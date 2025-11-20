@@ -51,10 +51,16 @@ export default {
           glow: "hsl(var(--stadium-glow))",
         },
         energy: {
-          orange: "hsl(var(--energy-orange))",
+          pink: "hsl(var(--energy-pink))",
         },
         victory: {
-          green: "hsl(var(--victory-green))",
+          cyan: "hsl(var(--victory-cyan))",
+        },
+        electric: {
+          purple: "hsl(var(--electric-purple))",
+        },
+        neon: {
+          green: "hsl(var(--neon-green))",
         },
         field: {
           dark: "hsl(var(--field-dark))",
@@ -64,9 +70,12 @@ export default {
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
         'gradient-applause': 'var(--gradient-applause)',
+        'gradient-neon': 'var(--gradient-neon)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
+        'pink': 'var(--shadow-pink)',
+        'cyan': 'var(--shadow-cyan)',
         'card': 'var(--shadow-card)',
       },
       borderRadius: {
