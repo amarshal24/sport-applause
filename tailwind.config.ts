@@ -47,35 +47,33 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        stadium: {
-          glow: "hsl(var(--stadium-glow))",
+        steel: {
+          blue: "hsl(var(--steel-blue))",
         },
-        energy: {
-          pink: "hsl(var(--energy-pink))",
+        iron: {
+          gray: "hsl(var(--iron-gray))",
         },
-        victory: {
-          cyan: "hsl(var(--victory-cyan))",
+        power: {
+          orange: "hsl(var(--power-orange))",
         },
         electric: {
-          purple: "hsl(var(--electric-purple))",
+          blue: "hsl(var(--electric-blue))",
         },
-        neon: {
-          green: "hsl(var(--neon-green))",
+        victory: {
+          gold: "hsl(var(--victory-gold))",
         },
-        field: {
-          dark: "hsl(var(--field-dark))",
-        },
+        charcoal: "hsl(var(--charcoal))",
       },
       backgroundImage: {
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
-        'gradient-applause': 'var(--gradient-applause)',
-        'gradient-neon': 'var(--gradient-neon)',
+        'gradient-power': 'var(--gradient-power)',
+        'gradient-steel': 'var(--gradient-steel)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
-        'pink': 'var(--shadow-pink)',
-        'cyan': 'var(--shadow-cyan)',
+        'orange': 'var(--shadow-orange)',
+        'steel': 'var(--shadow-steel)',
         'card': 'var(--shadow-card)',
       },
       borderRadius: {
