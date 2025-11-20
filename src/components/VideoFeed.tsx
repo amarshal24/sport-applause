@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Share2, MessageCircle } from "lucide-react";
-import { FilterSelector } from "./FilterSelector";
-import { AnimatedFilter, FilterType } from "./AnimatedFilters";
+import PostComposer from "./PostComposer";
 
 const SPORTS_CATEGORIES = [
   "All Sports",
@@ -117,7 +116,6 @@ const MOCK_VIDEOS = [
 const VideoFeed = () => {
   const [selectedSport, setSelectedSport] = useState("All Sports");
   const [applausedVideos, setApplausedVideos] = useState<number[]>([]);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("none");
 
   const handleApplause = (videoId: number) => {
     if (applausedVideos.includes(videoId)) {
@@ -133,14 +131,9 @@ const VideoFeed = () => {
 
   return (
     <section>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">For You</h2>
-        
-        <FilterSelector 
-          selectedFilter={activeFilter}
-          onFilterSelect={setActiveFilter}
-        />
-        
+      <PostComposer />
+      
+      <div className="mb-6">
         <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
           {SPORTS_CATEGORIES.map((sport) => (
             <Button
@@ -168,7 +161,6 @@ const VideoFeed = () => {
                   alt={video.title}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
-                <AnimatedFilter type={activeFilter} />
                 <Badge className="absolute top-3 left-3 bg-primary/90 text-primary-foreground z-10">
                   {video.sport}
                 </Badge>
