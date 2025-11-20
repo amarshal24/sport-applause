@@ -132,31 +132,31 @@ const VideoFeed = () => {
     : MOCK_VIDEOS.filter(v => v.sport === selectedSport);
 
   return (
-    <section className="py-16 px-6">
-      <div className="container mx-auto">
+    <section>
       <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-6">Trending Highlights</h2>
-          
-          <FilterSelector 
-            selectedFilter={activeFilter}
-            onFilterSelect={setActiveFilter}
-          />
-          
-          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-            {SPORTS_CATEGORIES.map((sport) => (
-              <Button
-                key={sport}
-                onClick={() => setSelectedSport(sport)}
-                variant={selectedSport === sport ? "default" : "outline"}
-                className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
-              >
-                {sport}
-              </Button>
-            ))}
-          </div>
+        <h2 className="text-2xl font-bold mb-4">For You</h2>
+        
+        <FilterSelector 
+          selectedFilter={activeFilter}
+          onFilterSelect={setActiveFilter}
+        />
+        
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+          {SPORTS_CATEGORIES.map((sport) => (
+            <Button
+              key={sport}
+              onClick={() => setSelectedSport(sport)}
+              size="sm"
+              variant={selectedSport === sport ? "default" : "outline"}
+              className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
+            >
+              {sport}
+            </Button>
+          ))}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredVideos.map((video) => (
             <div
               key={video.id}
@@ -219,7 +219,6 @@ const VideoFeed = () => {
             </div>
           ))}
         </div>
-      </div>
     </section>
   );
 };
