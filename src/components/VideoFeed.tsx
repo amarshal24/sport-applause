@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Share2, MessageCircle } from "lucide-react";
+import { FilterSelector } from "./FilterSelector";
+import { AnimatedFilter, FilterType } from "./AnimatedFilters";
 
 const SPORTS_CATEGORIES = [
   "All Sports",
@@ -95,6 +97,7 @@ const MOCK_VIDEOS = [
 const VideoFeed = () => {
   const [selectedSport, setSelectedSport] = useState("All Sports");
   const [applausedVideos, setApplausedVideos] = useState<number[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("none");
 
   const handleApplause = (videoId: number) => {
     if (applausedVideos.includes(videoId)) {
@@ -111,8 +114,13 @@ const VideoFeed = () => {
   return (
     <section className="py-16 px-6">
       <div className="container mx-auto">
-        <div className="mb-8">
+      <div className="mb-8">
           <h2 className="text-3xl font-bold mb-6">Trending Highlights</h2>
+          
+          <FilterSelector 
+            selectedFilter={activeFilter}
+            onFilterSelect={setActiveFilter}
+          />
           
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
             {SPORTS_CATEGORIES.map((sport) => (
@@ -140,7 +148,8 @@ const VideoFeed = () => {
                   alt={video.title}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
-                <Badge className="absolute top-3 left-3 bg-primary/90 text-primary-foreground">
+                <AnimatedFilter type={activeFilter} />
+                <Badge className="absolute top-3 left-3 bg-primary/90 text-primary-foreground z-10">
                   {video.sport}
                 </Badge>
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
