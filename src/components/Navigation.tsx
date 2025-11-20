@@ -3,7 +3,10 @@ import { User, Search, Upload, Menu, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SportIcon } from "./SportIcon";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +17,19 @@ import {
 const Navigation = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    }
+  }, [user]);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border">
       <div className="mx-auto px-4 py-3">
@@ -51,11 +67,16 @@ const Navigation = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.user_metadata?.avatar_url} />
-                        <AvatarFallback>{user.user_metadata?.username?.[0] || "U"}</AvatarFallback>
-                      </Avatar>
-                      <span className="hidden md:inline">{user.user_metadata?.username || "Profile"}</span>
+                      <div className="relative">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={profile?.avatar_url || user.user_metadata?.avatar_url} />
+                          <AvatarFallback>{profile?.username?.[0] || user.user_metadata?.username?.[0] || "U"}</AvatarFallback>
+                        </Avatar>
+                        {profile?.sports && profile.sports.length > 0 && (
+                          <SportIcon sportId={profile.sports[0]} className="w-4 h-4 p-0.5" />
+                        )}
+                      </div>
+                      <span className="hidden md:inline">{profile?.username || user.user_metadata?.username || "Profile"}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">

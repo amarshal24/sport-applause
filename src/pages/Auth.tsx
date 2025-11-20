@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(128),
   username: z.string().trim().min(3, { message: "Username must be at least 3 characters" }).max(50).optional(),
+  sports: z.array(z.string()).min(1, { message: "Select at least one sport" }).optional(),
 });
 
 const Auth = () => {
@@ -18,6 +21,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signUp, signIn, user } = useAuth();
@@ -36,7 +40,7 @@ const Auth = () => {
 
     try {
       const data = isSignUp 
-        ? { email, password, username }
+        ? { email, password, username, sports: selectedSports }
         : { email, password };
 
       const result = authSchema.safeParse(data);
@@ -54,7 +58,7 @@ const Auth = () => {
       }
 
       if (isSignUp) {
-        await signUp(email, password, username);
+        await signUp(email, password, username, selectedSports);
       } else {
         await signIn(email, password);
       }
@@ -91,6 +95,44 @@ const Auth = () => {
                 />
                 {errors.username && (
                   <p className="text-sm text-destructive mt-1">{errors.username}</p>
+                )}
+              </div>
+            )}
+
+            {isSignUp && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  What sports do you play? (Select at least one)
+                </Label>
+                <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border rounded-md">
+                  {SPORTS.map((sport) => {
+                    const Icon = sport.icon;
+                    return (
+                      <div key={sport.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={sport.id}
+                          checked={selectedSports.includes(sport.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSports([...selectedSports, sport.id]);
+                            } else {
+                              setSelectedSports(selectedSports.filter(s => s !== sport.id));
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={sport.id}
+                          className="flex items-center gap-2 cursor-pointer text-sm"
+                        >
+                          <Icon className="w-4 h-4" />
+                          {sport.name}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.sports && (
+                  <p className="text-sm text-destructive mt-1">{errors.sports}</p>
                 )}
               </div>
             )}
