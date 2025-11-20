@@ -1,15 +1,20 @@
 import Navigation from "@/components/Navigation";
-import Hero from "@/components/Hero";
+import Sidebar from "@/components/Sidebar";
+import Stories from "@/components/Stories";
 import VideoFeed from "@/components/VideoFeed";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="pt-20">
-        <Hero />
-        <VideoFeed />
-      </div>
+      <Sidebar />
+      
+      <main className="pt-20 lg:pl-64">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <Stories />
+          <VideoFeed />
+        </div>
+      </main>
     </div>
   );
 };
