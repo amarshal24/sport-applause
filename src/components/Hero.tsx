@@ -23,9 +23,13 @@ const Hero = () => {
             </Button>
             <Button size="lg" variant="outline" className="border-primary text-foreground hover:bg-primary/10">
               <Users className="mr-2 h-5 w-5" />
-              Join as Athlete
+              Join as Creator
             </Button>
           </div>
+          
+          <p className="text-sm text-muted-foreground mb-8">
+            Athletes • Commentators • Media • Fitness Coaches • Entertainment
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="bg-card/80 backdrop-blur-sm p-6 rounded-lg border border-border shadow-card">

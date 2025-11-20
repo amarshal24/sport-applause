@@ -13,6 +13,8 @@ const SPORTS_CATEGORIES = [
   "Tennis",
   "Boxing",
   "MMA",
+  "Media",
+  "Fitness",
 ];
 
 const MOCK_VIDEOS = [
@@ -51,6 +53,42 @@ const MOCK_VIDEOS = [
     authorType: "Athlete",
     applause: 7300,
     thumbnail: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&q=80",
+  },
+  {
+    id: 5,
+    sport: "Media",
+    title: "Breaking down the championship game | Sports Talk",
+    author: "TheSportsPod",
+    authorType: "Media",
+    applause: 9800,
+    thumbnail: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80",
+  },
+  {
+    id: 6,
+    sport: "Media",
+    title: "Weekly NFL Power Rankings Podcast",
+    author: "GridironTalk",
+    authorType: "Media",
+    applause: 6500,
+    thumbnail: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&q=80",
+  },
+  {
+    id: 7,
+    sport: "Fitness",
+    title: "30-min HIIT workout for athletes",
+    author: "FitCoachMike",
+    authorType: "Fitness",
+    applause: 11400,
+    thumbnail: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
+  },
+  {
+    id: 8,
+    sport: "Fitness",
+    title: "Pre-game warm up routine",
+    author: "AthletePro",
+    authorType: "Fitness",
+    applause: 8200,
+    thumbnail: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80",
   },
 ];
 
