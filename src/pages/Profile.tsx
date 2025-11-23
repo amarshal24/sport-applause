@@ -14,8 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Grid3x3, Heart, Bookmark, Video } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio } from "lucide-react";
 import { toast } from "sonner";
+import PodcastUploader from "@/components/PodcastUploader";
+import LiveStreamManager from "@/components/LiveStreamManager";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -193,9 +195,15 @@ const Profile = () => {
 
           {/* Tabs Section */}
           <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 border-y border-border bg-transparent rounded-none glass-effect">
+            <TabsList className="w-full grid grid-cols-5 h-12 border-y border-border bg-transparent rounded-none glass-effect">
               <TabsTrigger value="posts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
                 <Grid3x3 className="h-5 w-5" />
+              </TabsTrigger>
+              <TabsTrigger value="podcasts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
+                <Music className="h-5 w-5" />
+              </TabsTrigger>
+              <TabsTrigger value="streams" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
+                <Radio className="h-5 w-5" />
               </TabsTrigger>
               <TabsTrigger value="liked" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
                 <Heart className="h-5 w-5" />
@@ -244,6 +252,16 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground">When you share posts, they'll appear here</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="podcasts" className="mt-6">
+              <div className="space-y-6">
+                <PodcastUploader onUploadComplete={fetchPosts} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="streams" className="mt-6">
+              <LiveStreamManager />
             </TabsContent>
 
             <TabsContent value="liked" className="mt-0">
