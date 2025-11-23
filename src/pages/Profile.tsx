@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import PostComposer from "@/components/PostComposer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,11 @@ const Profile = () => {
       
       <main className="pt-20 lg:pl-64">
         <div className="max-w-3xl mx-auto px-4 pb-6">
+          {/* Post Composer */}
+          <div className="mb-6">
+            <PostComposer />
+          </div>
+
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
             <div className="relative">
