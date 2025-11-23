@@ -1,4 +1,4 @@
-import { Home, Flame, Compass, Upload, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film } from "lucide-react";
+import { Home, Flame, Compass, Upload, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
@@ -49,6 +49,15 @@ const Sidebar = () => {
       <div className="space-y-1">
         <p className="px-4 py-2 text-sm font-semibold text-muted-foreground">Categories</p>
         
+        <NavLink 
+          to="/recruiting" 
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+          activeClassName="bg-primary/10 text-primary font-medium"
+        >
+          <GraduationCap className="h-5 w-5" />
+          <span>Get Recruited</span>
+        </NavLink>
+
         <NavLink 
           to="/motivation" 
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"

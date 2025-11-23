@@ -127,6 +127,80 @@ export type Database = {
         }
         Relationships: []
       }
+      recruiting_videos: {
+        Row: {
+          created_at: string
+          description: string | null
+          featured: boolean
+          graduation_year: number | null
+          height: string | null
+          id: string
+          location: string | null
+          position: string | null
+          school: string | null
+          sport: string
+          stats: Json | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string
+          views_count: number
+          weight: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          graduation_year?: number | null
+          height?: string | null
+          id?: string
+          location?: string | null
+          position?: string | null
+          school?: string | null
+          sport: string
+          stats?: Json | null
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+          views_count?: number
+          weight?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          graduation_year?: number | null
+          height?: string | null
+          id?: string
+          location?: string | null
+          position?: string | null
+          school?: string | null
+          sport?: string
+          stats?: Json | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          views_count?: number
+          weight?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruiting_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           created_at: string
