@@ -40,7 +40,7 @@ const Navigation = () => {
             </Button>
             
             <h1 className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight">
-              U⚡️Sports
+              U⚡️Sportz
             </h1>
           </div>
 
