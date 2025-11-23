@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import PostComposer from "@/components/PostComposer";
+import FavoriteVideos from "@/components/FavoriteVideos";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,11 @@ const Profile = () => {
           {/* Post Composer */}
           <div className="mb-6">
             <PostComposer />
+          </div>
+
+          {/* Favorite Videos Section */}
+          <div className="mb-6">
+            <FavoriteVideos />
           </div>
 
           {/* Profile Header */}
