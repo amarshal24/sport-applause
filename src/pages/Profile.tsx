@@ -10,8 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Grid3x3, Heart, Bookmark, Video } from "lucide-react";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -19,6 +23,12 @@ const Profile = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    bio: "",
+    username: "",
+  });
 
   useEffect(() => {
     if (user) {
@@ -35,6 +45,39 @@ const Profile = () => {
       .eq("id", user.id)
       .single();
     setProfile(data);
+    if (data) {
+      setEditForm({
+        full_name: data.full_name || "",
+        bio: data.bio || "",
+        username: data.username || "",
+      });
+    }
+  };
+
+  const handleEditProfile = () => {
+    setShowEditProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editForm.full_name,
+        bio: editForm.bio,
+        username: editForm.username,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      toast.error("Failed to update profile");
+      return;
+    }
+
+    toast.success("Profile updated successfully");
+    setShowEditProfile(false);
+    fetchProfile();
   };
 
   const fetchPosts = async () => {
@@ -139,7 +182,11 @@ const Profile = () => {
             )}
 
             {/* Edit Profile Button */}
-            <Button variant="outline" className="w-full max-w-xs hover-lift">
+            <Button 
+              variant="outline" 
+              className="w-full max-w-xs hover-lift"
+              onClick={handleEditProfile}
+            >
               Edit Profile
             </Button>
           </div>
@@ -225,6 +272,53 @@ const Profile = () => {
             onVideoUploaded={fetchProfile}
             onClose={() => setShowVideoRecorder(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={editForm.username}
+                onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                placeholder="Your username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                placeholder="Your full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={editForm.bio}
+                onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                placeholder="Tell us about yourself..."
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => setShowEditProfile(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveProfile}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
