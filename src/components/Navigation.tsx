@@ -31,7 +31,7 @@ const Navigation = () => {
   }, [user]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-effect shadow-steel">
       <div className="mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -39,8 +39,8 @@ const Navigation = () => {
               <Menu className="h-5 w-5" />
             </Button>
             
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              You Sports
+            <h1 className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight">
+              YOU SPORTS
             </h1>
           </div>
 

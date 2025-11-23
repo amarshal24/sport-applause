@@ -62,24 +62,25 @@ const Profile = () => {
       <main className="pt-20 lg:pl-64">
         <div className="max-w-3xl mx-auto px-4 pb-6">
           {/* Profile Header */}
-          <div className="flex flex-col items-center py-6 space-y-4">
+          <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
             <div className="relative">
-              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-2 border-border">
+              <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
+              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary/30 shadow-glow relative z-10">
                 <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="text-3xl">
+                <AvatarFallback className="text-3xl font-display">
                   {profile?.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               {profile?.sports && profile.sports.length > 0 && (
                 <SportIcon 
                   sportId={profile.sports[0]} 
-                  className="absolute -bottom-1 -right-1 w-8 h-8 p-1.5 border-2"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 p-1.5 border-2 shadow-steel"
                 />
               )}
             </div>
 
             <div className="text-center space-y-1">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-display font-bold text-foreground">
                 {profile?.username}
               </h1>
               {profile?.full_name && (
@@ -115,21 +116,21 @@ const Profile = () => {
             )}
 
             {/* Edit Profile Button */}
-            <Button variant="outline" className="w-full max-w-xs">
+            <Button variant="outline" className="w-full max-w-xs hover-lift">
               Edit Profile
             </Button>
           </div>
 
           {/* Tabs Section */}
           <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 border-y border-border bg-transparent rounded-none">
-              <TabsTrigger value="posts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+            <TabsList className="w-full grid grid-cols-3 h-12 border-y border-border bg-transparent rounded-none glass-effect">
+              <TabsTrigger value="posts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
                 <Grid3x3 className="h-5 w-5" />
               </TabsTrigger>
-              <TabsTrigger value="liked" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <TabsTrigger value="liked" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
                 <Heart className="h-5 w-5" />
               </TabsTrigger>
-              <TabsTrigger value="saved" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <TabsTrigger value="saved" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
                 <Bookmark className="h-5 w-5" />
               </TabsTrigger>
             </TabsList>

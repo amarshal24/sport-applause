@@ -152,7 +152,7 @@ const PostComposer = ({ onPostCreated }: PostComposerProps) => {
   if (!user) return null;
 
   return (
-    <Card className="p-4 mb-6">
+    <Card className="p-4 mb-6 glass-effect hover-lift shadow-card animate-fade-in">
       <div className="flex gap-3">
         <Avatar>
           <AvatarImage src={user.user_metadata?.avatar_url} />
