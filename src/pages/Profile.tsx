@@ -3,7 +3,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
-import PostComposer from "@/components/PostComposer";
 import FavoriteVideos from "@/components/FavoriteVideos";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
@@ -63,11 +62,6 @@ const Profile = () => {
       
       <main className="pt-20 lg:pl-64">
         <div className="max-w-3xl mx-auto px-4 pb-6">
-          {/* Post Composer */}
-          <div className="mb-6">
-            <PostComposer />
-          </div>
-
           {/* Favorite Videos Section */}
           <div className="mb-6">
             <FavoriteVideos />
