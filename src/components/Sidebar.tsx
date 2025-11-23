@@ -1,4 +1,4 @@
-import { Home, Flame, Compass, Upload, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle } from "lucide-react";
+import { Home, Flame, Compass, Upload, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
@@ -97,9 +97,9 @@ const Sidebar = () => {
 
       <div className="border-t border-border my-4" />
 
-      <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-        <Upload className="mr-2 h-4 w-4" />
-        Upload Video
+      <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => window.location.href = '/editor'}>
+        <Film className="mr-2 h-4 w-4" />
+        Create Video
       </Button>
 
       <div className="mt-6 p-4 bg-muted/50 rounded-lg">
