@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, TrendingUp, Users, Video, GraduationCap, Zap, Heart, Sparkles, Film, Globe } from "lucide-react";
+import { Play, TrendingUp, Users, Video, GraduationCap, Zap, Heart, Sparkles, Film, Globe, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
@@ -123,6 +123,17 @@ const Hero = () => {
                 <CardDescription>
                   Test your sports knowledge with trivia, guess the sport challenges, and athlete 
                   matching games. Compete with friends and climb the leaderboards.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <Mic className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Podcasts & Live Streams</CardTitle>
+                <CardDescription>
+                  Share your sports insights through podcasts or broadcast live. Athletes, coaches, 
+                  and commentators can engage audiences with long-form audio content and real-time streaming.
                 </CardDescription>
               </CardHeader>
             </Card>
