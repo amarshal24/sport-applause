@@ -4,42 +4,49 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import FavoriteVideos from "@/components/FavoriteVideos";
+import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
+import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, Heart, Bookmark } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Grid3x3, Heart, Bookmark, Video } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false);
 
   useEffect(() => {
     if (user) {
-      // Fetch profile
-      supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          setProfile(data);
-        });
-
-      // Fetch user posts
-      supabase
-        .from("posts")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .then(({ data }) => {
-          setPosts(data || []);
-          setLoading(false);
-        });
+      fetchProfile();
+      fetchPosts();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    setProfile(data);
+  };
+
+  const fetchPosts = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setPosts(data || []);
+    setLoading(false);
+  };
 
   if (loading) {
     return (
@@ -69,20 +76,30 @@ const Profile = () => {
 
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
-            <div className="relative">
+            <div className="relative group">
               <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
-              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary/30 shadow-glow relative z-10">
-                <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="text-3xl font-display">
-                  {profile?.username?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <AnimatedAvatar
+                videoUrl={profile?.profile_video_url}
+                imageUrl={profile?.avatar_url}
+                fallback={profile?.username?.[0]?.toUpperCase() || "U"}
+                className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary/30 shadow-glow relative z-10"
+                showPlayIcon
+              />
               {profile?.sports && profile.sports.length > 0 && (
                 <SportIcon 
                   sportId={profile.sports[0]} 
-                  className="absolute -bottom-1 -right-1 w-8 h-8 p-1.5 border-2 shadow-steel"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 p-1.5 border-2 shadow-steel z-20"
                 />
               )}
+              {/* Video Upload Button */}
+              <Button
+                size="icon"
+                variant="outline"
+                className="absolute top-0 right-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                onClick={() => setShowVideoRecorder(true)}
+              >
+                <Video className="w-4 h-4" />
+              </Button>
             </div>
 
             <div className="text-center space-y-1">
@@ -200,6 +217,16 @@ const Profile = () => {
           </Tabs>
         </div>
       </main>
+
+      {/* Video Recorder Dialog */}
+      <Dialog open={showVideoRecorder} onOpenChange={setShowVideoRecorder}>
+        <DialogContent className="max-w-2xl p-0 bg-transparent border-none">
+          <ProfileVideoRecorder
+            onVideoUploaded={fetchProfile}
+            onClose={() => setShowVideoRecorder(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

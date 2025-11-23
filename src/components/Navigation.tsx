@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AnimatedAvatar from "./AnimatedAvatar";
 import { SportIcon } from "./SportIcon";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -68,10 +68,12 @@ const Navigation = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-2">
                       <div className="relative">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={profile?.avatar_url || user.user_metadata?.avatar_url} />
-                          <AvatarFallback>{profile?.username?.[0] || user.user_metadata?.username?.[0] || "U"}</AvatarFallback>
-                        </Avatar>
+                        <AnimatedAvatar
+                          videoUrl={profile?.profile_video_url}
+                          imageUrl={profile?.avatar_url || user.user_metadata?.avatar_url}
+                          fallback={profile?.username?.[0] || user.user_metadata?.username?.[0] || "U"}
+                          className="h-6 w-6"
+                        />
                         {profile?.sports && profile.sports.length > 0 && (
                           <SportIcon sportId={profile.sports[0]} className="w-4 h-4 p-0.5" />
                         )}

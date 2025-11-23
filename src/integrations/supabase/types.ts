@@ -98,6 +98,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          profile_video_url: string | null
           sports: string[] | null
           updated_at: string
           username: string
@@ -108,6 +109,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          profile_video_url?: string | null
           sports?: string[] | null
           updated_at?: string
           username: string
@@ -118,6 +120,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          profile_video_url?: string | null
           sports?: string[] | null
           updated_at?: string
           username?: string
