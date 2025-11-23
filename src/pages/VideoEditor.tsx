@@ -6,12 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Upload, Download, Play, Pause, Sparkles, Type, 
-  Sticker, Music, Scissors, Zap, RotateCcw, Check 
+  Sticker, Music, Scissors, Zap, RotateCcw, Check,
+  Share2, Trash2, Send, Image as ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface TextOverlay {
   id: string;
@@ -44,6 +50,8 @@ const filters: Filter[] = [
 const stickers = ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏆", "🥇", "🔥", "⚡", "💪", "👏", "🎯", "🏁"];
 
 const VideoEditor = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,6 +62,9 @@ const VideoEditor = () => {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(100);
   const [duration, setDuration] = useState(0);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [postCaption, setPostCaption] = useState("");
+  const [exporting, setExporting] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -148,9 +159,138 @@ const VideoEditor = () => {
   };
 
   const exportVideo = () => {
-    toast.info("Exporting video... This feature requires server-side processing");
-    // In a real implementation, this would send the video with all settings to a server
-    // for processing using FFmpeg or similar tools
+    if (!videoFile) {
+      toast.error("No video to export");
+      return;
+    }
+    setShowExportDialog(true);
+  };
+
+  const handleDownload = () => {
+    if (!videoUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = videoUrl;
+    link.download = `edited-video-${Date.now()}.${videoFile?.name.split('.').pop() || 'mp4'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Video downloaded!");
+  };
+
+  const handleShare = async () => {
+    if (!videoUrl) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My edited sports video',
+          text: 'Check out this video I created!',
+          url: videoUrl,
+        });
+        toast.success("Shared successfully!");
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(videoUrl);
+      toast.success("Video link copied to clipboard!");
+    }
+  };
+
+  const handleDelete = () => {
+    setVideoFile(null);
+    setVideoUrl("");
+    resetEditor();
+    toast.success("Video removed");
+  };
+
+  const postToFeed = async () => {
+    if (!user || !videoFile) {
+      toast.error("Please sign in to post");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      // Upload video to storage
+      const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("posts")
+        .upload(fileName, videoFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("posts")
+        .getPublicUrl(fileName);
+
+      // Create post
+      const { error: postError } = await supabase
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          content: postCaption || "Check out my edited sports video! 🎬",
+          image_url: publicUrl,
+        });
+
+      if (postError) throw postError;
+
+      toast.success("Posted to feed!");
+      setShowExportDialog(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Error posting:", error);
+      toast.error("Failed to post video");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const postToStory = async () => {
+    if (!user || !videoFile) {
+      toast.error("Please sign in to post");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      // Upload to stories storage
+      const fileName = `${user.id}/${Date.now()}-story-${videoFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("stories")
+        .upload(fileName, videoFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("stories")
+        .getPublicUrl(fileName);
+
+      // Create story (expires in 24 hours)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      const { error: storyError } = await supabase
+        .from("stories")
+        .insert({
+          user_id: user.id,
+          image_url: publicUrl,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (storyError) throw storyError;
+
+      toast.success("Posted to story!");
+      setShowExportDialog(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Error posting story:", error);
+      toast.error("Failed to post story");
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -175,9 +315,25 @@ const VideoEditor = () => {
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Reset
               </Button>
+              {videoFile && (
+                <>
+                  <Button variant="outline" onClick={handleShare}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share
+                  </Button>
+                  <Button variant="outline" onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                  <Button variant="outline" onClick={handleDelete} className="text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </>
+              )}
               <Button onClick={exportVideo} disabled={!videoFile}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
+                <Send className="mr-2 h-4 w-4" />
+                Post
               </Button>
             </div>
           </div>
@@ -439,6 +595,95 @@ const VideoEditor = () => {
           </div>
         </div>
       </main>
+
+      {/* Export/Post Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Share Your Video
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Preview */}
+            {videoUrl && (
+              <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                <video
+                  src={videoUrl}
+                  className="w-full h-full object-cover"
+                  style={{ filter: selectedFilter.cssFilter }}
+                  controls
+                />
+              </div>
+            )}
+
+            {/* Caption */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Add a caption (optional)
+              </label>
+              <Textarea
+                value={postCaption}
+                onChange={(e) => setPostCaption(e.target.value)}
+                placeholder="What's happening in this video?"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={postToFeed}
+                disabled={exporting}
+                className="w-full"
+              >
+                <ImageIcon className="mr-2 h-4 w-4" />
+                {exporting ? "Posting..." : "Post to Feed"}
+              </Button>
+
+              <Button
+                onClick={postToStory}
+                disabled={exporting}
+                variant="outline"
+                className="w-full"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {exporting ? "Posting..." : "Post to Story"}
+              </Button>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t">
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Link
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              Note: Video processing with effects requires server-side rendering. 
+              The original video will be posted.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
