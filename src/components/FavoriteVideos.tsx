@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, Heart, Play } from "lucide-react";
+import { Star, Heart, Play, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface FavoritePost {
@@ -145,7 +145,7 @@ const FavoriteVideos = () => {
                 </p>
                 <div className="flex items-center gap-3 mt-1">
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Heart className="w-3 h-3 fill-current" />
+                  <Sparkles className="w-3 h-3 fill-current" />
                   {post.likes_count} claps
                 </span>
                 </div>

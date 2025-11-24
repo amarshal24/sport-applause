@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import PodcastUploader from "@/components/PodcastUploader";
 import LiveStreamManager from "@/components/LiveStreamManager";
@@ -237,7 +237,7 @@ const Profile = () => {
                       <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="flex items-center gap-4 text-foreground">
                         <div className="flex items-center gap-1">
-                          <Heart className="h-5 w-5 fill-current" />
+                          <Sparkles className="h-5 w-5 fill-current" />
                           <span className="font-semibold">{post.likes_count} claps</span>
                         </div>
                         </div>
