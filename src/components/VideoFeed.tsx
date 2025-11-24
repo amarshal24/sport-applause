@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Share2, MessageCircle } from "lucide-react";
+import { Sparkles, Share2, MessageSquare } from "lucide-react";
 import PostComposer from "./PostComposer";
 
 const SPORTS_CATEGORIES = [
@@ -199,8 +199,8 @@ const VideoFeed = () => {
                   </button>
 
                   <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                    <MessageCircle className="h-5 w-5" />
-                    <span className="text-sm">Reply</span>
+                    <MessageSquare className="h-5 w-5" />
+                    <span className="text-sm">Comment</span>
                   </button>
 
                   <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
