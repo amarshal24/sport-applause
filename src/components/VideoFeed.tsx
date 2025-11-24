@@ -188,11 +188,7 @@ const VideoFeed = () => {
                         : "text-muted-foreground hover:text-primary"
                     }`}
                   >
-                    <Sparkles
-                      className={`h-5 w-5 ${
-                        applausedVideos.includes(video.id) ? "fill-primary" : ""
-                      }`}
-                    />
+                    <span className="text-lg">👏</span>
                     <span className="text-sm font-medium">
                       {video.applause + (applausedVideos.includes(video.id) ? 1 : 0)}
                     </span>
