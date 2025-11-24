@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Share2, MessageCircle } from "lucide-react";
+import { Sparkles, Share2, MessageCircle } from "lucide-react";
 import PostComposer from "./PostComposer";
 
 const SPORTS_CATEGORIES = [
@@ -188,7 +188,7 @@ const VideoFeed = () => {
                         : "text-muted-foreground hover:text-primary"
                     }`}
                   >
-                    <Heart
+                    <Sparkles
                       className={`h-5 w-5 ${
                         applausedVideos.includes(video.id) ? "fill-primary" : ""
                       }`}
