@@ -4,10 +4,13 @@ import Stories from "@/components/Stories";
 import MoodSelector from "@/components/MoodSelector";
 import VideoFeed from "@/components/VideoFeed";
 import Hero from "@/components/Hero";
+import MusicRecommendations from "@/components/MusicRecommendations";
 import { useAuth } from "@/hooks/useAuth";
+import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 
 const Index = () => {
   const { user, loading } = useAuth();
+  const { recommendations, loading: musicLoading } = useMusicRecommendations();
 
   if (loading) {
     return (
@@ -30,6 +33,7 @@ const Index = () => {
         <div className="max-w-5xl mx-auto px-4 py-6">
           <Stories />
           <MoodSelector />
+          <MusicRecommendations recommendations={recommendations} loading={musicLoading} />
           <VideoFeed />
         </div>
       </main>

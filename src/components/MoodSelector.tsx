@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Music, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 
 interface Mood {
   id: string;
@@ -59,6 +60,13 @@ const moods: Mood[] = [
 
 const MoodSelector = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const { fetchRecommendations, loading } = useMusicRecommendations();
+
+  const handleSetVibe = () => {
+    if (selectedMood) {
+      fetchRecommendations(selectedMood);
+    }
+  };
 
   return (
     <Card className="glass-effect animate-fade-in mb-6">
@@ -110,8 +118,10 @@ const MoodSelector = () => {
               size="sm" 
               variant="ghost"
               className="gap-1 text-primary hover:text-primary/90"
+              onClick={handleSetVibe}
+              disabled={loading}
             >
-              Set Vibe
+              {loading ? "Loading..." : "Get Music"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
