@@ -120,10 +120,10 @@ const Hero = () => {
               <CardHeader>
                 <Zap className="h-12 w-12 text-accent mb-4" />
                 <CardTitle>Interactive Games</CardTitle>
-                <CardDescription>
-                  Test your sports knowledge with trivia, guess the sport challenges, and athlete 
-                  matching games. Compete with friends and climb the leaderboards.
-                </CardDescription>
+              <CardDescription>
+                Test your sports knowledge with trivia, guess the sport challenges, and athlete 
+                matching games. Compete with fans and climb the leaderboards.
+              </CardDescription>
               </CardHeader>
             </Card>
 
