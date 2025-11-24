@@ -236,10 +236,10 @@ const Profile = () => {
                       )}
                       <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="flex items-center gap-4 text-foreground">
-                          <div className="flex items-center gap-1">
-                            <Heart className="h-5 w-5 fill-current" />
-                            <span className="font-semibold">{post.likes_count}</span>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <Heart className="h-5 w-5 fill-current" />
+                          <span className="font-semibold">{post.likes_count} claps</span>
+                        </div>
                         </div>
                       </div>
                     </div>

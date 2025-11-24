@@ -144,10 +144,10 @@ const FavoriteVideos = () => {
                   {post.content}
                 </p>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Heart className="w-3 h-3 fill-current" />
-                    {post.likes_count}
-                  </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Heart className="w-3 h-3 fill-current" />
+                  {post.likes_count} claps
+                </span>
                 </div>
               </div>
             </div>
