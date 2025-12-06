@@ -168,6 +168,10 @@
     "games": "Games",
     "videoEditor": "Video Editor",
     "recruiting": "Recruiting",
-    "motivation": "Motivation"
+    "motivation": "Motivation",
+    "podcasts": "Podcasts"
+  },
+  "podcasts": {
+    "subtitle": "Listen to sports podcasts and upload your own"
   }
 }
