@@ -170,7 +170,9 @@
     "recruiting": "Reclutamiento",
     "motivation": "Motivación",
     "podcasts": "Podcasts",
-    "liveStreams": "En Vivo"
+    "liveStreams": "En Vivo",
+    "searchPlaceholder": "Buscar páginas...",
+    "noResults": "No se encontraron páginas"
   },
   "podcasts": {
     "subtitle": "Escucha podcasts deportivos y sube los tuyos"

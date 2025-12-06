@@ -170,7 +170,9 @@
     "recruiting": "Recruiting",
     "motivation": "Motivation",
     "podcasts": "Podcasts",
-    "liveStreams": "Live Streams"
+    "liveStreams": "Live Streams",
+    "searchPlaceholder": "Search pages...",
+    "noResults": "No pages found"
   },
   "podcasts": {
     "subtitle": "Listen to sports podcasts and upload your own"
