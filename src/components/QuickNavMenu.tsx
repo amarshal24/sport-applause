@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,8 +13,10 @@ import {
   Radio,
   Menu,
   X,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -33,11 +35,27 @@ const QuickNavMenu = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    if (!isOpen) {
+      setSearchQuery("");
+    }
+  }, [isOpen]);
 
   const handleNavigate = (path: string) => {
     navigate(path);
     setIsOpen(false);
   };
+
+  const filteredItems = menuItems.filter((item) => {
+    const label = t(item.labelKey).toLowerCase();
+    return label.includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className="fixed bottom-20 right-4 z-[90] md:bottom-6">
@@ -48,27 +66,44 @@ const QuickNavMenu = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 mb-2 min-w-[180px] rounded-xl border border-border bg-card p-2 shadow-xl"
+            className="absolute bottom-16 right-0 mb-2 min-w-[200px] rounded-xl border border-border bg-card p-2 shadow-xl"
           >
-            <nav className="flex flex-col gap-1">
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => handleNavigate(item.path)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{t(item.labelKey)}</span>
-                  </button>
-                );
-              })}
+            <div className="relative mb-2">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                type="text"
+                placeholder={t("quickNav.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 text-sm bg-muted/50"
+              />
+            </div>
+            <nav className="flex flex-col gap-1 max-h-[300px] overflow-y-auto">
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => handleNavigate(item.path)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{t(item.labelKey)}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {t("quickNav.noResults")}
+                </p>
+              )}
             </nav>
           </motion.div>
         )}
