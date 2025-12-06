@@ -1,4 +1,5 @@
-import { memo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { User, Search, Upload, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { NavLink } from "@/components/NavLink";
 import AnimatedAvatar from "./AnimatedAvatar";
 import { SportIcon } from "./SportIcon";
 import { supabase } from "@/integrations/supabase/client";
+import LanguageSwitcher from "./LanguageSwitcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
@@ -36,7 +39,6 @@ const Navigation = () => {
       <div className="mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            
             <NavLink to="/" end className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight hover:opacity-80 transition-opacity">
               USportz
             </NavLink>
@@ -46,13 +48,14 @@ const Navigation = () => {
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search sports, athletes, highlights..." 
+                placeholder={t("nav.search")} 
                 className="pl-10 bg-muted/50 border-border"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
             <Button variant="ghost" size="icon" className="md:hidden">
               <Search className="h-5 w-5" />
             </Button>
@@ -60,7 +63,7 @@ const Navigation = () => {
               <>
                 <Button variant="ghost" size="sm" className="hidden md:flex border-primary text-foreground">
                   <Upload className="mr-2 h-4 w-4" />
-                  Upload
+                  {t("nav.upload")}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -76,17 +79,17 @@ const Navigation = () => {
                           <SportIcon sportId={profile.sports[0]} className="w-4 h-4 p-0.5" />
                         )}
                       </div>
-                      <span className="hidden md:inline">{profile?.username || user.user_metadata?.username || "Profile"}</span>
+                      <span className="hidden md:inline">{profile?.username || user.user_metadata?.username || t("nav.profile")}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="mr-2 h-4 w-4" />
-                      View Profile
+                      {t("nav.viewProfile")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t("nav.signOut")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -98,7 +101,7 @@ const Navigation = () => {
                 onClick={() => navigate("/auth")}
               >
                 <User className="mr-2 h-4 w-4" />
-                <span className="hidden md:inline">Sign In</span>
+                <span className="hidden md:inline">{t("nav.signIn")}</span>
               </Button>
             )}
           </div>

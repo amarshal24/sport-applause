@@ -1,8 +1,11 @@
-import { Home, Flame, Compass, Upload, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Home, Flame, Compass, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
+  const { t } = useTranslation();
+
   return (
     <aside className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-64 bg-card/50 backdrop-blur-lg border-r border-border p-4 hidden lg:block overflow-y-auto">
       <div className="space-y-1">
@@ -13,7 +16,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Home className="h-5 w-5" />
-          <span>Home</span>
+          <span>{t("sidebar.home")}</span>
         </NavLink>
 
         <NavLink 
@@ -22,7 +25,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Flame className="h-5 w-5" />
-          <span>Trending</span>
+          <span>{t("sidebar.trending")}</span>
         </NavLink>
 
         <NavLink 
@@ -31,7 +34,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Compass className="h-5 w-5" />
-          <span>Discover</span>
+          <span>{t("sidebar.discover")}</span>
         </NavLink>
 
         <NavLink 
@@ -40,14 +43,14 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Users className="h-5 w-5" />
-          <span>Following</span>
+          <span>{t("sidebar.following")}</span>
         </NavLink>
       </div>
 
       <div className="border-t border-border my-4" />
 
       <div className="space-y-1">
-        <p className="px-4 py-2 text-sm font-semibold text-muted-foreground">Categories</p>
+        <p className="px-4 py-2 text-sm font-semibold text-muted-foreground">{t("sidebar.categories")}</p>
         
         <NavLink 
           to="/recruiting" 
@@ -55,7 +58,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <GraduationCap className="h-5 w-5" />
-          <span>Get Recruited</span>
+          <span>{t("sidebar.getRecruited")}</span>
         </NavLink>
 
         <NavLink 
@@ -64,7 +67,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <MessageCircle className="h-5 w-5" />
-          <span>Daily Motivation</span>
+          <span>{t("sidebar.dailyMotivation")}</span>
         </NavLink>
 
         <NavLink 
@@ -73,7 +76,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Gamepad2 className="h-5 w-5" />
-          <span>Games</span>
+          <span>{t("sidebar.games")}</span>
         </NavLink>
 
         <NavLink 
@@ -82,7 +85,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Trophy className="h-5 w-5" />
-          <span>Top Plays</span>
+          <span>{t("sidebar.topPlays")}</span>
         </NavLink>
 
         <NavLink 
@@ -91,7 +94,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <TrendingUp className="h-5 w-5" />
-          <span>Live</span>
+          <span>{t("sidebar.live")}</span>
         </NavLink>
 
         <NavLink 
@@ -100,7 +103,7 @@ const Sidebar = () => {
           activeClassName="bg-primary/10 text-primary font-medium"
         >
           <Clock className="h-5 w-5" />
-          <span>Watch Later</span>
+          <span>{t("sidebar.watchLater")}</span>
         </NavLink>
       </div>
 
@@ -109,16 +112,16 @@ const Sidebar = () => {
       <NavLink to="/editor">
         <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
           <Film className="mr-2 h-4 w-4" />
-          Create Video
+          {t("sidebar.createVideo")}
         </Button>
       </NavLink>
 
       <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-        <p className="text-xs text-muted-foreground mb-2">Join You Sports</p>
-        <p className="text-sm mb-3">Share your best sports moments with the world!</p>
+        <p className="text-xs text-muted-foreground mb-2">{t("sidebar.joinUs")}</p>
+        <p className="text-sm mb-3">{t("sidebar.shareMessage")}</p>
         <Button variant="outline" size="sm" className="w-full">
           <User className="mr-2 h-4 w-4" />
-          Sign Up
+          {t("sidebar.signUp")}
         </Button>
       </div>
     </aside>
