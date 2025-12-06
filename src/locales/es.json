@@ -139,6 +139,7 @@
     "readPage": "Leer Página en Voz Alta",
     "stopReading": "Dejar de Leer",
     "readingPage": "Leyendo contenido de la página...",
+    "stoppedReading": "Dejó de leer",
     "speechRate": "Velocidad de Lectura",
     "selectVoice": "Voz",
     "chooseVoice": "Elegir una voz",
@@ -146,9 +147,16 @@
     "stopListening": "Dejar de Escuchar",
     "listening": "Escuchando... Habla ahora",
     "listeningNow": "Escuchando...",
+    "stoppedListening": "Dejó de escuchar",
     "transcriptReady": "¡Transcripción lista!",
     "transcript": "Tu discurso",
     "copyTranscript": "Copiar al Portapapeles",
-    "copiedToClipboard": "¡Copiado al portapapeles!"
+    "copiedToClipboard": "¡Copiado al portapapeles!",
+    "keyboardShortcuts": "Atajos de Teclado",
+    "readPageShortcut": "Leer/Parar página",
+    "voiceInputShortcut": "Entrada de voz",
+    "stopAllShortcut": "Detener todo",
+    "showShortcutsShortcut": "Mostrar atajos",
+    "stoppedAll": "Todo el audio detenido"
   }
 }
