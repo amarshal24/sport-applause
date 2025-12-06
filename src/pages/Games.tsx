@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Trophy, Timer, Target, Zap, Medal } from "lucide-react";
 import { useState } from "react";
@@ -8,29 +10,30 @@ import GuessTheSport from "@/components/games/GuessTheSport";
 import AthleteMatch from "@/components/games/AthleteMatch";
 
 const Games = () => {
+  const { t } = useTranslation();
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
 
   const games = [
     {
       id: "trivia",
-      title: "Sports Trivia Challenge",
-      description: "Test your sports knowledge with rapid-fire questions",
+      title: t("games.sportsTrivia"),
+      description: t("games.triviaDesc"),
       icon: Brain,
       color: "from-blue-500 to-cyan-500",
       component: SportsTrivia,
     },
     {
       id: "guess-sport",
-      title: "Guess the Sport",
-      description: "Identify sports from emojis and clues",
+      title: t("games.guessTheSport"),
+      description: t("games.guessDesc"),
       icon: Target,
       color: "from-purple-500 to-pink-500",
       component: GuessTheSport,
     },
     {
       id: "athlete-match",
-      title: "Athlete Match",
-      description: "Match legendary athletes to their sports",
+      title: t("games.athleteMatch"),
+      description: t("games.matchDesc"),
       icon: Medal,
       color: "from-orange-500 to-red-500",
       component: AthleteMatch,
@@ -43,17 +46,18 @@ const Games = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <Sidebar />
+      <MobileNav />
       
-      <main className="pt-20 lg:pl-64">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="max-w-6xl mx-auto px-4 py-6">
           {!selectedGame ? (
             <>
               <div className="mb-8 text-center">
                 <h1 className="text-4xl font-display font-bold gradient-text mb-3 animate-fade-in">
-                  Sports Game Zone ⚡️
+                  {t("games.title")} ⚡️
                 </h1>
                 <p className="text-muted-foreground text-lg">
-                  Learn, compete, and master your sports knowledge
+                  {t("games.subtitle")}
                 </p>
               </div>
 
@@ -78,7 +82,7 @@ const Games = () => {
                       <CardContent>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Zap className="w-4 h-4 text-primary" />
-                          <span>Interactive & Educational</span>
+                          <span>{t("games.playNow")}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -89,34 +93,34 @@ const Games = () => {
               <div className="mt-12 glass-effect p-6 rounded-xl">
                 <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
                   <Trophy className="w-6 h-6 text-primary" />
-                  Why Play?
+                  {t("games.title")}
                 </h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Brain className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold">Learn Sports History</h3>
+                    <h3 className="font-semibold">{t("games.sportsTrivia")}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Discover fascinating facts about legendary athletes and iconic moments
+                      {t("games.triviaDesc")}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Timer className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold">Quick & Fun</h3>
+                    <h3 className="font-semibold">{t("games.guessTheSport")}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Perfect for short breaks - each game takes just a few minutes
+                      {t("games.guessDesc")}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Medal className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold">Track Progress</h3>
+                    <h3 className="font-semibold">{t("games.athleteMatch")}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Challenge yourself and improve your score with every play
+                      {t("games.matchDesc")}
                     </p>
                   </div>
                 </div>
