@@ -139,6 +139,7 @@
     "readPage": "Read Page Aloud",
     "stopReading": "Stop Reading",
     "readingPage": "Reading page content...",
+    "stoppedReading": "Stopped reading",
     "speechRate": "Speech Rate",
     "selectVoice": "Voice",
     "chooseVoice": "Choose a voice",
@@ -146,9 +147,16 @@
     "stopListening": "Stop Listening",
     "listening": "Listening... Speak now",
     "listeningNow": "Listening...",
+    "stoppedListening": "Stopped listening",
     "transcriptReady": "Transcript ready!",
     "transcript": "Your speech",
     "copyTranscript": "Copy to Clipboard",
-    "copiedToClipboard": "Copied to clipboard!"
+    "copiedToClipboard": "Copied to clipboard!",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "readPageShortcut": "Read/Stop page",
+    "voiceInputShortcut": "Voice input",
+    "stopAllShortcut": "Stop all",
+    "showShortcutsShortcut": "Show shortcuts",
+    "stoppedAll": "Stopped all audio"
   }
 }

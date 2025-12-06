@@ -7,10 +7,10 @@ import {
   VolumeX, 
   Mic, 
   MicOff, 
-  Settings,
   X,
   Minus,
-  Plus
+  Plus,
+  Keyboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAccessibility } from '@/hooks/useAccessibility';
+import { useAccessibilityShortcuts } from '@/hooks/useAccessibilityShortcuts';
 import { toast } from 'sonner';
 
 const AccessibilityToolbar = () => {
@@ -50,6 +51,17 @@ const AccessibilityToolbar = () => {
     availableVoices,
     setSelectedVoice,
   } = useAccessibility();
+
+  // Enable keyboard shortcuts
+  const { handleShowShortcuts } = useAccessibilityShortcuts({
+    speak,
+    stopSpeaking,
+    isSpeaking,
+    startListening,
+    stopListening,
+    isListening,
+    resetTranscript,
+  });
 
   const handleReadPage = () => {
     const mainContent = document.querySelector('main')?.textContent || 
@@ -283,6 +295,32 @@ const AccessibilityToolbar = () => {
                     </Button>
                   </div>
                 )}
+              </div>
+
+              {/* Keyboard Shortcuts Section */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Keyboard className="h-4 w-4" />
+                  {t('accessibility.keyboardShortcuts')}
+                </h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Alt + R</span>
+                    <span>{t('accessibility.readPageShortcut')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Alt + V</span>
+                    <span>{t('accessibility.voiceInputShortcut')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Alt + S</span>
+                    <span>{t('accessibility.stopAllShortcut')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Alt + H</span>
+                    <span>{t('accessibility.showShortcutsShortcut')}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </SheetContent>
