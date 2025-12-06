@@ -66,6 +66,63 @@ All colors MUST be HSL.
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
+
+  /* High Contrast Mode */
+  .high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 60 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 180 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 85%;
+
+    --accent: 300 100% 60%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 40%;
+    --input: 0 0% 20%;
+    --ring: 60 100% 50%;
+
+    /* High contrast custom colors */
+    --steel-blue: 60 100% 50%;
+    --iron-gray: 0 0% 30%;
+    --power-orange: 30 100% 50%;
+    --electric-blue: 180 100% 50%;
+    --victory-gold: 60 100% 50%;
+    --charcoal: 0 0% 10%;
+    
+    /* High contrast gradients - simplified for clarity */
+    --gradient-hero: linear-gradient(135deg, hsl(60 100% 50% / 0.3), hsl(180 100% 50% / 0.25), hsl(60 100% 50% / 0.15));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 8%), hsl(0 0% 5%), hsl(0 0% 3%));
+    --gradient-power: linear-gradient(120deg, hsl(60 100% 50%), hsl(180 100% 50%), hsl(30 100% 50%));
+    --gradient-steel: linear-gradient(90deg, hsl(0 0% 30%), hsl(60 100% 50%), hsl(0 0% 40%));
+    --gradient-mesh: none;
+    
+    /* High contrast shadows */
+    --shadow-glow: 0 0 20px hsl(60 100% 50% / 0.6);
+    --shadow-orange: 0 0 20px hsl(30 100% 50% / 0.6);
+    --shadow-steel: 0 4px 12px hsl(0 0% 0% / 0.8);
+    --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.9);
+    --shadow-elevation: 0 8px 24px hsl(0 0% 0% / 0.9);
+  }
+
+  .high-contrast body {
+    background-image: none;
+  }
 }
 
 @layer base {
