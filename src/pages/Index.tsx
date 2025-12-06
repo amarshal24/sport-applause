@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
 import Stories from "@/components/Stories";
 import MoodSelector from "@/components/MoodSelector";
 import VideoFeed from "@/components/VideoFeed";
@@ -28,8 +29,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <Sidebar />
+      <MobileNav />
       
-      <main className="pt-20 lg:pl-64">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="max-w-5xl mx-auto px-4 py-6">
           <Stories />
           <MoodSelector />
