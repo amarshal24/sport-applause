@@ -161,5 +161,13 @@
     "stopAllShortcut": "Stop all",
     "showShortcutsShortcut": "Show shortcuts",
     "stoppedAll": "Stopped all audio"
+  },
+  "quickNav": {
+    "home": "Home",
+    "profile": "Profile",
+    "games": "Games",
+    "videoEditor": "Video Editor",
+    "recruiting": "Recruiting",
+    "motivation": "Motivation"
   }
 }
