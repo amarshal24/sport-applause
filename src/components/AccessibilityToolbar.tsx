@@ -10,10 +10,12 @@ import {
   X,
   Minus,
   Plus,
-  Keyboard
+  Keyboard,
+  Contrast
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import {
   Sheet,
   SheetContent,
@@ -31,6 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { useAccessibilityShortcuts } from '@/hooks/useAccessibilityShortcuts';
+import { useHighContrast } from '@/hooks/useHighContrast';
 import { toast } from 'sonner';
 
 const AccessibilityToolbar = () => {
@@ -51,6 +54,8 @@ const AccessibilityToolbar = () => {
     availableVoices,
     setSelectedVoice,
   } = useAccessibility();
+
+  const { isHighContrast, toggleHighContrast } = useHighContrast();
 
   // Enable keyboard shortcuts
   const { handleShowShortcuts } = useAccessibilityShortcuts({
@@ -124,7 +129,30 @@ const AccessibilityToolbar = () => {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)]">
+              {/* High Contrast Mode */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Contrast className="h-4 w-4" />
+                  {t('accessibility.visualSettings')}
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium">
+                      {t('accessibility.highContrast')}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t('accessibility.highContrastDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isHighContrast}
+                    onCheckedChange={toggleHighContrast}
+                    aria-label={t('accessibility.highContrast')}
+                  />
+                </div>
+              </div>
+
               {/* Text-to-Speech Section */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">
