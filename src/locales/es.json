@@ -169,9 +169,15 @@
     "videoEditor": "Editor de Video",
     "recruiting": "Reclutamiento",
     "motivation": "Motivación",
-    "podcasts": "Podcasts"
+    "podcasts": "Podcasts",
+    "liveStreams": "En Vivo"
   },
   "podcasts": {
     "subtitle": "Escucha podcasts deportivos y sube los tuyos"
+  },
+  "liveStreams": {
+    "subtitle": "Transmite en vivo y conecta con tu audiencia",
+    "signInRequired": "Inicia sesión para transmitir",
+    "signInMessage": "Crea una cuenta para comenzar tus transmisiones en vivo"
   }
 }

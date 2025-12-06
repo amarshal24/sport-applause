@@ -17,6 +17,7 @@ const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
 const VideoEditor = lazy(() => import("./pages/VideoEditor"));
 const Recruiting = lazy(() => import("./pages/Recruiting"));
 const Podcasts = lazy(() => import("./pages/Podcasts"));
+const LiveStreams = lazy(() => import("./pages/LiveStreams"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/editor" element={<VideoEditor />} />
               <Route path="/recruiting" element={<Recruiting />} />
               <Route path="/podcasts" element={<Podcasts />} />
+              <Route path="/live" element={<LiveStreams />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
