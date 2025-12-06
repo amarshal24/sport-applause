@@ -9,6 +9,7 @@ import {
   Video,
   Trophy,
   Quote,
+  Headphones,
   Menu,
   X,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const menuItems = [
   { path: "/editor", icon: Video, labelKey: "quickNav.videoEditor" },
   { path: "/recruiting", icon: Trophy, labelKey: "quickNav.recruiting" },
   { path: "/motivation", icon: Quote, labelKey: "quickNav.motivation" },
+  { path: "/podcasts", icon: Headphones, labelKey: "quickNav.podcasts" },
 ];
 
 const QuickNavMenu = () => {

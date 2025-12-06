@@ -168,6 +168,10 @@
     "games": "Juegos",
     "videoEditor": "Editor de Video",
     "recruiting": "Reclutamiento",
-    "motivation": "Motivación"
+    "motivation": "Motivación",
+    "podcasts": "Podcasts"
+  },
+  "podcasts": {
+    "subtitle": "Escucha podcasts deportivos y sube los tuyos"
   }
 }
