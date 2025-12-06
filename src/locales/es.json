@@ -129,5 +129,26 @@
     "ja": "日本語",
     "ko": "한국어",
     "ar": "العربية"
+  },
+  "accessibility": {
+    "title": "Accesibilidad",
+    "description": "Herramientas para ayudarte a navegar y usar esta aplicación",
+    "openToolbar": "Abrir herramientas de accesibilidad",
+    "textToSpeech": "Texto a Voz (Leer en Voz Alta)",
+    "speechToText": "Voz a Texto (Entrada por Voz)",
+    "readPage": "Leer Página en Voz Alta",
+    "stopReading": "Dejar de Leer",
+    "readingPage": "Leyendo contenido de la página...",
+    "speechRate": "Velocidad de Lectura",
+    "selectVoice": "Voz",
+    "chooseVoice": "Elegir una voz",
+    "startListening": "Iniciar Entrada por Voz",
+    "stopListening": "Dejar de Escuchar",
+    "listening": "Escuchando... Habla ahora",
+    "listeningNow": "Escuchando...",
+    "transcriptReady": "¡Transcripción lista!",
+    "transcript": "Tu discurso",
+    "copyTranscript": "Copiar al Portapapeles",
+    "copiedToClipboard": "¡Copiado al portapapeles!"
   }
 }

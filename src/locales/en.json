@@ -129,5 +129,26 @@
     "ja": "日本語",
     "ko": "한국어",
     "ar": "العربية"
+  },
+  "accessibility": {
+    "title": "Accessibility",
+    "description": "Tools to help you navigate and use this app",
+    "openToolbar": "Open accessibility toolbar",
+    "textToSpeech": "Text-to-Speech (Read Aloud)",
+    "speechToText": "Speech-to-Text (Voice Input)",
+    "readPage": "Read Page Aloud",
+    "stopReading": "Stop Reading",
+    "readingPage": "Reading page content...",
+    "speechRate": "Speech Rate",
+    "selectVoice": "Voice",
+    "chooseVoice": "Choose a voice",
+    "startListening": "Start Voice Input",
+    "stopListening": "Stop Listening",
+    "listening": "Listening... Speak now",
+    "listeningNow": "Listening...",
+    "transcriptReady": "Transcript ready!",
+    "transcript": "Your speech",
+    "copyTranscript": "Copy to Clipboard",
+    "copiedToClipboard": "Copied to clipboard!"
   }
 }
