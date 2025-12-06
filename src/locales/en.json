@@ -171,6 +171,11 @@
     "motivation": "Motivation",
     "podcasts": "Podcasts",
     "liveStreams": "Live Streams",
+    "trending": "Trending",
+    "discover": "Discover",
+    "following": "Following",
+    "topPlays": "Top Plays",
+    "watchLater": "Watch Later",
     "searchPlaceholder": "Search pages...",
     "noResults": "No pages found"
   },

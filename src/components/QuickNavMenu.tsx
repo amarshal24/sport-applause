@@ -14,6 +14,10 @@ import {
   Menu,
   X,
   Search,
+  Flame,
+  Compass,
+  Users,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +26,17 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
   { path: "/profile", icon: User, labelKey: "quickNav.profile" },
+  { path: "/trending", icon: Flame, labelKey: "quickNav.trending" },
+  { path: "/discover", icon: Compass, labelKey: "quickNav.discover" },
+  { path: "/following", icon: Users, labelKey: "quickNav.following" },
   { path: "/games", icon: Gamepad2, labelKey: "quickNav.games" },
   { path: "/editor", icon: Video, labelKey: "quickNav.videoEditor" },
   { path: "/recruiting", icon: Trophy, labelKey: "quickNav.recruiting" },
   { path: "/motivation", icon: Quote, labelKey: "quickNav.motivation" },
   { path: "/podcasts", icon: Headphones, labelKey: "quickNav.podcasts" },
   { path: "/live", icon: Radio, labelKey: "quickNav.liveStreams" },
+  { path: "/top-plays", icon: Trophy, labelKey: "quickNav.topPlays" },
+  { path: "/watch-later", icon: Clock, labelKey: "quickNav.watchLater" },
 ];
 
 const QuickNavMenu = () => {

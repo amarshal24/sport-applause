@@ -18,6 +18,11 @@ const VideoEditor = lazy(() => import("./pages/VideoEditor"));
 const Recruiting = lazy(() => import("./pages/Recruiting"));
 const Podcasts = lazy(() => import("./pages/Podcasts"));
 const LiveStreams = lazy(() => import("./pages/LiveStreams"));
+const Trending = lazy(() => import("./pages/Trending"));
+const Discover = lazy(() => import("./pages/Discover"));
+const Following = lazy(() => import("./pages/Following"));
+const TopPlays = lazy(() => import("./pages/TopPlays"));
+const WatchLater = lazy(() => import("./pages/WatchLater"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -55,6 +60,11 @@ const App = () => (
               <Route path="/recruiting" element={<Recruiting />} />
               <Route path="/podcasts" element={<Podcasts />} />
               <Route path="/live" element={<LiveStreams />} />
+              <Route path="/trending" element={<Trending />} />
+              <Route path="/discover" element={<Discover />} />
+              <Route path="/following" element={<Following />} />
+              <Route path="/top-plays" element={<TopPlays />} />
+              <Route path="/watch-later" element={<WatchLater />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
