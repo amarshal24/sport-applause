@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Share2, MessageSquare } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw } from "lucide-react";
 import PostComposer from "./PostComposer";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { toast } from "sonner";
 
 const SPORTS_CATEGORIES = [
   "All Sports",
@@ -116,6 +118,19 @@ const MOCK_VIDEOS = [
 const VideoFeed = () => {
   const [selectedSport, setSelectedSport] = useState("All Sports");
   const [applausedVideos, setApplausedVideos] = useState<number[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshKey(prev => prev + 1);
+    toast.success("Feed refreshed!");
+  }, []);
+
+  const { containerRef, isRefreshing, pullDistance, pullProgress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+  });
 
   const handleApplause = (videoId: number) => {
     if (applausedVideos.includes(videoId)) {
@@ -130,26 +145,53 @@ const VideoFeed = () => {
     : MOCK_VIDEOS.filter(v => v.sport === selectedSport);
 
   return (
-    <section>
-      <PostComposer />
-      
-      <div className="mb-6">
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-          {SPORTS_CATEGORIES.map((sport) => (
-            <Button
-              key={sport}
-              onClick={() => setSelectedSport(sport)}
-              size="sm"
-              variant={selectedSport === sport ? "default" : "outline"}
-              className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
-            >
-              {sport}
-            </Button>
-          ))}
+    <section ref={containerRef} className="relative">
+      {/* Pull to refresh indicator */}
+      <div 
+        className="absolute left-0 right-0 flex justify-center items-center transition-all duration-200 overflow-hidden z-10"
+        style={{ 
+          height: pullDistance,
+          top: -pullDistance,
+          opacity: pullProgress,
+        }}
+      >
+        <div 
+          className={`flex items-center gap-2 text-primary ${isRefreshing ? 'animate-spin' : ''}`}
+          style={{ 
+            transform: `rotate(${pullProgress * 360}deg)`,
+            transition: isRefreshing ? 'none' : 'transform 0.1s',
+          }}
+        >
+          <RefreshCw className="h-6 w-6" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Content wrapper with pull animation */}
+      <div 
+        className="transition-transform duration-200"
+        style={{ 
+          transform: `translateY(${pullDistance}px)`,
+        }}
+      >
+        <PostComposer />
+        
+        <div className="mb-6">
+          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+            {SPORTS_CATEGORIES.map((sport) => (
+              <Button
+                key={sport}
+                onClick={() => setSelectedSport(sport)}
+                size="sm"
+                variant={selectedSport === sport ? "default" : "outline"}
+                className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
+              >
+                {sport}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
           {filteredVideos.map((video) => (
             <div
               key={video.id}
@@ -159,6 +201,7 @@ const VideoFeed = () => {
                 <img
                   src={video.thumbnail}
                   alt={video.title}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
                 <Badge className="absolute top-3 left-3 bg-primary/90 text-primary-foreground z-10">
@@ -207,6 +250,7 @@ const VideoFeed = () => {
             </div>
           ))}
         </div>
+      </div>
     </section>
   );
 };
