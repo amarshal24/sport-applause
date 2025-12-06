@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { Home, Flame, Compass, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <aside className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-64 bg-card/50 backdrop-blur-lg border-r border-border p-4 hidden lg:block overflow-y-auto">
@@ -119,7 +121,12 @@ const Sidebar = () => {
       <div className="mt-6 p-4 bg-muted/50 rounded-lg">
         <p className="text-xs text-muted-foreground mb-2">{t("sidebar.joinUs")}</p>
         <p className="text-sm mb-3">{t("sidebar.shareMessage")}</p>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={() => navigate("/auth")}
+        >
           <User className="mr-2 h-4 w-4" />
           {t("sidebar.signUp")}
         </Button>

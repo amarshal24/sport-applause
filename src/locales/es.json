@@ -171,6 +171,11 @@
     "motivation": "Motivación",
     "podcasts": "Podcasts",
     "liveStreams": "En Vivo",
+    "trending": "Tendencias",
+    "discover": "Descubrir",
+    "following": "Siguiendo",
+    "topPlays": "Mejores Jugadas",
+    "watchLater": "Ver Después",
     "searchPlaceholder": "Buscar páginas...",
     "noResults": "No se encontraron páginas"
   },
