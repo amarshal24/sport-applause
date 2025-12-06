@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -54,14 +53,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     if (error) {
-      toast({
-        title: "Sign up failed",
+      toast.error("Sign up failed", {
         description: error.message,
-        variant: "destructive",
       });
     } else {
-      toast({
-        title: "Account created!",
+      toast.success("Account created!", {
         description: "You're now signed in.",
       });
     }
@@ -76,10 +72,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     if (error) {
-      toast({
-        title: "Sign in failed",
+      toast.error("Sign in failed", {
         description: error.message,
-        variant: "destructive",
       });
     }
 
@@ -88,8 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
+    toast.success("Signed out", {
       description: "You've been signed out successfully.",
     });
   };
