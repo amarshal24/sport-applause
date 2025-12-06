@@ -106,10 +106,12 @@ const Sidebar = () => {
 
       <div className="border-t border-border my-4" />
 
-      <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => window.location.href = '/editor'}>
-        <Film className="mr-2 h-4 w-4" />
-        Create Video
-      </Button>
+      <NavLink to="/editor">
+        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Film className="mr-2 h-4 w-4" />
+          Create Video
+        </Button>
+      </NavLink>
 
       <div className="mt-6 p-4 bg-muted/50 rounded-lg">
         <p className="text-xs text-muted-foreground mb-2">Join You Sports</p>

@@ -96,4 +96,8 @@ All colors MUST be HSL.
   .gradient-text {
     @apply bg-gradient-to-r from-primary via-electric-blue to-power-orange bg-clip-text text-transparent;
   }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

@@ -1,9 +1,10 @@
+import { memo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { User, Search, Upload, Menu, LogOut } from "lucide-react";
+import { User, Search, Upload, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { NavLink } from "@/components/NavLink";
 import AnimatedAvatar from "./AnimatedAvatar";
 import { SportIcon } from "./SportIcon";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,14 +35,11 @@ const Navigation = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass-effect shadow-steel">
       <div className="mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="lg:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-2">
             
-            <h1 className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight">
-              U⚡️Sportz
-            </h1>
+            <NavLink to="/" end className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight hover:opacity-80 transition-opacity">
+              USportz
+            </NavLink>
           </div>
 
           <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
