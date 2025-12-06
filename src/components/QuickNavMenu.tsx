@@ -10,6 +10,7 @@ import {
   Trophy,
   Quote,
   Headphones,
+  Radio,
   Menu,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const menuItems = [
   { path: "/recruiting", icon: Trophy, labelKey: "quickNav.recruiting" },
   { path: "/motivation", icon: Quote, labelKey: "quickNav.motivation" },
   { path: "/podcasts", icon: Headphones, labelKey: "quickNav.podcasts" },
+  { path: "/live", icon: Radio, labelKey: "quickNav.liveStreams" },
 ];
 
 const QuickNavMenu = () => {
