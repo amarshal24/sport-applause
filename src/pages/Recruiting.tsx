@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { SPORTS } from "@/constants/sports";
 import ContactAthleteModal from "@/components/ContactAthleteModal";
 import AthleteSearch from "@/components/AthleteSearch";
+import AthleteComparison from "@/components/AthleteComparison";
 
 interface RecruitingVideo {
   id: string;
@@ -534,6 +535,11 @@ const Recruiting = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* NBA Athlete Comparison Tool */}
+          <div className="mb-6">
+            <AthleteComparison />
+          </div>
 
           {/* Videos Grid */}
           {loading ? (
