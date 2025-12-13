@@ -11,6 +11,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
 import { Phone, Mail, ScanFace } from "lucide-react";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -389,6 +390,7 @@ const Auth = () => {
                   {errors.password && (
                     <p className="text-sm text-destructive mt-1">{errors.password}</p>
                   )}
+                  {mode === "signup" && <PasswordStrengthIndicator password={password} />}
                 </div>
               )}
 
