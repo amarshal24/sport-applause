@@ -98,8 +98,8 @@ const Profile = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
         <Sidebar />
-        <main className="pt-20 lg:pl-64">
-          <div className="max-w-5xl mx-auto px-4 py-6">
+        <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+          <div className="px-4 lg:px-6 py-6">
             <div className="animate-pulse">Loading...</div>
           </div>
         </main>
@@ -112,8 +112,8 @@ const Profile = () => {
       <Navigation />
       <Sidebar />
       
-      <main className="pt-20 lg:pl-64">
-        <div className="max-w-3xl mx-auto px-4 pb-6">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <div className="px-4 lg:px-6 py-6">
           {/* Favorite Videos Section */}
           <div className="mb-6">
             <FavoriteVideos />
