@@ -6,8 +6,8 @@ import Sidebar from "@/components/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Play, Heart, MessageCircle, Share2, Eye, TrendingUp } from "lucide-react";
-
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Flame, Play, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark } from "lucide-react";
 const trendingVideos = [
   {
     id: "1",
@@ -92,6 +92,7 @@ const trendingVideos = [
 const Trending = () => {
   const { t } = useTranslation();
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<typeof trendingVideos[0] | null>(null);
 
   const toggleLike = (videoId: string) => {
     setLikedVideos((prev) =>
@@ -169,6 +170,7 @@ const Trending = () => {
               <Card
                 key={video.id}
                 className="overflow-hidden hover-lift bg-card border-border group cursor-pointer"
+                onClick={() => setSelectedVideo(video)}
               >
                 <div className="relative aspect-video">
                   <img
@@ -251,6 +253,99 @@ const Trending = () => {
           </div>
         </div>
       </main>
+
+      {/* Video Player Modal */}
+      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card border-border">
+          {selectedVideo && (
+            <div className="flex flex-col">
+              {/* Video Player Area */}
+              <div className="relative aspect-video bg-black">
+                <img
+                  src={selectedVideo.thumbnail}
+                  alt={selectedVideo.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Button
+                    size="lg"
+                    className="rounded-full h-20 w-20 bg-primary/90 hover:bg-primary"
+                  >
+                    <Play className="h-10 w-10 fill-current" />
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white"
+                  onClick={() => setSelectedVideo(null)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+                <span className="absolute bottom-4 right-4 bg-black/80 text-white text-sm px-3 py-1 rounded">
+                  {selectedVideo.duration}
+                </span>
+              </div>
+
+              {/* Video Info */}
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <img
+                    src={selectedVideo.creatorAvatar}
+                    alt={selectedVideo.creator}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-foreground mb-1">
+                      {selectedVideo.title}
+                    </h2>
+                    <p className="text-muted-foreground">{selectedVideo.creator}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        {selectedVideo.views} views
+                      </span>
+                      <Badge variant="secondary">{selectedVideo.sport}</Badge>
+                      <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                        <Flame className="h-3 w-3 mr-1" />
+                        #{selectedVideo.trending} Trending
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border">
+                  <Button
+                    variant={likedVideos.includes(selectedVideo.id) ? "default" : "outline"}
+                    className={likedVideos.includes(selectedVideo.id) ? "bg-pink-500 hover:bg-pink-600" : ""}
+                    onClick={() => toggleLike(selectedVideo.id)}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${likedVideos.includes(selectedVideo.id) ? "fill-current" : ""}`} />
+                    {selectedVideo.likes}
+                  </Button>
+                  <Button variant="outline">
+                    <ThumbsUp className="h-4 w-4 mr-2" />
+                    Like
+                  </Button>
+                  <Button variant="outline">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    {selectedVideo.comments}
+                  </Button>
+                  <Button variant="outline">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button variant="outline">
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
