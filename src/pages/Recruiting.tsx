@@ -12,8 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
-  School, Ruler, Weight, Star, Plus, Filter
+  School, Ruler, Weight, Star, Plus, Filter, 
+  Share2, Download, Edit, Trash2, MoreVertical, X
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -21,6 +28,7 @@ import { SPORTS } from "@/constants/sports";
 
 interface RecruitingVideo {
   id: string;
+  user_id: string;
   title: string;
   description: string | null;
   video_url: string;
@@ -47,8 +55,16 @@ const Recruiting = () => {
   const [videos, setVideos] = useState<RecruitingVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<RecruitingVideo | null>(null);
+  const [editingVideo, setEditingVideo] = useState<RecruitingVideo | null>(null);
+  
+  // Filters
   const [selectedSport, setSelectedSport] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedPosition, setSelectedPosition] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
@@ -66,7 +82,7 @@ const Recruiting = () => {
 
   useEffect(() => {
     fetchVideos();
-  }, [selectedSport, selectedYear]);
+  }, [selectedSport, selectedYear, selectedPosition, selectedLocation]);
 
   const fetchVideos = async () => {
     setLoading(true);
@@ -91,6 +107,14 @@ const Recruiting = () => {
 
     if (selectedYear !== "all") {
       query = query.eq("graduation_year", parseInt(selectedYear));
+    }
+
+    if (selectedPosition.trim()) {
+      query = query.ilike("position", `%${selectedPosition}%`);
+    }
+
+    if (selectedLocation.trim()) {
+      query = query.ilike("location", `%${selectedLocation}%`);
     }
 
     const { data, error } = await query;
@@ -132,8 +156,8 @@ const Recruiting = () => {
   };
 
   const handleUpload = async () => {
-    if (!videoFile || !user) {
-      toast.error("Please select a video and fill in required fields");
+    if (!user) {
+      toast.error("Please sign in to upload");
       return;
     }
 
@@ -142,50 +166,162 @@ const Recruiting = () => {
       return;
     }
 
+    // For new uploads, require video file
+    if (!editingVideo && !videoFile) {
+      toast.error("Please select a video");
+      return;
+    }
+
     setUploading(true);
 
     try {
-      // Upload video to storage
-      const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("recruiting-videos")
-        .upload(fileName, videoFile);
+      let videoUrl = editingVideo?.video_url || "";
 
-      if (uploadError) throw uploadError;
+      // Upload new video if provided
+      if (videoFile) {
+        const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("recruiting-videos")
+          .upload(fileName, videoFile);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("recruiting-videos")
-        .getPublicUrl(fileName);
+        if (uploadError) throw uploadError;
 
-      // Save video metadata to database
-      const { error: insertError } = await supabase
-        .from("recruiting_videos")
-        .insert({
-          user_id: user.id,
-          title,
-          description,
-          video_url: publicUrl,
-          sport,
-          position: position || null,
-          graduation_year: parseInt(graduationYear),
-          height: height || null,
-          weight: weight || null,
-          location: location || null,
-          school: school || null,
-        });
+        const { data: { publicUrl } } = supabase.storage
+          .from("recruiting-videos")
+          .getPublicUrl(fileName);
 
-      if (insertError) throw insertError;
+        videoUrl = publicUrl;
+      }
 
-      toast.success("Recruiting video uploaded successfully!");
+      if (editingVideo) {
+        // Update existing video
+        const { error: updateError } = await supabase
+          .from("recruiting_videos")
+          .update({
+            title,
+            description,
+            video_url: videoUrl,
+            sport,
+            position: position || null,
+            graduation_year: parseInt(graduationYear),
+            height: height || null,
+            weight: weight || null,
+            location: location || null,
+            school: school || null,
+          })
+          .eq("id", editingVideo.id);
+
+        if (updateError) throw updateError;
+        toast.success("Video updated successfully!");
+      } else {
+        // Create new video
+        const { error: insertError } = await supabase
+          .from("recruiting_videos")
+          .insert({
+            user_id: user.id,
+            title,
+            description,
+            video_url: videoUrl,
+            sport,
+            position: position || null,
+            graduation_year: parseInt(graduationYear),
+            height: height || null,
+            weight: weight || null,
+            location: location || null,
+            school: school || null,
+          });
+
+        if (insertError) throw insertError;
+        toast.success("Recruiting video uploaded successfully!");
+      }
+
       setShowUploadModal(false);
       resetForm();
       fetchVideos();
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      toast.error("Failed to save video");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleDelete = async (video: RecruitingVideo) => {
+    if (!confirm("Are you sure you want to delete this video?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("recruiting_videos")
+        .delete()
+        .eq("id", video.id);
+
+      if (error) throw error;
+      toast.success("Video deleted successfully");
+      fetchVideos();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete video");
+    }
+  };
+
+  const handleEdit = (video: RecruitingVideo) => {
+    setEditingVideo(video);
+    setTitle(video.title);
+    setDescription(video.description || "");
+    setSport(video.sport);
+    setPosition(video.position || "");
+    setGraduationYear(video.graduation_year?.toString() || "");
+    setHeight(video.height || "");
+    setWeight(video.weight || "");
+    setLocation(video.location || "");
+    setSchool(video.school || "");
+    setShowUploadModal(true);
+  };
+
+  const handleShare = async (video: RecruitingVideo) => {
+    const shareUrl = `${window.location.origin}/recruiting?video=${video.id}`;
+    const shareData = {
+      title: video.title,
+      text: `Check out ${video.profiles.full_name || video.profiles.username}'s highlight reel!`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+    }
+  };
+
+  const handleDownload = async (video: RecruitingVideo) => {
+    try {
+      toast.info("Starting download...");
+      const response = await fetch(video.video_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${video.title.replace(/[^a-z0-9]/gi, "_")}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Download started!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download video");
+    }
+  };
+
+  const handlePlayVideo = (video: RecruitingVideo) => {
+    setSelectedVideo(video);
+    setShowVideoPlayer(true);
+    incrementViewCount(video.id);
   };
 
   const resetForm = () => {
@@ -199,10 +335,19 @@ const Recruiting = () => {
     setWeight("");
     setLocation("");
     setSchool("");
+    setEditingVideo(null);
   };
 
+  const clearFilters = () => {
+    setSelectedSport("all");
+    setSelectedYear("all");
+    setSelectedPosition("");
+    setSelectedLocation("");
+  };
+
+  const hasActiveFilters = selectedSport !== "all" || selectedYear !== "all" || selectedPosition || selectedLocation;
+
   const incrementViewCount = async (videoId: string) => {
-    // Increment view count
     const video = videos.find(v => v.id === videoId);
     if (video) {
       await supabase
@@ -238,7 +383,10 @@ const Recruiting = () => {
               {user && (
                 <Button 
                   size="lg"
-                  onClick={() => setShowUploadModal(true)}
+                  onClick={() => {
+                    resetForm();
+                    setShowUploadModal(true);
+                  }}
                   className="shadow-glow"
                 >
                   <Plus className="mr-2 h-5 w-5" />
@@ -266,7 +414,7 @@ const Recruiting = () => {
                 </div>
                 
                 <Select value={selectedSport} onValueChange={setSelectedSport}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="All Sports" />
                   </SelectTrigger>
                   <SelectContent>
@@ -280,7 +428,7 @@ const Recruiting = () => {
                 </Select>
 
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Grad Year" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,6 +440,27 @@ const Recruiting = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                <Input
+                  placeholder="Position..."
+                  value={selectedPosition}
+                  onChange={(e) => setSelectedPosition(e.target.value)}
+                  className="w-[140px]"
+                />
+
+                <Input
+                  placeholder="Location..."
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="w-[140px]"
+                />
+
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    <X className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -315,7 +484,7 @@ const Recruiting = () => {
                 <Trophy className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">No Videos Yet</h3>
                 <p className="text-muted-foreground">
-                  Be the first to upload a recruiting highlight reel!
+                  {hasActiveFilters ? "No videos match your filters." : "Be the first to upload a recruiting highlight reel!"}
                 </p>
               </CardContent>
             </Card>
@@ -324,13 +493,12 @@ const Recruiting = () => {
               {videos.map((video) => (
                 <Card 
                   key={video.id} 
-                  className="glass-effect hover:shadow-glow transition-all duration-300 group cursor-pointer"
-                  onClick={() => {
-                    incrementViewCount(video.id);
-                    window.open(video.video_url, '_blank');
-                  }}
+                  className="glass-effect hover:shadow-glow transition-all duration-300 group"
                 >
-                  <div className="relative aspect-video overflow-hidden rounded-t-xl bg-black">
+                  <div 
+                    className="relative aspect-video overflow-hidden rounded-t-xl bg-black cursor-pointer"
+                    onClick={() => handlePlayVideo(video)}
+                  >
                     <video
                       src={video.video_url}
                       className="w-full h-full object-cover"
@@ -340,11 +508,52 @@ const Recruiting = () => {
                       <Play className="w-16 h-16 text-white" />
                     </div>
                     {video.featured && (
-                      <Badge className="absolute top-2 right-2 bg-primary">
+                      <Badge className="absolute top-2 left-2 bg-primary">
                         <Star className="w-3 h-3 mr-1 fill-current" />
                         Featured
                       </Badge>
                     )}
+                    
+                    {/* Action buttons */}
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="secondary" 
+                            size="icon" 
+                            className="h-8 w-8 bg-background/80 hover:bg-background"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => handleShare(video)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(video)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                          {user?.id === video.user_id && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleEdit(video)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(video)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   
                   <CardContent className="p-4 space-y-3">
@@ -423,20 +632,23 @@ const Recruiting = () => {
         </div>
       </main>
 
-      {/* Upload Modal */}
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+      {/* Upload/Edit Modal */}
+      <Dialog open={showUploadModal} onOpenChange={(open) => {
+        setShowUploadModal(open);
+        if (!open) resetForm();
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <Trophy className="w-6 h-6 text-primary" />
-              Upload Your Highlight Reel
+              {editingVideo ? "Edit Highlight Reel" : "Upload Your Highlight Reel"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Video Upload */}
             <div>
-              <Label>Video File *</Label>
+              <Label>Video File {editingVideo ? "(optional - leave empty to keep current)" : "*"}</Label>
               <div 
                 className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
                 onClick={() => fileInputRef.current?.click()}
@@ -447,6 +659,14 @@ const Recruiting = () => {
                     <p className="font-medium">{videoFile.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                ) : editingVideo ? (
+                  <div className="space-y-2">
+                    <Play className="w-12 h-12 text-muted-foreground mx-auto" />
+                    <p className="font-medium">Current video will be kept</p>
+                    <p className="text-sm text-muted-foreground">
+                      Click to upload a new video
                     </p>
                   </div>
                 ) : (
@@ -592,13 +812,66 @@ const Recruiting = () => {
             {/* Upload Button */}
             <Button 
               onClick={handleUpload}
-              disabled={uploading || !videoFile || !title || !sport || !graduationYear}
+              disabled={uploading || (!editingVideo && !videoFile) || !title || !sport || !graduationYear}
               className="w-full"
               size="lg"
             >
-              {uploading ? "Uploading..." : "Upload Highlight Reel"}
+              {uploading ? "Saving..." : editingVideo ? "Save Changes" : "Upload Highlight Reel"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Player Modal */}
+      <Dialog open={showVideoPlayer} onOpenChange={setShowVideoPlayer}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          {selectedVideo && (
+            <div>
+              <video
+                src={selectedVideo.video_url}
+                className="w-full aspect-video"
+                controls
+                autoPlay
+              />
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">{selectedVideo.title}</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleShare(selectedVideo)}>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(selectedVideo)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={selectedVideo.profiles.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {selectedVideo.profiles.username[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">
+                      {selectedVideo.profiles.full_name || selectedVideo.profiles.username}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="secondary">{selectedVideo.sport}</Badge>
+                      {selectedVideo.graduation_year && (
+                        <span>Class of {selectedVideo.graduation_year}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {selectedVideo.description && (
+                  <p className="text-sm text-muted-foreground">{selectedVideo.description}</p>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
