@@ -17,14 +17,14 @@ const authSchema = z.object({
 });
 
 const Auth = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, user } = useAuth();
+  const { signUp, signIn, resetPassword, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,7 +39,20 @@ const Auth = () => {
     setIsSubmitting(true);
 
     try {
-      const data = isSignUp 
+      if (mode === "forgot") {
+        const emailResult = z.string().trim().email().safeParse(email);
+        if (!emailResult.success) {
+          setErrors({ email: "Please enter a valid email address" });
+          setIsSubmitting(false);
+          return;
+        }
+        await resetPassword(email);
+        setMode("signin");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const data = mode === "signup"
         ? { email, password, username, sports: selectedSports }
         : { email, password };
 
@@ -57,7 +70,7 @@ const Auth = () => {
         return;
       }
 
-      if (isSignUp) {
+      if (mode === "signup") {
         await signUp(email, password, username, selectedSports);
       } else {
         await signIn(email, password);
@@ -69,20 +82,32 @@ const Auth = () => {
     }
   };
 
+  const getTitle = () => {
+    switch (mode) {
+      case "signup": return "Create Account";
+      case "forgot": return "Reset Password";
+      default: return "Welcome Back";
+    }
+  };
+
+  const getDescription = () => {
+    switch (mode) {
+      case "signup": return "Sign up to share your sports moments";
+      case "forgot": return "Enter your email and we'll send you a reset link";
+      default: return "Sign in to continue to USportz";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
-          <CardDescription>
-            {isSignUp 
-              ? "Sign up to share your sports moments" 
-              : "Sign in to continue to You Sports"}
-          </CardDescription>
+          <CardTitle>{getTitle()}</CardTitle>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
+            {mode === "signup" && (
               <div>
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -99,7 +124,7 @@ const Auth = () => {
               </div>
             )}
 
-            {isSignUp && (
+            {mode === "signup" && (
               <div className="space-y-3">
                 <Label className="text-sm font-medium">
                   What sports do you play? (Select at least one)
@@ -152,39 +177,71 @@ const Auth = () => {
               )}
             </div>
 
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                maxLength={128}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive mt-1">{errors.password}</p>
-              )}
-            </div>
+            {mode !== "forgot" && (
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  maxLength={128}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">{errors.password}</p>
+                )}
+              </div>
+            )}
+
+            {mode === "signin" && (
+              <Button
+                type="button"
+                variant="link"
+                className="px-0 text-sm text-muted-foreground"
+                onClick={() => setMode("forgot")}
+              >
+                Forgot your password?
+              </Button>
+            )}
 
             <Button 
               type="submit" 
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
+              {isSubmitting 
+                ? "Processing..." 
+                : mode === "signup" 
+                  ? "Sign Up" 
+                  : mode === "forgot" 
+                    ? "Send Reset Link" 
+                    : "Sign In"}
             </Button>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setIsSignUp(!isSignUp)}
-            >
-              {isSignUp 
-                ? "Already have an account? Sign in" 
-                : "Don't have an account? Sign up"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              {mode === "forgot" ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setMode("signin")}
+                >
+                  Back to Sign In
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                >
+                  {mode === "signup" 
+                    ? "Already have an account? Sign in" 
+                    : "Don't have an account? Sign up"}
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
