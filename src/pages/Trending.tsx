@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2 } from "lucide-react";
+import { Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2, Sparkles } from "lucide-react";
+import { AnimatedFilter, colorFilters, animatedFilters, getColorFilterStyle, type FilterType, type ColorFilterType } from "@/components/AnimatedFilters";
 
 const trendingVideos = [
   {
@@ -111,6 +112,9 @@ const Trending = () => {
   const [isPiP, setIsPiP] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showFiltersMenu, setShowFiltersMenu] = useState(false);
+  const [activeColorFilter, setActiveColorFilter] = useState<ColorFilterType>("none");
+  const [activeAnimatedFilter, setActiveAnimatedFilter] = useState<FilterType>("none");
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const changePlaybackSpeed = (speed: number) => {
@@ -383,11 +387,15 @@ const Trending = () => {
                   src={selectedVideo.videoUrl}
                   poster={selectedVideo.thumbnail}
                   className="w-full h-full object-contain"
+                  style={getColorFilterStyle(activeColorFilter)}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => setIsPlaying(false)}
                   onClick={togglePlay}
                 />
+                
+                {/* Animated Filter Overlay */}
+                <AnimatedFilter type={activeAnimatedFilter} />
                 
                 {/* Play/Pause Overlay */}
                 {!isPlaying && (
@@ -500,6 +508,56 @@ const Trending = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Filters Button */}
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`text-white hover:bg-white/20 ${showFiltersMenu ? "bg-white/30" : ""}`}
+                          onClick={() => setShowFiltersMenu(!showFiltersMenu)}
+                          title="Video Filters"
+                        >
+                          <Sparkles className="h-5 w-5" />
+                        </Button>
+                        {showFiltersMenu && (
+                          <div className="absolute bottom-full mb-2 right-0 bg-black/95 rounded-lg overflow-hidden shadow-lg p-3 min-w-[280px]">
+                            {/* Color Filters */}
+                            <p className="text-white text-xs font-semibold mb-2">Color Filters</p>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {colorFilters.map((filter) => (
+                                <button
+                                  key={filter.type}
+                                  className={`w-10 h-10 rounded-lg ${filter.preview} ${
+                                    activeColorFilter === filter.type ? "ring-2 ring-primary ring-offset-1 ring-offset-black" : ""
+                                  }`}
+                                  onClick={() => setActiveColorFilter(filter.type)}
+                                  title={filter.label}
+                                />
+                              ))}
+                            </div>
+                            
+                            {/* Animated Filters */}
+                            <p className="text-white text-xs font-semibold mb-2">Effects</p>
+                            <div className="flex flex-wrap gap-2">
+                              {animatedFilters.map((filter) => (
+                                <button
+                                  key={filter.type}
+                                  className={`px-2 py-1 rounded text-sm ${
+                                    activeAnimatedFilter === filter.type 
+                                      ? "bg-primary text-primary-foreground" 
+                                      : "bg-white/10 text-white hover:bg-white/20"
+                                  }`}
+                                  onClick={() => setActiveAnimatedFilter(filter.type)}
+                                >
+                                  {filter.icon} {filter.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
                       <Button
                         variant="ghost"
                         size="icon"
