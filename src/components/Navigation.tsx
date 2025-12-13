@@ -42,7 +42,7 @@ const Navigation = () => {
     { name: t("sidebar.watchLater"), icon: Clock, path: "/watch-later" },
     { name: t("sidebar.games"), icon: Gamepad2, path: "/games" },
     { name: t("sidebar.podcasts"), icon: Mic, path: "/podcasts" },
-    { name: t("sidebar.quotes"), icon: Quote, path: "/motivation-quotes" },
+    { name: t("sidebar.quotes"), icon: Quote, path: "/motivation" },
     { name: t("sidebar.recruiting"), icon: GraduationCap, path: "/recruiting" },
   ];
 
