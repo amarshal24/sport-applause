@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SPORTS } from "@/constants/sports";
 import ContactAthleteModal from "@/components/ContactAthleteModal";
+import AthleteSearch from "@/components/AthleteSearch";
 
 interface RecruitingVideo {
   id: string;
@@ -449,9 +450,18 @@ const Recruiting = () => {
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Search & Filters */}
           <Card className="glass-effect mb-6">
-            <CardContent className="p-4">
+            <CardContent className="p-4 space-y-4">
+              {/* Athlete Search */}
+              <div className="flex items-center gap-4">
+                <AthleteSearch 
+                  placeholder="Search athletes by name..." 
+                  className="flex-1 max-w-md"
+                />
+              </div>
+
+              {/* Filters */}
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-muted-foreground" />
