@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, ScanFace } from "lucide-react";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -31,8 +31,14 @@ const Auth = () => {
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, user } = useAuth();
+  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user } = useAuth();
   const navigate = useNavigate();
+  const [biometricRegistered, setBiometricRegistered] = useState(false);
+
+  useEffect(() => {
+    const hasCredential = localStorage.getItem('biometric_credential_id');
+    setBiometricRegistered(!!hasCredential);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -433,6 +439,29 @@ const Auth = () => {
                       Apple
                     </Button>
                   </div>
+
+                  {isBiometricAvailable && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full mt-3"
+                      onClick={async () => {
+                        if (biometricRegistered) {
+                          await signInWithBiometric();
+                        } else if (email) {
+                          const { error } = await registerBiometric(email);
+                          if (!error) {
+                            setBiometricRegistered(true);
+                          }
+                        } else {
+                          setErrors({ email: "Enter your email first to register Face ID" });
+                        }
+                      }}
+                    >
+                      <ScanFace className="mr-2 h-4 w-4" />
+                      {biometricRegistered ? "Sign in with Face ID" : "Set up Face ID"}
+                    </Button>
+                  )}
                 </>
               )}
 
