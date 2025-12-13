@@ -29,6 +29,7 @@ const Auth = () => {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user } = useAuth();
@@ -38,6 +39,15 @@ const Auth = () => {
   useEffect(() => {
     const hasCredential = localStorage.getItem('biometric_credential_id');
     setBiometricRegistered(!!hasCredential);
+  }, []);
+
+  useEffect(() => {
+    // Load remembered email on mount
+    const rememberedEmail = localStorage.getItem('remembered_email');
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -86,6 +96,12 @@ const Auth = () => {
       if (mode === "signup") {
         await signUp(email, password, username, selectedSports);
       } else {
+        // Handle remember me
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email);
+        } else {
+          localStorage.removeItem('remembered_email');
+        }
         await signIn(email, password);
       }
     } catch (error) {
@@ -377,14 +393,26 @@ const Auth = () => {
               )}
 
               {mode === "signin" && (
-                <Button
-                  type="button"
-                  variant="link"
-                  className="px-0 text-sm text-muted-foreground"
-                  onClick={() => setMode("forgot")}
-                >
-                  Forgot your password?
-                </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    />
+                    <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+                      Remember me
+                    </Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="px-0 text-sm text-muted-foreground"
+                    onClick={() => setMode("forgot")}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
               )}
 
               <Button 
