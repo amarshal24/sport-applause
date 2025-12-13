@@ -23,6 +23,8 @@ const Discover = lazy(() => import("./pages/Discover"));
 const Following = lazy(() => import("./pages/Following"));
 const TopPlays = lazy(() => import("./pages/TopPlays"));
 const WatchLater = lazy(() => import("./pages/WatchLater"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -65,6 +67,8 @@ const App = () => (
               <Route path="/following" element={<Following />} />
               <Route path="/top-plays" element={<TopPlays />} />
               <Route path="/watch-later" element={<WatchLater />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
