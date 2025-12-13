@@ -7,6 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Upload, Music, X } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
+
+// Input validation schema
+const podcastSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  description: z.string().trim().max(2000, "Description must be less than 2000 characters").optional(),
+});
 
 interface PodcastUploaderProps {
   onUploadComplete?: () => void;
@@ -19,6 +26,7 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
 
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,8 +72,22 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     
-    if (!user || !audioFile || !title) {
+    // Validate inputs using zod
+    const validationResult = podcastSchema.safeParse({ title, description });
+    if (!validationResult.success) {
+      const fieldErrors: { title?: string; description?: string } = {};
+      validationResult.error.errors.forEach((err) => {
+        if (err.path[0] === 'title') fieldErrors.title = err.message;
+        if (err.path[0] === 'description') fieldErrors.description = err.message;
+      });
+      setErrors(fieldErrors);
+      toast.error("Please fix the validation errors");
+      return;
+    }
+
+    if (!user || !audioFile) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -131,8 +153,10 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter podcast title"
+          maxLength={200}
           required
         />
+        {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
       </div>
 
       <div className="space-y-2">
@@ -143,7 +167,9 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe your podcast..."
           rows={3}
+          maxLength={2000}
         />
+        {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
       </div>
 
       <div className="space-y-2">
