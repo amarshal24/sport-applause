@@ -49,7 +49,7 @@ const Games = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="px-4 lg:px-6 py-6">
           {!selectedGame ? (
             <>
               <div className="mb-8 text-center">

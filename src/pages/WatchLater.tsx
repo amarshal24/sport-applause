@@ -18,8 +18,8 @@ const WatchLater = () => {
       <Sidebar />
       <MobileNav />
       
-      <main className="pt-20 pb-24 md:pb-8 lg:pl-64 px-4">
-        <div className="max-w-4xl mx-auto">
+      <main className="pt-20 pb-24 md:pb-8 lg:pl-64 px-4 lg:px-6">
+        <div className="py-6">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 rounded-xl bg-muted">
               <Clock className="h-8 w-8 text-muted-foreground" />

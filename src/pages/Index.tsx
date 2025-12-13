@@ -32,7 +32,7 @@ const Index = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="px-4 lg:px-6 py-6">
           <Stories />
           <MoodSelector />
           <MusicRecommendations recommendations={recommendations} loading={musicLoading} />

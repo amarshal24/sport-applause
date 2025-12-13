@@ -220,8 +220,8 @@ const Recruiting = () => {
       <Navigation />
       <Sidebar />
       
-      <main className="pt-20 lg:pl-64">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <div className="px-4 lg:px-6 py-6">
           {/* Hero Section */}
           <div className="mb-8 text-center relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-background to-primary/10 p-8 md:p-12">
             <div className="relative z-10">

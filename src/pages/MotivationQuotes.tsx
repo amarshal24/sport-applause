@@ -126,8 +126,8 @@ const MotivationQuotes = () => {
       <div className="min-h-screen bg-background">
         <Navigation />
         <Sidebar />
-        <main className="pt-20 lg:pl-64">
-          <div className="max-w-4xl mx-auto px-4 py-6">
+        <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+          <div className="px-4 lg:px-6 py-6">
             <div className="animate-pulse">Loading...</div>
           </div>
         </main>
@@ -140,8 +140,8 @@ const MotivationQuotes = () => {
       <Navigation />
       <Sidebar />
       
-      <main className="pt-20 lg:pl-64">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <div className="px-4 lg:px-6 py-6">
           {/* Header */}
           <div className="mb-8 text-center animate-fade-in">
             <div className="inline-flex items-center gap-2 mb-3">
