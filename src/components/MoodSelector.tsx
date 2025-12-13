@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Music, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { getSportIcon } from "@/constants/sports";
 
 interface Mood {
   id: string;
@@ -60,7 +63,29 @@ const moods: Mood[] = [
 
 const MoodSelector = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [userSport, setUserSport] = useState<string | null>(null);
   const { fetchRecommendations, loading } = useMusicRecommendations();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchUserSport = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("sports")
+        .eq("id", user.id)
+        .single();
+      
+      if (data?.sports && data.sports.length > 0) {
+        setUserSport(data.sports[0]);
+      }
+    };
+
+    fetchUserSport();
+  }, [user]);
+
+  const SportIcon = userSport ? getSportIcon(userSport) : Music;
 
   const handleSetVibe = () => {
     if (selectedMood) {
@@ -72,7 +97,7 @@ const MoodSelector = () => {
     <Card className="glass-effect animate-fade-in mb-6 max-w-5xl mx-auto w-full">
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Music className="w-5 h-5 text-primary" />
+          <SportIcon className="w-5 h-5 text-primary" />
           <h3 className="font-display font-semibold text-lg">What's your vibe today?</h3>
         </div>
         
