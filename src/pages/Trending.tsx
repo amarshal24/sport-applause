@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from "lucide-react";
+import { Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2 } from "lucide-react";
 
 const trendingVideos = [
   {
@@ -106,6 +106,7 @@ const Trending = () => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isPiP, setIsPiP] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const toggleLike = (videoId: string) => {
@@ -175,6 +176,22 @@ const Trending = () => {
       } else {
         videoRef.current.requestFullscreen();
       }
+    }
+  };
+
+  const togglePiP = async () => {
+    if (!videoRef.current) return;
+    
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPiP(false);
+      } else if (document.pictureInPictureEnabled) {
+        await videoRef.current.requestPictureInPicture();
+        setIsPiP(true);
+      }
+    } catch (error) {
+      console.error("PiP error:", error);
     }
   };
 
@@ -444,14 +461,25 @@ const Trending = () => {
                       </span>
                     </div>
                     
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-white hover:bg-white/20"
-                      onClick={toggleFullscreen}
-                    >
-                      <Maximize className="h-5 w-5" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`text-white hover:bg-white/20 ${isPiP ? "bg-white/30" : ""}`}
+                        onClick={togglePiP}
+                        title="Picture in Picture"
+                      >
+                        <PictureInPicture2 className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/20"
+                        onClick={toggleFullscreen}
+                      >
+                        <Maximize className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
