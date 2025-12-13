@@ -6,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import TopFiveVideos from "@/components/TopFiveVideos";
 import ContactAthleteModal from "@/components/ContactAthleteModal";
+import { RecruiterInterestScale } from "@/components/RecruiterInterestScale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -230,6 +231,13 @@ const AthleteProfile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Recruiter Interest Scale - only show to other logged-in users */}
+          {!isOwnProfile && userId && (
+            <div className="mb-6">
+              <RecruiterInterestScale athleteId={userId} />
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
