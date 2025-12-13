@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -57,8 +56,7 @@ interface SearchResult {
   position: string | null;
 }
 
-export const AthleteComparison = () => {
-  const { user } = useAuth();
+const AthleteComparison = () => {
   const navigate = useNavigate();
   const [selectedAthletes, setSelectedAthletes] = useState<AthleteData[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
