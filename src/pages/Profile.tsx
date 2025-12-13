@@ -114,7 +114,7 @@ const Profile = () => {
       <Sidebar />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="px-4 lg:px-6 py-6">
+        <div className="px-4 lg:px-6 py-6 max-w-5xl mx-auto w-full">
           {/* Top 5 Highlights Section */}
           <div className="mb-8">
             <TopFiveVideos isOwnProfile={true} />
