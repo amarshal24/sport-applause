@@ -69,7 +69,7 @@ const MoodSelector = () => {
   };
 
   return (
-    <Card className="glass-effect animate-fade-in mb-6">
+    <Card className="glass-effect animate-fade-in mb-6 max-w-5xl mx-auto w-full">
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Music className="w-5 h-5 text-primary" />
