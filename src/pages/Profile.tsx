@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import FavoriteVideos from "@/components/FavoriteVideos";
+import TopFiveVideos from "@/components/TopFiveVideos";
 import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -114,6 +115,11 @@ const Profile = () => {
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="px-4 lg:px-6 py-6">
+          {/* Top 5 Highlights Section */}
+          <div className="mb-8">
+            <TopFiveVideos isOwnProfile={true} />
+          </div>
+
           {/* Favorite Videos Section */}
           <div className="mb-6">
             <FavoriteVideos />
