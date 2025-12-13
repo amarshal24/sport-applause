@@ -97,6 +97,8 @@ const trendingVideos = [
   },
 ];
 
+const playbackSpeeds = [0.5, 1, 1.5, 2];
+
 const Trending = () => {
   const { t } = useTranslation();
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
@@ -107,7 +109,17 @@ const Trending = () => {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isPiP, setIsPiP] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const changePlaybackSpeed = (speed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+      setPlaybackSpeed(speed);
+      setShowSpeedMenu(false);
+    }
+  };
 
   const toggleLike = (videoId: string) => {
     setLikedVideos((prev) =>
@@ -462,6 +474,32 @@ const Trending = () => {
                     </div>
                     
                     <div className="flex items-center gap-1">
+                      {/* Playback Speed */}
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-white hover:bg-white/20 px-2 text-sm font-medium"
+                          onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                        >
+                          {playbackSpeed}x
+                        </Button>
+                        {showSpeedMenu && (
+                          <div className="absolute bottom-full mb-2 right-0 bg-black/90 rounded-lg overflow-hidden shadow-lg">
+                            {playbackSpeeds.map((speed) => (
+                              <button
+                                key={speed}
+                                className={`block w-full px-4 py-2 text-sm text-left hover:bg-white/20 ${
+                                  playbackSpeed === speed ? "text-primary bg-white/10" : "text-white"
+                                }`}
+                                onClick={() => changePlaybackSpeed(speed)}
+                              >
+                                {speed}x
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
