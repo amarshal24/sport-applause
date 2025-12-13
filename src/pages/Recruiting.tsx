@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
-  Share2, Download, Edit, Trash2, MoreVertical, X, Mail
+  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -67,11 +67,12 @@ const Recruiting = () => {
     avatar_url: string | null;
   } | null>(null);
   
-  // Filters
+  // Filters & Sorting
   const [selectedSport, setSelectedSport] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("featured");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -90,7 +91,7 @@ const Recruiting = () => {
 
   useEffect(() => {
     fetchVideos();
-  }, [selectedSport, selectedYear, selectedPosition, selectedLocation]);
+  }, [selectedSport, selectedYear, selectedPosition, selectedLocation, sortBy]);
 
   const fetchVideos = async () => {
     setLoading(true);
@@ -105,9 +106,24 @@ const Recruiting = () => {
           full_name
         )
       `)
-      .eq("status", "active")
-      .order("featured", { ascending: false })
-      .order("created_at", { ascending: false });
+      .eq("status", "active");
+
+    // Apply sorting
+    switch (sortBy) {
+      case "views":
+        query = query.order("views_count", { ascending: false });
+        break;
+      case "newest":
+        query = query.order("created_at", { ascending: false });
+        break;
+      case "oldest":
+        query = query.order("created_at", { ascending: true });
+        break;
+      case "featured":
+      default:
+        query = query.order("featured", { ascending: false }).order("created_at", { ascending: false });
+        break;
+    }
 
     if (selectedSport !== "all") {
       query = query.eq("sport", selectedSport);
@@ -481,6 +497,21 @@ const Recruiting = () => {
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   className="w-[140px]"
                 />
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="views">Most Viewed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
