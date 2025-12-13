@@ -32,6 +32,7 @@ const Auth = () => {
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user } = useAuth();
@@ -96,6 +97,11 @@ const Auth = () => {
       }
 
       if (mode === "signup") {
+        if (!acceptedTerms) {
+          setErrors({ terms: "You must accept the Terms of Service and Privacy Policy" });
+          setIsSubmitting(false);
+          return;
+        }
         await signUp(email, password, username, selectedSports);
       } else {
         // Handle remember me
@@ -409,6 +415,32 @@ const Auth = () => {
                     <p className="text-sm text-destructive mt-1">{errors.password}</p>
                   )}
                   {mode === "signup" && <PasswordStrengthIndicator password={password} />}
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
+                      I agree to the{" "}
+                      <a href="/terms" className="text-primary underline hover:no-underline" target="_blank">
+                        Terms of Service
+                      </a>{" "}
+                      and{" "}
+                      <a href="/privacy" className="text-primary underline hover:no-underline" target="_blank">
+                        Privacy Policy
+                      </a>
+                    </Label>
+                  </div>
+                  {errors.terms && (
+                    <p className="text-sm text-destructive">{errors.terms}</p>
+                  )}
                 </div>
               )}
 
