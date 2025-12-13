@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
-  Share2, Download, Edit, Trash2, MoreVertical, X
+  Share2, Download, Edit, Trash2, MoreVertical, X, Mail
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SPORTS } from "@/constants/sports";
+import ContactAthleteModal from "@/components/ContactAthleteModal";
 
 interface RecruitingVideo {
   id: string;
@@ -56,8 +57,15 @@ const Recruiting = () => {
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<RecruitingVideo | null>(null);
   const [editingVideo, setEditingVideo] = useState<RecruitingVideo | null>(null);
+  const [contactAthlete, setContactAthlete] = useState<{
+    id: string;
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
   
   // Filters
   const [selectedSport, setSelectedSport] = useState<string>("all");
@@ -324,6 +332,25 @@ const Recruiting = () => {
     incrementViewCount(video.id);
   };
 
+  const handleContact = (video: RecruitingVideo) => {
+    if (!user) {
+      toast.error("Please sign in to contact athletes");
+      return;
+    }
+    if (user.id === video.user_id) {
+      toast.info("This is your own video");
+      return;
+    }
+    setContactAthlete({
+      id: video.user_id,
+      username: video.profiles.username,
+      full_name: video.profiles.full_name,
+      avatar_url: video.profiles.avatar_url,
+    });
+    setSelectedVideo(video);
+    setShowContactModal(true);
+  };
+
   const resetForm = () => {
     setVideoFile(null);
     setTitle("");
@@ -528,6 +555,12 @@ const Recruiting = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          {user?.id !== video.user_id && (
+                            <DropdownMenuItem onClick={() => handleContact(video)}>
+                              <Mail className="w-4 h-4 mr-2" />
+                              Contact Athlete
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handleShare(video)}>
                             <Share2 className="w-4 h-4 mr-2" />
                             Share
@@ -874,6 +907,16 @@ const Recruiting = () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Contact Athlete Modal */}
+      {contactAthlete && (
+        <ContactAthleteModal
+          open={showContactModal}
+          onOpenChange={setShowContactModal}
+          athlete={contactAthlete}
+          videoId={selectedVideo?.id}
+          videoTitle={selectedVideo?.title}
+        />
+      )}
     </div>
   );
 };
