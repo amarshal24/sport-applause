@@ -5,13 +5,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Valid input options for validation
+const VALID_MOODS = ['motivated', 'relaxed', 'intense', 'focused', 'energetic', 'calm', 'pumped', 'determined'];
+const VALID_SPORTS = [
+  'basketball', 'football', 'soccer', 'baseball', 'tennis', 'golf', 'swimming', 
+  'running', 'cycling', 'boxing', 'mma', 'volleyball', 'hockey', 'lacrosse',
+  'track', 'gymnastics', 'wrestling', 'weightlifting', 'crossfit', 'yoga',
+  'general sports'
+];
+
+// Sanitize and validate input
+function validateInput(value: string | undefined, validOptions: string[], defaultValue: string): string {
+  if (!value || typeof value !== 'string') return defaultValue;
+  const sanitized = value.toLowerCase().trim().slice(0, 50); // Limit length
+  return validOptions.includes(sanitized) ? sanitized : defaultValue;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { mood, sport } = await req.json();
+    const body = await req.json();
+    
+    // Validate and sanitize inputs
+    const mood = validateInput(body?.mood, VALID_MOODS, 'motivated');
+    const sport = validateInput(body?.sport, VALID_SPORTS, 'general sports');
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    console.log(`Processing music recommendation request - mood: ${mood}, sport: ${sport}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -28,7 +51,7 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: `Recommend 6 workout songs for ${sport || 'general sports'} athletes feeling ${mood || 'motivated'}. Focus on high-energy tracks that enhance athletic performance.`
+            content: `Recommend 6 workout songs for ${sport} athletes feeling ${mood}. Focus on high-energy tracks that enhance athletic performance.`
           }
         ],
         response_format: { type: "json_object" }
