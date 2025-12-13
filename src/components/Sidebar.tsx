@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Home, Flame, Compass, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail } from "lucide-react";
+import { Home, Flame, Compass, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
@@ -61,6 +61,15 @@ const Sidebar = () => {
         >
           <GraduationCap className="h-5 w-5" />
           <span>{t("sidebar.getRecruited")}</span>
+        </NavLink>
+
+        <NavLink 
+          to="/recruiter-dashboard" 
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+          activeClassName="bg-primary/10 text-primary font-medium"
+        >
+          <ClipboardList className="h-5 w-5" />
+          <span>Recruiter Dashboard</span>
         </NavLink>
 
         <NavLink 
