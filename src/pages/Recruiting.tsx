@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
-  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown
+  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +54,7 @@ interface RecruitingVideo {
 
 const Recruiting = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [videos, setVideos] = useState<RecruitingVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -586,6 +588,10 @@ const Recruiting = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => navigate(`/athlete/${video.user_id}`)}>
+                            <User className="w-4 h-4 mr-2" />
+                            View Profile
+                          </DropdownMenuItem>
                           {user?.id !== video.user_id && (
                             <DropdownMenuItem onClick={() => handleContact(video)}>
                               <Mail className="w-4 h-4 mr-2" />
@@ -622,7 +628,13 @@ const Recruiting = () => {
                   
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-10 w-10">
+                      <Avatar 
+                        className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/athlete/${video.user_id}`);
+                        }}
+                      >
                         <AvatarImage src={video.profiles.avatar_url || undefined} />
                         <AvatarFallback>
                           {video.profiles.username[0].toUpperCase()}
@@ -632,7 +644,13 @@ const Recruiting = () => {
                         <h3 className="font-semibold text-sm line-clamp-2 mb-1">
                           {video.title}
                         </h3>
-                        <p className="text-xs text-muted-foreground">
+                        <p 
+                          className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/athlete/${video.user_id}`);
+                          }}
+                        >
                           {video.profiles.full_name || video.profiles.username}
                         </p>
                       </div>
