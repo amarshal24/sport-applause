@@ -272,6 +272,36 @@ export type Database = {
         }
         Relationships: []
       }
+      recruiter_interests: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          id: string
+          interest_level: number
+          notes: string | null
+          recruiter_id: string
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          id?: string
+          interest_level: number
+          notes?: string | null
+          recruiter_id: string
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          id?: string
+          interest_level?: number
+          notes?: string | null
+          recruiter_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recruiting_videos: {
         Row: {
           created_at: string
