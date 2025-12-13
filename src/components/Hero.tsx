@@ -10,7 +10,7 @@ const Hero = () => {
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1920&q=80')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1280&q=60&fm=webp&auto=format')] bg-cover bg-center opacity-20" />
         
         <div className="container relative z-10 px-6 py-20 text-center">
           <div className="animate-slide-up">
