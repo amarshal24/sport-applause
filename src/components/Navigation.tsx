@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { User, Search, Upload, LogOut } from "lucide-react";
+import { User, Search, Upload, LogOut, ChevronDown, Flame, Compass, Users, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -34,14 +34,51 @@ const Navigation = () => {
     }
   }, [user]);
 
+  const categories = [
+    { name: t("sidebar.trending"), icon: Flame, path: "/trending" },
+    { name: t("sidebar.discover"), icon: Compass, path: "/discover" },
+    { name: t("sidebar.following"), icon: Users, path: "/following" },
+    { name: t("sidebar.topPlays"), icon: Trophy, path: "/top-plays" },
+    { name: t("sidebar.watchLater"), icon: Clock, path: "/watch-later" },
+    { name: t("sidebar.games"), icon: Gamepad2, path: "/games" },
+    { name: t("sidebar.podcasts"), icon: Mic, path: "/podcasts" },
+    { name: t("sidebar.quotes"), icon: Quote, path: "/motivation-quotes" },
+    { name: t("sidebar.recruiting"), icon: GraduationCap, path: "/recruiting" },
+  ];
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-effect shadow-steel">
       <div className="mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <NavLink to="/" end className="text-xl md:text-2xl font-display font-bold gradient-text tracking-tight hover:opacity-80 transition-opacity">
               USportz
             </NavLink>
+            
+            {/* Categories Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                  <span className="hidden sm:inline">Categories</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="start" 
+                className="w-56 bg-popover border-border z-50"
+              >
+                {categories.map((category) => (
+                  <DropdownMenuItem 
+                    key={category.path}
+                    onClick={() => navigate(category.path)}
+                    className="cursor-pointer hover:bg-muted"
+                  >
+                    <category.icon className="mr-2 h-4 w-4" />
+                    {category.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
