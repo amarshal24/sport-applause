@@ -26,6 +26,7 @@ const WatchLater = lazy(() => import("./pages/WatchLater"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Messages = lazy(() => import("./pages/Messages"));
+const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/athlete/:userId" element={<AthleteProfile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
