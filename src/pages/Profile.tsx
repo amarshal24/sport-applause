@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
@@ -17,8 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import PodcastUploader from "@/components/PodcastUploader";
-import LiveStreamManager from "@/components/LiveStreamManager";
+
+// Lazy load heavy tab components
+const PodcastUploader = lazy(() => import("@/components/PodcastUploader"));
+const LiveStreamManager = lazy(() => import("@/components/LiveStreamManager"));
 
 const Profile = () => {
   const { user } = useAuth();
@@ -35,10 +37,31 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      fetchProfile();
-      fetchPosts();
+      // Fetch profile and posts in parallel for faster loading
+      fetchData();
     }
   }, [user]);
+
+  const fetchData = async () => {
+    if (!user) return;
+    
+    const [profileResult, postsResult] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+    ]);
+    
+    if (profileResult.data) {
+      setProfile(profileResult.data);
+      setEditForm({
+        full_name: profileResult.data.full_name || "",
+        bio: profileResult.data.bio || "",
+        username: profileResult.data.username || "",
+      });
+    }
+    
+    setPosts(postsResult.data || []);
+    setLoading(false);
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -46,7 +69,7 @@ const Profile = () => {
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
     setProfile(data);
     if (data) {
       setEditForm({
@@ -261,13 +284,15 @@ const Profile = () => {
             </TabsContent>
 
             <TabsContent value="podcasts" className="mt-6">
-              <div className="space-y-6">
-                <PodcastUploader onUploadComplete={fetchPosts} />
-              </div>
+              <Suspense fallback={<div className="animate-pulse h-40 bg-muted/30 rounded-lg" />}>
+                <PodcastUploader onUploadComplete={fetchData} />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="streams" className="mt-6">
-              <LiveStreamManager />
+              <Suspense fallback={<div className="animate-pulse h-40 bg-muted/30 rounded-lg" />}>
+                <LiveStreamManager />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="liked" className="mt-0">
