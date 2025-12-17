@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
 import MoodSelector from "@/components/MoodSelector";
+import PostComposer from "@/components/PostComposer";
 import { toast } from "sonner";
 
 // Lazy load heavy tab components
@@ -148,6 +149,9 @@ const Profile = () => {
           <div className="mb-6">
             <FavoriteVideos />
           </div>
+
+          {/* What's on your mind */}
+          <PostComposer />
 
           {/* Mood Selector */}
           <MoodSelector />
