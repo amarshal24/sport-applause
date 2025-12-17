@@ -443,7 +443,7 @@ const Recruiting = () => {
               {!user && (
                 <Button 
                   size="lg"
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => navigate('/auth')}
                 >
                   Sign In to Upload
                 </Button>

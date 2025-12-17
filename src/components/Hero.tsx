@@ -202,6 +202,29 @@ const Hero = () => {
           </Button>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-6 border-t border-border">
+        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} USportz. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Terms of Service
+            </button>
+            <button 
+              onClick={() => navigate('/privacy')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
