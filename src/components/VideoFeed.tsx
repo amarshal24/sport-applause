@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Share2, MessageSquare, RefreshCw } from "lucide-react";
-import PostComposer from "./PostComposer";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 
@@ -173,7 +172,6 @@ const VideoFeed = () => {
           transform: `translateY(${pullDistance}px)`,
         }}
       >
-        <PostComposer />
         
         <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
