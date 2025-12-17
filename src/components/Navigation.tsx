@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { User, Search, Upload, LogOut, ChevronDown, Flame, Compass, Users, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap, ClipboardList } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -82,21 +81,16 @@ const Navigation = () => {
             </DropdownMenu>
           </div>
 
-          <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder={t("nav.search")} 
-                className="pl-10 bg-muted/50 border-border"
-              />
-            </div>
-          </div>
-
           <div className="flex items-center gap-1">
-            <LanguageSwitcher />
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/search")}
+              aria-label="Search"
+            >
               <Search className="h-5 w-5" />
             </Button>
+            <LanguageSwitcher />
             {user ? (
               <>
                 <Button variant="ghost" size="sm" className="hidden md:flex border-primary text-foreground">

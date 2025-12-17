@@ -28,6 +28,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Messages = lazy(() => import("./pages/Messages"));
 const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
 const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
+const Search = lazy(() => import("./pages/Search"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/athlete/:userId" element={<AthleteProfile />} />
               <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
+              <Route path="/search" element={<Search />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
