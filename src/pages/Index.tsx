@@ -2,7 +2,6 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Stories from "@/components/Stories";
-import PostComposer from "@/components/PostComposer";
 import VideoFeed from "@/components/VideoFeed";
 import Hero from "@/components/Hero";
 import MusicRecommendations from "@/components/MusicRecommendations";
@@ -33,7 +32,6 @@ const Index = () => {
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="px-4 lg:px-6 py-6">
-          <PostComposer />
           <Stories />
           <MusicRecommendations recommendations={recommendations} loading={musicLoading} />
           <VideoFeed />
