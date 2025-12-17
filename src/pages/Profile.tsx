@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
+import MoodSelector from "@/components/MoodSelector";
 import { toast } from "sonner";
 
 // Lazy load heavy tab components
@@ -147,6 +148,9 @@ const Profile = () => {
           <div className="mb-6">
             <FavoriteVideos />
           </div>
+
+          {/* Mood Selector */}
+          <MoodSelector />
 
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
