@@ -153,8 +153,10 @@ const Profile = () => {
           {/* What's on your mind */}
           <PostComposer />
 
-          {/* Mood Selector */}
-          <MoodSelector />
+          {/* Mood Selector - Sticky */}
+          <div className="sticky top-20 z-40 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 lg:-mx-6 lg:px-6">
+            <MoodSelector />
+          </div>
 
           {/* Profile Header */}
           <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
