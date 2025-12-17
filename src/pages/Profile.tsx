@@ -16,8 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
-import MoodSelector from "@/components/MoodSelector";
-import PostComposer from "@/components/PostComposer";
+import UnifiedComposer from "@/components/UnifiedComposer";
 import { toast } from "sonner";
 
 // Lazy load heavy tab components
@@ -150,12 +149,9 @@ const Profile = () => {
             <FavoriteVideos />
           </div>
 
-          {/* What's on your mind */}
-          <PostComposer />
-
-          {/* Mood Selector - Sticky */}
+          {/* Unified Composer - Sticky */}
           <div className="sticky top-20 z-40 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 lg:-mx-6 lg:px-6">
-            <MoodSelector />
+            <UnifiedComposer />
           </div>
 
           {/* Profile Header */}
