@@ -98,7 +98,7 @@ const MoodSelector = () => {
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
           <SportIcon className="w-5 h-5 text-primary" />
-          <h3 className="font-display font-semibold text-lg">What's your vibe today?</h3>
+          <h3 className="font-display font-semibold text-lg">What's on your mind today?</h3>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
