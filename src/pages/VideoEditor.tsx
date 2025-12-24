@@ -34,6 +34,40 @@ interface TextOverlay {
   animation?: string;
 }
 
+interface MusicTrack {
+  id: string;
+  name: string;
+  genre: string;
+  mood: string;
+  duration: string;
+  bpm: number;
+  // Using royalty-free placeholder URLs - in production these would be actual audio file URLs
+  previewUrl: string;
+}
+
+const musicTracks: MusicTrack[] = [
+  // Energetic / Workout
+  { id: "1", name: "Victory Rush", genre: "Electronic", mood: "Energetic", duration: "2:30", bpm: 140, previewUrl: "" },
+  { id: "2", name: "Game Day", genre: "Hip Hop", mood: "Energetic", duration: "2:45", bpm: 128, previewUrl: "" },
+  { id: "3", name: "Champion's Rise", genre: "Rock", mood: "Energetic", duration: "3:00", bpm: 145, previewUrl: "" },
+  { id: "4", name: "Power Move", genre: "EDM", mood: "Energetic", duration: "2:20", bpm: 150, previewUrl: "" },
+  // Motivational
+  { id: "5", name: "Unstoppable", genre: "Cinematic", mood: "Motivational", duration: "2:50", bpm: 110, previewUrl: "" },
+  { id: "6", name: "Rise Up", genre: "Orchestral", mood: "Motivational", duration: "3:15", bpm: 100, previewUrl: "" },
+  { id: "7", name: "No Limits", genre: "Pop", mood: "Motivational", duration: "2:40", bpm: 120, previewUrl: "" },
+  { id: "8", name: "Dream Big", genre: "Indie", mood: "Motivational", duration: "2:55", bpm: 115, previewUrl: "" },
+  // Chill / Focus
+  { id: "9", name: "Smooth Flow", genre: "Lo-Fi", mood: "Chill", duration: "3:00", bpm: 85, previewUrl: "" },
+  { id: "10", name: "Zone In", genre: "Ambient", mood: "Focus", duration: "2:30", bpm: 90, previewUrl: "" },
+  { id: "11", name: "Cool Down", genre: "Chillhop", mood: "Chill", duration: "2:45", bpm: 80, previewUrl: "" },
+  { id: "12", name: "Mental Game", genre: "Electronic", mood: "Focus", duration: "3:10", bpm: 95, previewUrl: "" },
+  // Intense / Hype
+  { id: "13", name: "Beast Mode", genre: "Trap", mood: "Intense", duration: "2:15", bpm: 160, previewUrl: "" },
+  { id: "14", name: "Full Send", genre: "Dubstep", mood: "Intense", duration: "2:30", bpm: 155, previewUrl: "" },
+  { id: "15", name: "Highlight Reel", genre: "Hip Hop", mood: "Hype", duration: "2:40", bpm: 135, previewUrl: "" },
+  { id: "16", name: "Crowd Goes Wild", genre: "EDM", mood: "Hype", duration: "2:25", bpm: 142, previewUrl: "" },
+];
+
 interface Filter {
   id: string;
   name: string;
@@ -120,8 +154,15 @@ const VideoEditor = () => {
   const [flipV, setFlipV] = useState(false);
   const [rotation, setRotation] = useState(0);
   
+  // Music
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
+  const [musicVolume, setMusicVolume] = useState(50);
+  const [musicFilter, setMusicFilter] = useState<string>("all");
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -258,7 +299,26 @@ const VideoEditor = () => {
     setRotation(0);
     setVolume(100);
     setIsMuted(false);
+    setSelectedTrack(null);
+    setMusicVolume(50);
+    setIsPlayingPreview(false);
     toast.success("Editor reset!");
+  };
+
+  const filteredTracks = musicFilter === "all" 
+    ? musicTracks 
+    : musicTracks.filter(t => t.mood.toLowerCase() === musicFilter || t.genre.toLowerCase() === musicFilter);
+
+  const getMoodColor = (mood: string) => {
+    switch (mood.toLowerCase()) {
+      case "energetic": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "motivational": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "chill": return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "focus": return "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      case "intense": return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "hype": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+      default: return "bg-muted text-muted-foreground";
+    }
   };
 
   const exportVideo = () => {
@@ -610,7 +670,7 @@ const VideoEditor = () => {
             <Card className="glass-effect w-full">
               <CardContent className="p-4">
                 <Tabs defaultValue="filters" className="w-full">
-                  <TabsList className="w-full grid grid-cols-6 mb-4">
+                  <TabsList className="w-full grid grid-cols-7 mb-4">
                     <TabsTrigger value="filters" className="flex flex-col sm:flex-row items-center gap-1">
                       <Sparkles className="w-4 h-4" />
                       <span className="hidden sm:inline text-xs">Filters</span>
@@ -622,6 +682,10 @@ const VideoEditor = () => {
                     <TabsTrigger value="effects" className="flex flex-col sm:flex-row items-center gap-1">
                       <Wand2 className="w-4 h-4" />
                       <span className="hidden sm:inline text-xs">Effects</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="music" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Music className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Music</span>
                     </TabsTrigger>
                     <TabsTrigger value="text" className="flex flex-col sm:flex-row items-center gap-1">
                       <Type className="w-4 h-4" />
@@ -840,6 +904,146 @@ const VideoEditor = () => {
                           <span className="text-xs">Vibrant</span>
                         </Button>
                       </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Music Tab */}
+                  <TabsContent value="music">
+                    <div className="space-y-4">
+                      {/* Filter Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant={musicFilter === "all" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("all")}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          variant={musicFilter === "energetic" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("energetic")}
+                          className="text-orange-400"
+                        >
+                          🔥 Energetic
+                        </Button>
+                        <Button
+                          variant={musicFilter === "motivational" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("motivational")}
+                          className="text-blue-400"
+                        >
+                          💪 Motivational
+                        </Button>
+                        <Button
+                          variant={musicFilter === "chill" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("chill")}
+                          className="text-green-400"
+                        >
+                          😎 Chill
+                        </Button>
+                        <Button
+                          variant={musicFilter === "focus" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("focus")}
+                          className="text-purple-400"
+                        >
+                          🎯 Focus
+                        </Button>
+                        <Button
+                          variant={musicFilter === "intense" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("intense")}
+                          className="text-red-400"
+                        >
+                          ⚡ Intense
+                        </Button>
+                        <Button
+                          variant={musicFilter === "hype" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setMusicFilter("hype")}
+                          className="text-yellow-400"
+                        >
+                          🎉 Hype
+                        </Button>
+                      </div>
+
+                      {/* Selected Track Display */}
+                      {selectedTrack && (
+                        <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                              <Music className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{selectedTrack.name}</p>
+                              <p className="text-xs text-muted-foreground">{selectedTrack.genre} • {selectedTrack.duration}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 min-w-[120px]">
+                              <Volume2 className="w-4 h-4 text-muted-foreground" />
+                              <Slider
+                                value={[musicVolume]}
+                                onValueChange={([v]) => setMusicVolume(v)}
+                                min={0}
+                                max={100}
+                                step={1}
+                                className="flex-1"
+                              />
+                              <span className="text-xs w-8">{musicVolume}%</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedTrack(null)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Music Track List */}
+                      <ScrollArea className="h-[200px]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                          {filteredTracks.map((track) => (
+                            <div
+                              key={track.id}
+                              onClick={() => {
+                                setSelectedTrack(track);
+                                toast.success(`Added "${track.name}" as background music`);
+                              }}
+                              className={cn(
+                                "p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5",
+                                selectedTrack?.id === track.id && "border-primary bg-primary/10"
+                              )}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
+                                  <Music className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">{track.name}</p>
+                                  <p className="text-xs text-muted-foreground">{track.genre} • {track.bpm} BPM</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded border", getMoodColor(track.mood))}>
+                                      {track.mood}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">{track.duration}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+
+                      <p className="text-xs text-muted-foreground text-center">
+                        🎵 Royalty-free music for your sports videos. Select a track to add it as background music.
+                      </p>
                     </div>
                   </TabsContent>
 
