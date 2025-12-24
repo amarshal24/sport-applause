@@ -41,31 +41,31 @@ interface MusicTrack {
   mood: string;
   duration: string;
   bpm: number;
-  // Using royalty-free placeholder URLs - in production these would be actual audio file URLs
   previewUrl: string;
 }
 
+// Royalty-free music from Pixabay (free for commercial use)
 const musicTracks: MusicTrack[] = [
   // Energetic / Workout
-  { id: "1", name: "Victory Rush", genre: "Electronic", mood: "Energetic", duration: "2:30", bpm: 140, previewUrl: "" },
-  { id: "2", name: "Game Day", genre: "Hip Hop", mood: "Energetic", duration: "2:45", bpm: 128, previewUrl: "" },
-  { id: "3", name: "Champion's Rise", genre: "Rock", mood: "Energetic", duration: "3:00", bpm: 145, previewUrl: "" },
-  { id: "4", name: "Power Move", genre: "EDM", mood: "Energetic", duration: "2:20", bpm: 150, previewUrl: "" },
+  { id: "1", name: "Powerful Beat", genre: "Electronic", mood: "Energetic", duration: "2:14", bpm: 140, previewUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" },
+  { id: "2", name: "Sport Action", genre: "Hip Hop", mood: "Energetic", duration: "1:51", bpm: 128, previewUrl: "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946cc6d109.mp3" },
+  { id: "3", name: "Energy Rock", genre: "Rock", mood: "Energetic", duration: "2:32", bpm: 145, previewUrl: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3" },
+  { id: "4", name: "EDM Festival", genre: "EDM", mood: "Energetic", duration: "2:20", bpm: 150, previewUrl: "https://cdn.pixabay.com/download/audio/2023/07/30/audio_e6e8d06d17.mp3" },
   // Motivational
-  { id: "5", name: "Unstoppable", genre: "Cinematic", mood: "Motivational", duration: "2:50", bpm: 110, previewUrl: "" },
-  { id: "6", name: "Rise Up", genre: "Orchestral", mood: "Motivational", duration: "3:15", bpm: 100, previewUrl: "" },
-  { id: "7", name: "No Limits", genre: "Pop", mood: "Motivational", duration: "2:40", bpm: 120, previewUrl: "" },
-  { id: "8", name: "Dream Big", genre: "Indie", mood: "Motivational", duration: "2:55", bpm: 115, previewUrl: "" },
+  { id: "5", name: "Inspiring Cinematic", genre: "Cinematic", mood: "Motivational", duration: "2:36", bpm: 110, previewUrl: "https://cdn.pixabay.com/download/audio/2022/02/22/audio_d1718ab41b.mp3" },
+  { id: "6", name: "Epic Orchestra", genre: "Orchestral", mood: "Motivational", duration: "2:31", bpm: 100, previewUrl: "https://cdn.pixabay.com/download/audio/2022/01/20/audio_3ee85c0e96.mp3" },
+  { id: "7", name: "Upbeat Pop", genre: "Pop", mood: "Motivational", duration: "2:17", bpm: 120, previewUrl: "https://cdn.pixabay.com/download/audio/2023/09/04/audio_0f00e95e1f.mp3" },
+  { id: "8", name: "Acoustic Uplifting", genre: "Indie", mood: "Motivational", duration: "2:11", bpm: 115, previewUrl: "https://cdn.pixabay.com/download/audio/2022/10/09/audio_f8dcdb2bd8.mp3" },
   // Chill / Focus
-  { id: "9", name: "Smooth Flow", genre: "Lo-Fi", mood: "Chill", duration: "3:00", bpm: 85, previewUrl: "" },
-  { id: "10", name: "Zone In", genre: "Ambient", mood: "Focus", duration: "2:30", bpm: 90, previewUrl: "" },
-  { id: "11", name: "Cool Down", genre: "Chillhop", mood: "Chill", duration: "2:45", bpm: 80, previewUrl: "" },
-  { id: "12", name: "Mental Game", genre: "Electronic", mood: "Focus", duration: "3:10", bpm: 95, previewUrl: "" },
+  { id: "9", name: "Lofi Study", genre: "Lo-Fi", mood: "Chill", duration: "2:16", bpm: 85, previewUrl: "https://cdn.pixabay.com/download/audio/2022/05/13/audio_257112c82d.mp3" },
+  { id: "10", name: "Calm Ambient", genre: "Ambient", mood: "Focus", duration: "3:00", bpm: 90, previewUrl: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_8cb749d484.mp3" },
+  { id: "11", name: "Chill Vibes", genre: "Chillhop", mood: "Chill", duration: "2:28", bpm: 80, previewUrl: "https://cdn.pixabay.com/download/audio/2023/04/10/audio_fd5ef7fd86.mp3" },
+  { id: "12", name: "Deep Focus", genre: "Electronic", mood: "Focus", duration: "2:45", bpm: 95, previewUrl: "https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3" },
   // Intense / Hype
-  { id: "13", name: "Beast Mode", genre: "Trap", mood: "Intense", duration: "2:15", bpm: 160, previewUrl: "" },
-  { id: "14", name: "Full Send", genre: "Dubstep", mood: "Intense", duration: "2:30", bpm: 155, previewUrl: "" },
-  { id: "15", name: "Highlight Reel", genre: "Hip Hop", mood: "Hype", duration: "2:40", bpm: 135, previewUrl: "" },
-  { id: "16", name: "Crowd Goes Wild", genre: "EDM", mood: "Hype", duration: "2:25", bpm: 142, previewUrl: "" },
+  { id: "13", name: "Trap Beat", genre: "Trap", mood: "Intense", duration: "2:04", bpm: 160, previewUrl: "https://cdn.pixabay.com/download/audio/2022/11/22/audio_4a28ac6a22.mp3" },
+  { id: "14", name: "Heavy Bass", genre: "Dubstep", mood: "Intense", duration: "2:18", bpm: 155, previewUrl: "https://cdn.pixabay.com/download/audio/2022/03/10/audio_8e66ab1e41.mp3" },
+  { id: "15", name: "Hip Hop Hype", genre: "Hip Hop", mood: "Hype", duration: "1:47", bpm: 135, previewUrl: "https://cdn.pixabay.com/download/audio/2023/06/13/audio_fc3d796bbc.mp3" },
+  { id: "16", name: "Party EDM", genre: "EDM", mood: "Hype", duration: "2:33", bpm: 142, previewUrl: "https://cdn.pixabay.com/download/audio/2022/04/27/audio_67bcbab8aa.mp3" },
 ];
 
 interface Filter {
@@ -159,10 +159,12 @@ const VideoEditor = () => {
   const [musicVolume, setMusicVolume] = useState(50);
   const [musicFilter, setMusicFilter] = useState<string>("all");
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [previewingTrackId, setPreviewingTrackId] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -211,12 +213,68 @@ const VideoEditor = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        // Pause background music too
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
       } else {
         videoRef.current.play();
+        // Play background music with video
+        if (audioRef.current && selectedTrack) {
+          audioRef.current.play();
+        }
       }
       setIsPlaying(!isPlaying);
     }
   };
+
+  const togglePreviewTrack = (track: MusicTrack, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (previewingTrackId === track.id) {
+      // Stop preview
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.currentTime = 0;
+      }
+      setPreviewingTrackId(null);
+    } else {
+      // Start preview
+      if (previewAudioRef.current) {
+        previewAudioRef.current.src = track.previewUrl;
+        previewAudioRef.current.volume = 0.5;
+        previewAudioRef.current.play().catch(console.error);
+      }
+      setPreviewingTrackId(track.id);
+    }
+  };
+
+  const selectTrack = (track: MusicTrack) => {
+    // Stop any preview
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current.currentTime = 0;
+    }
+    setPreviewingTrackId(null);
+    
+    setSelectedTrack(track);
+    
+    // Set up background audio
+    if (audioRef.current) {
+      audioRef.current.src = track.previewUrl;
+      audioRef.current.volume = musicVolume / 100;
+      audioRef.current.loop = true;
+    }
+    
+    toast.success(`Added "${track.name}" as background music`);
+  };
+
+  // Sync music volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = musicVolume / 100;
+    }
+  }, [musicVolume]);
 
   const getVideoStyles = () => {
     const filterParts = [];
@@ -1012,19 +1070,28 @@ const VideoEditor = () => {
                           {filteredTracks.map((track) => (
                             <div
                               key={track.id}
-                              onClick={() => {
-                                setSelectedTrack(track);
-                                toast.success(`Added "${track.name}" as background music`);
-                              }}
+                              onClick={() => selectTrack(track)}
                               className={cn(
                                 "p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5",
                                 selectedTrack?.id === track.id && "border-primary bg-primary/10"
                               )}
                             >
                               <div className="flex items-start gap-2">
-                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
-                                  <Music className="w-4 h-4 text-muted-foreground" />
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={cn(
+                                    "w-8 h-8 p-0 rounded shrink-0",
+                                    previewingTrackId === track.id && "bg-primary text-primary-foreground"
+                                  )}
+                                  onClick={(e) => togglePreviewTrack(track, e)}
+                                >
+                                  {previewingTrackId === track.id ? (
+                                    <Pause className="w-4 h-4" />
+                                  ) : (
+                                    <Play className="w-4 h-4" />
+                                  )}
+                                </Button>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate">{track.name}</p>
                                   <p className="text-xs text-muted-foreground">{track.genre} • {track.bpm} BPM</p>
@@ -1041,8 +1108,15 @@ const VideoEditor = () => {
                         </div>
                       </ScrollArea>
 
+                      {/* Audio elements for playback */}
+                      <audio ref={audioRef} />
+                      <audio 
+                        ref={previewAudioRef} 
+                        onEnded={() => setPreviewingTrackId(null)}
+                      />
+
                       <p className="text-xs text-muted-foreground text-center">
-                        🎵 Royalty-free music for your sports videos. Select a track to add it as background music.
+                        🎵 Click ▶ to preview • Click card to add as background music
                       </p>
                     </div>
                   </TabsContent>
