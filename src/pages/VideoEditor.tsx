@@ -34,6 +34,14 @@ interface TextOverlay {
   animation?: string;
 }
 
+interface DragState {
+  overlayId: string;
+  startX: number;
+  startY: number;
+  overlayStartX: number;
+  overlayStartY: number;
+}
+
 interface MusicTrack {
   id: string;
   name: string;
@@ -192,6 +200,9 @@ const VideoEditor = () => {
   const [transitionDuration, setTransitionDuration] = useState(0.5);
   const [isPreviewingTransition, setIsPreviewingTransition] = useState(false);
   const [previewTransitionType, setPreviewTransitionType] = useState<"intro" | "outro" | null>(null);
+  
+  // Drag and drop
+  const [dragState, setDragState] = useState<DragState | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -374,6 +385,47 @@ const VideoEditor = () => {
     setTextOverlays(textOverlays.filter(o => o.id !== id));
   };
 
+  // Drag and drop handlers for overlays
+  const handleOverlayMouseDown = (e: React.MouseEvent, overlay: TextOverlay) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setDragState({
+      overlayId: overlay.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      overlayStartX: overlay.x,
+      overlayStartY: overlay.y,
+    });
+  };
+
+  const handleOverlayMouseMove = (e: React.MouseEvent) => {
+    if (!dragState || !videoContainerRef.current) return;
+    
+    const container = videoContainerRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - dragState.startX;
+    const deltaY = e.clientY - dragState.startY;
+    
+    // Convert pixel delta to percentage
+    const deltaXPercent = (deltaX / container.width) * 100;
+    const deltaYPercent = (deltaY / container.height) * 100;
+    
+    const newX = Math.max(5, Math.min(95, dragState.overlayStartX + deltaXPercent));
+    const newY = Math.max(5, Math.min(95, dragState.overlayStartY + deltaYPercent));
+    
+    setTextOverlays(prev => 
+      prev.map(o => 
+        o.id === dragState.overlayId 
+          ? { ...o, x: newX, y: newY }
+          : o
+      )
+    );
+  };
+
+  const handleOverlayMouseUp = () => {
+    setDragState(null);
+  };
+
   const resetEditor = () => {
     setSelectedFilter(filters[0]);
     setTextOverlays([]);
@@ -396,6 +448,7 @@ const VideoEditor = () => {
     setIntroTransition(transitions[0]);
     setOutroTransition(transitions[0]);
     setTransitionDuration(0.5);
+    setDragState(null);
     toast.success("Editor reset!");
   };
 
@@ -688,8 +741,14 @@ const VideoEditor = () => {
                     {/* Video Player */}
                     <div 
                       ref={videoContainerRef}
-                      className="relative aspect-video max-h-[50vh] rounded-xl overflow-hidden bg-black mx-auto"
+                      className={cn(
+                        "relative aspect-video max-h-[50vh] rounded-xl overflow-hidden bg-black mx-auto",
+                        dragState && "cursor-grabbing"
+                      )}
                       style={getTransitionStyles()}
+                      onMouseMove={handleOverlayMouseMove}
+                      onMouseUp={handleOverlayMouseUp}
+                      onMouseLeave={handleOverlayMouseUp}
                     >
                       <video
                         ref={videoRef}
@@ -699,14 +758,15 @@ const VideoEditor = () => {
                         onClick={togglePlayPause}
                       />
                       
-                      {/* Text Overlays */}
+                      {/* Text Overlays - Draggable */}
                       {textOverlays.map((overlay) => (
                         <div
                           key={overlay.id}
                           className={cn(
-                            "absolute cursor-pointer group",
-                            overlay.animation === "bounce" && "animate-bounce",
-                            overlay.animation === "pulse" && "animate-pulse"
+                            "absolute select-none group",
+                            overlay.animation === "bounce" && !dragState && "animate-bounce",
+                            overlay.animation === "pulse" && !dragState && "animate-pulse",
+                            dragState?.overlayId === overlay.id ? "cursor-grabbing z-50" : "cursor-grab"
                           )}
                           style={{
                             left: `${overlay.x}%`,
@@ -717,28 +777,44 @@ const VideoEditor = () => {
                             textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
                             transform: "translate(-50%, -50%)",
                           }}
-                          onClick={() => removeOverlay(overlay.id)}
+                          onMouseDown={(e) => handleOverlayMouseDown(e, overlay)}
+                          onDoubleClick={() => removeOverlay(overlay.id)}
                         >
                           {overlay.text}
-                          <span className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-xs bg-background/80 px-2 py-1 rounded whitespace-nowrap">
-                            Click to remove
-                          </span>
+                          <div className={cn(
+                            "absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+                            dragState?.overlayId === overlay.id && "opacity-100"
+                          )}>
+                            <span className="text-xs bg-background/90 px-2 py-1 rounded flex items-center gap-1 whitespace-nowrap border border-border/50">
+                              <Move className="w-3 h-3" />
+                              Drag to move
+                            </span>
+                          </div>
+                          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] bg-destructive/80 text-destructive-foreground px-1.5 py-0.5 rounded whitespace-nowrap">
+                              Double-click to remove
+                            </span>
+                          </div>
                         </div>
                       ))}
 
                       {/* Play/Pause Overlay */}
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                        onClick={togglePlayPause}
-                      >
-                        <div className="w-16 h-16 rounded-full bg-background/80 flex items-center justify-center">
-                          {isPlaying ? (
-                            <Pause className="w-8 h-8" />
-                          ) : (
-                            <Play className="w-8 h-8 ml-1" />
-                          )}
+                      {!dragState && (
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer pointer-events-none"
+                        >
+                          <div 
+                            className="w-16 h-16 rounded-full bg-background/80 flex items-center justify-center pointer-events-auto"
+                            onClick={togglePlayPause}
+                          >
+                            {isPlaying ? (
+                              <Pause className="w-8 h-8" />
+                            ) : (
+                              <Play className="w-8 h-8 ml-1" />
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Timeline & Controls */}
