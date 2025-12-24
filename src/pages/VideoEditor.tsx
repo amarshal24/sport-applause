@@ -102,6 +102,31 @@ const filters: Filter[] = [
 
 const stickers = ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏆", "🥇", "🔥", "⚡", "💪", "👏", "🎯", "🏁", "💯", "🙌", "👑", "💥", "⭐", "🚀"];
 
+interface Transition {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+const transitions: Transition[] = [
+  { id: "none", name: "None", emoji: "➖", description: "No transition" },
+  { id: "fade", name: "Fade", emoji: "🌫️", description: "Smooth opacity fade" },
+  { id: "fade-black", name: "Fade Black", emoji: "🖤", description: "Fade through black" },
+  { id: "fade-white", name: "Fade White", emoji: "🤍", description: "Fade through white" },
+  { id: "slide-left", name: "Slide Left", emoji: "⬅️", description: "Slide to the left" },
+  { id: "slide-right", name: "Slide Right", emoji: "➡️", description: "Slide to the right" },
+  { id: "slide-up", name: "Slide Up", emoji: "⬆️", description: "Slide upwards" },
+  { id: "slide-down", name: "Slide Down", emoji: "⬇️", description: "Slide downwards" },
+  { id: "zoom-in", name: "Zoom In", emoji: "🔍", description: "Zoom into the scene" },
+  { id: "zoom-out", name: "Zoom Out", emoji: "🔎", description: "Zoom out of the scene" },
+  { id: "spin", name: "Spin", emoji: "🔄", description: "Rotating transition" },
+  { id: "blur", name: "Blur", emoji: "💨", description: "Blur transition" },
+  { id: "flash", name: "Flash", emoji: "⚡", description: "Quick flash effect" },
+  { id: "wipe", name: "Wipe", emoji: "🧹", description: "Horizontal wipe" },
+  { id: "glitch", name: "Glitch", emoji: "📺", description: "Digital glitch effect" },
+];
+
 const textAnimations = [
   { id: "none", name: "None" },
   { id: "bounce", name: "Bounce" },
@@ -161,10 +186,18 @@ const VideoEditor = () => {
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [previewingTrackId, setPreviewingTrackId] = useState<string | null>(null);
   
+  // Transitions
+  const [introTransition, setIntroTransition] = useState<Transition>(transitions[0]);
+  const [outroTransition, setOutroTransition] = useState<Transition>(transitions[0]);
+  const [transitionDuration, setTransitionDuration] = useState(0.5);
+  const [isPreviewingTransition, setIsPreviewingTransition] = useState(false);
+  const [previewTransitionType, setPreviewTransitionType] = useState<"intro" | "outro" | null>(null);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -360,7 +393,71 @@ const VideoEditor = () => {
     setSelectedTrack(null);
     setMusicVolume(50);
     setIsPlayingPreview(false);
+    setIntroTransition(transitions[0]);
+    setOutroTransition(transitions[0]);
+    setTransitionDuration(0.5);
     toast.success("Editor reset!");
+  };
+
+  const previewTransition = (type: "intro" | "outro") => {
+    const transition = type === "intro" ? introTransition : outroTransition;
+    if (transition.id === "none") {
+      toast.info("No transition selected");
+      return;
+    }
+    
+    setPreviewTransitionType(type);
+    setIsPreviewingTransition(true);
+    
+    // Reset after animation completes
+    setTimeout(() => {
+      setIsPreviewingTransition(false);
+      setPreviewTransitionType(null);
+    }, transitionDuration * 1000 + 100);
+  };
+
+  const getTransitionStyles = () => {
+    if (!isPreviewingTransition || !previewTransitionType) return {};
+    
+    const transition = previewTransitionType === "intro" ? introTransition : outroTransition;
+    const duration = `${transitionDuration}s`;
+    
+    const baseStyle = {
+      transition: `all ${duration} ease-in-out`,
+    };
+
+    switch (transition.id) {
+      case "fade":
+        return { ...baseStyle, animation: `fade-transition ${duration} ease-in-out` };
+      case "fade-black":
+        return { ...baseStyle, animation: `fade-black-transition ${duration} ease-in-out` };
+      case "fade-white":
+        return { ...baseStyle, animation: `fade-white-transition ${duration} ease-in-out` };
+      case "slide-left":
+        return { ...baseStyle, animation: `slide-left-transition ${duration} ease-in-out` };
+      case "slide-right":
+        return { ...baseStyle, animation: `slide-right-transition ${duration} ease-in-out` };
+      case "slide-up":
+        return { ...baseStyle, animation: `slide-up-transition ${duration} ease-in-out` };
+      case "slide-down":
+        return { ...baseStyle, animation: `slide-down-transition ${duration} ease-in-out` };
+      case "zoom-in":
+        return { ...baseStyle, animation: `zoom-in-transition ${duration} ease-in-out` };
+      case "zoom-out":
+        return { ...baseStyle, animation: `zoom-out-transition ${duration} ease-in-out` };
+      case "spin":
+        return { ...baseStyle, animation: `spin-transition ${duration} ease-in-out` };
+      case "blur":
+        return { ...baseStyle, animation: `blur-transition ${duration} ease-in-out` };
+      case "flash":
+        return { ...baseStyle, animation: `flash-transition ${duration} ease-in-out` };
+      case "wipe":
+        return { ...baseStyle, animation: `wipe-transition ${duration} ease-in-out` };
+      case "glitch":
+        return { ...baseStyle, animation: `glitch-transition ${duration} ease-in-out` };
+      default:
+        return {};
+    }
   };
 
   const filteredTracks = musicFilter === "all" 
@@ -589,7 +686,11 @@ const VideoEditor = () => {
                 ) : (
                   <div className="space-y-4">
                     {/* Video Player */}
-                    <div className="relative aspect-video max-h-[50vh] rounded-xl overflow-hidden bg-black mx-auto">
+                    <div 
+                      ref={videoContainerRef}
+                      className="relative aspect-video max-h-[50vh] rounded-xl overflow-hidden bg-black mx-auto"
+                      style={getTransitionStyles()}
+                    >
                       <video
                         ref={videoRef}
                         src={videoUrl}
@@ -728,7 +829,7 @@ const VideoEditor = () => {
             <Card className="glass-effect w-full">
               <CardContent className="p-4">
                 <Tabs defaultValue="filters" className="w-full">
-                  <TabsList className="w-full grid grid-cols-7 mb-4">
+                  <TabsList className="w-full grid grid-cols-8 mb-4">
                     <TabsTrigger value="filters" className="flex flex-col sm:flex-row items-center gap-1">
                       <Sparkles className="w-4 h-4" />
                       <span className="hidden sm:inline text-xs">Filters</span>
@@ -740,6 +841,10 @@ const VideoEditor = () => {
                     <TabsTrigger value="effects" className="flex flex-col sm:flex-row items-center gap-1">
                       <Wand2 className="w-4 h-4" />
                       <span className="hidden sm:inline text-xs">Effects</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="transitions" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Layers className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Transitions</span>
                     </TabsTrigger>
                     <TabsTrigger value="music" className="flex flex-col sm:flex-row items-center gap-1">
                       <Music className="w-4 h-4" />
@@ -961,6 +1066,126 @@ const VideoEditor = () => {
                           <Zap className="w-5 h-5 mb-1 text-primary" />
                           <span className="text-xs">Vibrant</span>
                         </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Transitions Tab */}
+                  <TabsContent value="transitions">
+                    <div className="space-y-4">
+                      {/* Duration Slider */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 flex-1">
+                          <Timer className="w-4 h-4 text-primary" />
+                          <span className="text-sm">Duration:</span>
+                          <Slider
+                            value={[transitionDuration]}
+                            onValueChange={([v]) => setTransitionDuration(v)}
+                            min={0.2}
+                            max={2}
+                            step={0.1}
+                            className="flex-1 max-w-[200px]"
+                          />
+                          <span className="text-sm text-muted-foreground w-12">{transitionDuration}s</span>
+                        </div>
+                      </div>
+
+                      {/* Intro Transition */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium flex items-center gap-2">
+                            <span className="text-green-400">▶</span> Intro Transition
+                          </h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => previewTransition("intro")}
+                            disabled={introTransition.id === "none" || !videoUrl}
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Preview
+                          </Button>
+                        </div>
+                        <ScrollArea className="w-full">
+                          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2">
+                            {transitions.map((t) => (
+                              <Button
+                                key={t.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setIntroTransition(t);
+                                  toast.success(`Intro: ${t.name}`);
+                                }}
+                                className={cn(
+                                  "flex flex-col h-auto py-2 px-2",
+                                  introTransition.id === t.id && "border-green-500 bg-green-500/10"
+                                )}
+                              >
+                                <span className="text-lg">{t.emoji}</span>
+                                <span className="text-[10px] mt-1">{t.name}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+
+                      {/* Outro Transition */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium flex items-center gap-2">
+                            <span className="text-red-400">■</span> Outro Transition
+                          </h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => previewTransition("outro")}
+                            disabled={outroTransition.id === "none" || !videoUrl}
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Preview
+                          </Button>
+                        </div>
+                        <ScrollArea className="w-full">
+                          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2">
+                            {transitions.map((t) => (
+                              <Button
+                                key={t.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setOutroTransition(t);
+                                  toast.success(`Outro: ${t.name}`);
+                                }}
+                                className={cn(
+                                  "flex flex-col h-auto py-2 px-2",
+                                  outroTransition.id === t.id && "border-red-500 bg-red-500/10"
+                                )}
+                              >
+                                <span className="text-lg">{t.emoji}</span>
+                                <span className="text-[10px] mt-1">{t.name}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+
+                      {/* Selected Transitions Summary */}
+                      <div className="p-3 rounded-lg bg-muted/50 flex flex-wrap items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-400">▶</span>
+                          <span>Intro:</span>
+                          <span className="font-medium">{introTransition.emoji} {introTransition.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">■</span>
+                          <span>Outro:</span>
+                          <span className="font-medium">{outroTransition.emoji} {outroTransition.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Timer className="w-4 h-4" />
+                          <span>{transitionDuration}s each</span>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
