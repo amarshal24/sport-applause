@@ -8,10 +8,14 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Upload, Download, Play, Pause, Sparkles, Type, 
   Sticker, Music, Scissors, Zap, RotateCcw, Check,
-  Share2, Trash2, Send, Image as ImageIcon
+  Share2, Trash2, Send, Image as ImageIcon, Wand2,
+  Sun, Contrast, Palette, Volume2, VolumeX, Timer,
+  FlipHorizontal, FlipVertical, RotateCw, Layers,
+  Blend, Droplets, Focus, Maximize, Move, Star
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -27,6 +31,7 @@ interface TextOverlay {
   fontSize: number;
   color: string;
   fontFamily: string;
+  animation?: string;
 }
 
 interface Filter {
@@ -34,6 +39,16 @@ interface Filter {
   name: string;
   cssFilter: string;
   emoji: string;
+}
+
+interface Effect {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
 }
 
 const filters: Filter[] = [
@@ -45,9 +60,30 @@ const filters: Filter[] = [
   { id: "noir", name: "Noir", cssFilter: "grayscale(1) contrast(1.5)", emoji: "🎬" },
   { id: "neon", name: "Neon", cssFilter: "saturate(3) brightness(1.2) contrast(1.3)", emoji: "💡" },
   { id: "fade", name: "Fade", cssFilter: "brightness(1.1) contrast(0.9)", emoji: "🌫️" },
+  { id: "dreamy", name: "Dreamy", cssFilter: "blur(0.5px) saturate(1.5) brightness(1.1)", emoji: "💭" },
+  { id: "cinematic", name: "Cinematic", cssFilter: "contrast(1.4) saturate(0.9)", emoji: "🎥" },
+  { id: "retro", name: "Retro", cssFilter: "sepia(0.3) saturate(1.4) hue-rotate(-10deg)", emoji: "📼" },
+  { id: "pop", name: "Pop", cssFilter: "saturate(2.5) brightness(1.1)", emoji: "🎨" },
 ];
 
-const stickers = ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏆", "🥇", "🔥", "⚡", "💪", "👏", "🎯", "🏁"];
+const stickers = ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏆", "🥇", "🔥", "⚡", "💪", "👏", "🎯", "🏁", "💯", "🙌", "👑", "💥", "⭐", "🚀"];
+
+const textAnimations = [
+  { id: "none", name: "None" },
+  { id: "bounce", name: "Bounce" },
+  { id: "pulse", name: "Pulse" },
+  { id: "shake", name: "Shake" },
+  { id: "fade-in", name: "Fade In" },
+  { id: "slide-up", name: "Slide Up" },
+];
+
+const fontOptions = [
+  { id: "Inter", name: "Modern" },
+  { id: "Georgia", name: "Classic" },
+  { id: "Comic Sans MS", name: "Fun" },
+  { id: "Impact", name: "Bold" },
+  { id: "Courier New", name: "Retro" },
+];
 
 const VideoEditor = () => {
   const { user } = useAuth();
@@ -55,16 +91,34 @@ const VideoEditor = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<Filter>(filters[0]);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
   const [currentText, setCurrentText] = useState("");
+  const [currentTextColor, setCurrentTextColor] = useState("#ffffff");
+  const [currentTextFont, setCurrentTextFont] = useState("Inter");
+  const [currentTextAnimation, setCurrentTextAnimation] = useState("none");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(100);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [postCaption, setPostCaption] = useState("");
   const [exporting, setExporting] = useState(false);
+  
+  // Adjustments
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [saturation, setSaturation] = useState(100);
+  const [blur, setBlur] = useState(0);
+  const [hueRotate, setHueRotate] = useState(0);
+  const [volume, setVolume] = useState(100);
+  
+  // Transform
+  const [flipH, setFlipH] = useState(false);
+  const [flipV, setFlipV] = useState(false);
+  const [rotation, setRotation] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,11 +144,25 @@ const VideoEditor = () => {
   }, [playbackSpeed]);
 
   useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume / 100;
+      videoRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      video.addEventListener("loadedmetadata", () => {
-        setDuration(video.duration);
-      });
+      const handleLoadedMetadata = () => setDuration(video.duration);
+      const handleTimeUpdate = () => setCurrentTime(video.currentTime);
+      
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
+      video.addEventListener("timeupdate", handleTimeUpdate);
+      
+      return () => {
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+        video.removeEventListener("timeupdate", handleTimeUpdate);
+      };
     }
   }, [videoUrl]);
 
@@ -109,6 +177,30 @@ const VideoEditor = () => {
     }
   };
 
+  const getVideoStyles = () => {
+    const filterParts = [];
+    
+    if (selectedFilter.cssFilter !== "none") {
+      filterParts.push(selectedFilter.cssFilter);
+    }
+    
+    if (brightness !== 100) filterParts.push(`brightness(${brightness / 100})`);
+    if (contrast !== 100) filterParts.push(`contrast(${contrast / 100})`);
+    if (saturation !== 100) filterParts.push(`saturate(${saturation / 100})`);
+    if (blur > 0) filterParts.push(`blur(${blur}px)`);
+    if (hueRotate !== 0) filterParts.push(`hue-rotate(${hueRotate}deg)`);
+    
+    const transform = [];
+    if (flipH) transform.push("scaleX(-1)");
+    if (flipV) transform.push("scaleY(-1)");
+    if (rotation !== 0) transform.push(`rotate(${rotation}deg)`);
+    
+    return {
+      filter: filterParts.length ? filterParts.join(" ") : "none",
+      transform: transform.length ? transform.join(" ") : "none",
+    };
+  };
+
   const addTextOverlay = () => {
     if (!currentText.trim()) {
       toast.error("Please enter text first");
@@ -121,8 +213,9 @@ const VideoEditor = () => {
       x: 50,
       y: 50,
       fontSize: 32,
-      color: "#ffffff",
-      fontFamily: "Inter",
+      color: currentTextColor,
+      fontFamily: currentTextFont,
+      animation: currentTextAnimation,
     };
 
     setTextOverlays([...textOverlays, newOverlay]);
@@ -155,6 +248,16 @@ const VideoEditor = () => {
     setPlaybackSpeed(1);
     setTrimStart(0);
     setTrimEnd(100);
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setBlur(0);
+    setHueRotate(0);
+    setFlipH(false);
+    setFlipV(false);
+    setRotation(0);
+    setVolume(100);
+    setIsMuted(false);
     toast.success("Editor reset!");
   };
 
@@ -193,7 +296,6 @@ const VideoEditor = () => {
         console.error('Error sharing:', error);
       }
     } else {
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(videoUrl);
       toast.success("Video link copied to clipboard!");
     }
@@ -214,7 +316,6 @@ const VideoEditor = () => {
 
     setExporting(true);
     try {
-      // Upload video to storage
       const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("posts")
@@ -226,7 +327,6 @@ const VideoEditor = () => {
         .from("posts")
         .getPublicUrl(fileName);
 
-      // Create post
       const { error: postError } = await supabase
         .from("posts")
         .insert({
@@ -256,7 +356,6 @@ const VideoEditor = () => {
 
     setExporting(true);
     try {
-      // Upload to stories storage
       const fileName = `${user.id}/${Date.now()}-story-${videoFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("stories")
@@ -268,7 +367,6 @@ const VideoEditor = () => {
         .from("stories")
         .getPublicUrl(fileName);
 
-      // Create story (expires in 24 hours)
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -293,203 +391,256 @@ const VideoEditor = () => {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const seekTo = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <Sidebar />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="px-4 lg:px-6 py-6">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
+        <div className="px-4 lg:px-6 py-4">
+          {/* Compact Header */}
+          <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-display font-bold gradient-text mb-2">
+              <h1 className="text-2xl font-display font-bold gradient-text">
                 Video Editor ⚡
               </h1>
-              <p className="text-muted-foreground">
-                Create amazing sports content with filters, text, and effects
+              <p className="text-sm text-muted-foreground">
+                Create TikTok-style sports content
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={resetEditor}>
-                <RotateCcw className="mr-2 h-4 w-4" />
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={resetEditor}>
+                <RotateCcw className="mr-1 h-4 w-4" />
                 Reset
               </Button>
               {videoFile && (
                 <>
-                  <Button variant="outline" onClick={handleShare}>
-                    <Share2 className="mr-2 h-4 w-4" />
+                  <Button variant="outline" size="sm" onClick={handleShare}>
+                    <Share2 className="mr-1 h-4 w-4" />
                     Share
                   </Button>
-                  <Button variant="outline" onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
+                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download className="mr-1 h-4 w-4" />
+                    Save
                   </Button>
-                  <Button variant="outline" onClick={handleDelete} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                  <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </>
               )}
-              <Button onClick={exportVideo} disabled={!videoFile}>
-                <Send className="mr-2 h-4 w-4" />
+              <Button size="sm" onClick={exportVideo} disabled={!videoFile}>
+                <Send className="mr-1 h-4 w-4" />
                 Post
               </Button>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Video Preview */}
-            <div className="lg:col-span-2 space-y-4">
-              <Card className="glass-effect">
-                <CardContent className="p-6">
-                  {!videoUrl ? (
-                    <div 
-                      className="aspect-video rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="w-12 h-12 text-muted-foreground mb-4" />
-                      <p className="text-lg font-medium mb-2">Upload a video to start editing</p>
-                      <p className="text-sm text-muted-foreground">Max 50MB • MP4, WebM, MOV</p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="video/*"
-                        onChange={handleFileUpload}
-                        className="hidden"
+          {/* Main Editor - Full Width Layout */}
+          <div className="space-y-4">
+            {/* Video Preview - Full Width */}
+            <Card className="glass-effect w-full">
+              <CardContent className="p-4">
+                {!videoUrl ? (
+                  <div 
+                    className="aspect-video max-h-[60vh] rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-12 h-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium mb-2">Upload a video to start editing</p>
+                    <p className="text-sm text-muted-foreground">Max 50MB • MP4, WebM, MOV</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Video Player */}
+                    <div className="relative aspect-video max-h-[50vh] rounded-xl overflow-hidden bg-black mx-auto">
+                      <video
+                        ref={videoRef}
+                        src={videoUrl}
+                        className="w-full h-full object-contain"
+                        style={getVideoStyles()}
+                        onClick={togglePlayPause}
                       />
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Video Player */}
-                      <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-                        <video
-                          ref={videoRef}
-                          src={videoUrl}
-                          className="w-full h-full object-contain"
-                          style={{ filter: selectedFilter.cssFilter }}
-                          onClick={togglePlayPause}
-                        />
-                        
-                        {/* Text Overlays */}
-                        {textOverlays.map((overlay) => (
-                          <div
-                            key={overlay.id}
-                            className="absolute cursor-move group"
-                            style={{
-                              left: `${overlay.x}%`,
-                              top: `${overlay.y}%`,
-                              fontSize: `${overlay.fontSize}px`,
-                              color: overlay.color,
-                              fontFamily: overlay.fontFamily,
-                              textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                              transform: "translate(-50%, -50%)",
-                            }}
-                            onClick={() => removeOverlay(overlay.id)}
-                          >
-                            {overlay.text}
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-xs bg-background/80 px-2 py-1 rounded whitespace-nowrap">
-                              Click to remove
-                            </span>
-                          </div>
-                        ))}
-
-                        {/* Play/Pause Overlay */}
-                        <div 
-                          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                          onClick={togglePlayPause}
+                      
+                      {/* Text Overlays */}
+                      {textOverlays.map((overlay) => (
+                        <div
+                          key={overlay.id}
+                          className={cn(
+                            "absolute cursor-pointer group",
+                            overlay.animation === "bounce" && "animate-bounce",
+                            overlay.animation === "pulse" && "animate-pulse"
+                          )}
+                          style={{
+                            left: `${overlay.x}%`,
+                            top: `${overlay.y}%`,
+                            fontSize: `${overlay.fontSize}px`,
+                            color: overlay.color,
+                            fontFamily: overlay.fontFamily,
+                            textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                            transform: "translate(-50%, -50%)",
+                          }}
+                          onClick={() => removeOverlay(overlay.id)}
                         >
-                          <div className="w-20 h-20 rounded-full bg-background/80 flex items-center justify-center">
-                            {isPlaying ? (
-                              <Pause className="w-10 h-10" />
-                            ) : (
-                              <Play className="w-10 h-10 ml-1" />
-                            )}
-                          </div>
+                          {overlay.text}
+                          <span className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-xs bg-background/80 px-2 py-1 rounded whitespace-nowrap">
+                            Click to remove
+                          </span>
+                        </div>
+                      ))}
+
+                      {/* Play/Pause Overlay */}
+                      <div 
+                        className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                        onClick={togglePlayPause}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-background/80 flex items-center justify-center">
+                          {isPlaying ? (
+                            <Pause className="w-8 h-8" />
+                          ) : (
+                            <Play className="w-8 h-8 ml-1" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline & Controls */}
+                    <div className="space-y-3">
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <Slider
+                          value={[currentTime]}
+                          onValueChange={([value]) => seekTo(value)}
+                          min={0}
+                          max={duration || 100}
+                          step={0.1}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{formatTime(currentTime)}</span>
+                          <span>{formatTime(duration)}</span>
                         </div>
                       </div>
 
-                      {/* Playback Controls */}
-                      <div className="flex items-center gap-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={togglePlayPause}
-                        >
-                          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        </Button>
+                      {/* Playback Controls Row */}
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={togglePlayPause}>
+                            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setIsMuted(!isMuted)}>
+                            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                          </Button>
+                        </div>
                         
-                        <div className="flex-1">
-                          <label className="text-xs text-muted-foreground mb-1 block">
-                            Speed: {playbackSpeed}x
-                          </label>
+                        <div className="flex items-center gap-2 flex-1 min-w-[150px] max-w-[200px]">
+                          <Timer className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground w-8">{playbackSpeed}x</span>
                           <Slider
                             value={[playbackSpeed]}
                             onValueChange={([value]) => setPlaybackSpeed(value)}
                             min={0.25}
                             max={2}
                             step={0.25}
-                            className="w-full"
+                            className="flex-1"
                           />
                         </div>
-                      </div>
 
-                      {/* Trim Controls */}
-                      {duration > 0 && (
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            <Scissors className="w-4 h-4 text-primary" />
-                            Trim Video: {(duration * trimStart / 100).toFixed(1)}s - {(duration * trimEnd / 100).toFixed(1)}s
-                          </label>
-                          <div className="flex gap-4">
-                            <div className="flex-1">
-                              <Slider
-                                value={[trimStart]}
-                                onValueChange={([value]) => setTrimStart(Math.min(value, trimEnd - 1))}
-                                min={0}
-                                max={100}
-                                step={1}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <Slider
-                                value={[trimEnd]}
-                                onValueChange={([value]) => setTrimEnd(Math.max(value, trimStart + 1))}
-                                min={0}
-                                max={100}
-                                step={1}
-                              />
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2 min-w-[120px] max-w-[150px]">
+                          <Volume2 className="h-4 w-4 text-muted-foreground" />
+                          <Slider
+                            value={[volume]}
+                            onValueChange={([value]) => setVolume(value)}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="flex-1"
+                          />
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant={flipH ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFlipH(!flipH)}
+                          >
+                            <FlipHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant={flipV ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFlipV(!flipV)}
+                          >
+                            <FlipVertical className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRotation((r) => (r + 90) % 360)}
+                          >
+                            <RotateCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Editing Tools */}
-            <div className="space-y-4">
-              <Card className="glass-effect">
-                <CardContent className="p-4">
-                  <Tabs defaultValue="filters" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="filters">
-                        <Sparkles className="w-4 h-4" />
-                      </TabsTrigger>
-                      <TabsTrigger value="text">
-                        <Type className="w-4 h-4" />
-                      </TabsTrigger>
-                      <TabsTrigger value="stickers">
-                        <Sticker className="w-4 h-4" />
-                      </TabsTrigger>
-                    </TabsList>
+            {/* Editing Tools - Full Width Tabs */}
+            <Card className="glass-effect w-full">
+              <CardContent className="p-4">
+                <Tabs defaultValue="filters" className="w-full">
+                  <TabsList className="w-full grid grid-cols-6 mb-4">
+                    <TabsTrigger value="filters" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Filters</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="adjust" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Sun className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Adjust</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="effects" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Wand2 className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Effects</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="text" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Type className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Text</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="stickers" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Sticker className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Stickers</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="trim" className="flex flex-col sm:flex-row items-center gap-1">
+                      <Scissors className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs">Trim</span>
+                    </TabsTrigger>
+                  </TabsList>
 
-                    {/* Filters Tab */}
-                    <TabsContent value="filters" className="space-y-3 mt-4">
-                      <h3 className="font-semibold text-sm">Filters</h3>
-                      <div className="grid grid-cols-2 gap-2">
+                  {/* Filters Tab */}
+                  <TabsContent value="filters">
+                    <ScrollArea className="w-full">
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
                         {filters.map((filter) => (
                           <Button
                             key={filter.id}
@@ -497,21 +648,205 @@ const VideoEditor = () => {
                             size="sm"
                             onClick={() => setSelectedFilter(filter)}
                             className={cn(
-                              "flex flex-col h-auto py-3",
+                              "flex flex-col h-auto py-2 px-2",
                               selectedFilter.id === filter.id && "border-primary bg-primary/10"
                             )}
                           >
-                            <span className="text-2xl mb-1">{filter.emoji}</span>
-                            <span className="text-xs">{filter.name}</span>
+                            <span className="text-xl">{filter.emoji}</span>
+                            <span className="text-[10px] mt-1">{filter.name}</span>
                           </Button>
                         ))}
                       </div>
-                    </TabsContent>
+                    </ScrollArea>
+                  </TabsContent>
 
-                    {/* Text Tab */}
-                    <TabsContent value="text" className="space-y-3 mt-4">
-                      <h3 className="font-semibold text-sm">Add Text</h3>
+                  {/* Adjust Tab */}
+                  <TabsContent value="adjust">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm flex items-center gap-2">
+                            <Sun className="w-4 h-4 text-primary" />
+                            Brightness
+                          </label>
+                          <span className="text-xs text-muted-foreground">{brightness}%</span>
+                        </div>
+                        <Slider
+                          value={[brightness]}
+                          onValueChange={([v]) => setBrightness(v)}
+                          min={0}
+                          max={200}
+                          step={1}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm flex items-center gap-2">
+                            <Contrast className="w-4 h-4 text-primary" />
+                            Contrast
+                          </label>
+                          <span className="text-xs text-muted-foreground">{contrast}%</span>
+                        </div>
+                        <Slider
+                          value={[contrast]}
+                          onValueChange={([v]) => setContrast(v)}
+                          min={0}
+                          max={200}
+                          step={1}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm flex items-center gap-2">
+                            <Palette className="w-4 h-4 text-primary" />
+                            Saturation
+                          </label>
+                          <span className="text-xs text-muted-foreground">{saturation}%</span>
+                        </div>
+                        <Slider
+                          value={[saturation]}
+                          onValueChange={([v]) => setSaturation(v)}
+                          min={0}
+                          max={200}
+                          step={1}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm flex items-center gap-2">
+                            <Droplets className="w-4 h-4 text-primary" />
+                            Blur
+                          </label>
+                          <span className="text-xs text-muted-foreground">{blur}px</span>
+                        </div>
+                        <Slider
+                          value={[blur]}
+                          onValueChange={([v]) => setBlur(v)}
+                          min={0}
+                          max={10}
+                          step={0.5}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm flex items-center gap-2">
+                            <Blend className="w-4 h-4 text-primary" />
+                            Hue Rotate
+                          </label>
+                          <span className="text-xs text-muted-foreground">{hueRotate}°</span>
+                        </div>
+                        <Slider
+                          value={[hueRotate]}
+                          onValueChange={([v]) => setHueRotate(v)}
+                          min={-180}
+                          max={180}
+                          step={1}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setBrightness(100);
+                            setContrast(100);
+                            setSaturation(100);
+                            setBlur(0);
+                            setHueRotate(0);
+                          }}
+                          className="w-full"
+                        >
+                          <RotateCcw className="w-4 h-4 mr-2" />
+                          Reset Adjustments
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Effects Tab */}
+                  <TabsContent value="effects">
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Quick effects presets</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setContrast(130);
+                            setSaturation(120);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Star className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">Enhance</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setPlaybackSpeed(0.5);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Timer className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">Slow Mo</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setBrightness(110);
+                            setContrast(90);
+                            setSaturation(130);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Layers className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">Dreamy</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setContrast(140);
+                            setSaturation(80);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Focus className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">Cinematic</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSaturation(0);
+                            setContrast(120);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Maximize className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">B&W</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSaturation(200);
+                            setBrightness(110);
+                          }}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <Zap className="w-5 h-5 mb-1 text-primary" />
+                          <span className="text-xs">Vibrant</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Text Tab */}
+                  <TabsContent value="text">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-3">
                         <Input
                           placeholder="Enter your text..."
                           value={currentText}
@@ -520,11 +855,40 @@ const VideoEditor = () => {
                             if (e.key === "Enter") addTextOverlay();
                           }}
                         />
-                        <Button 
-                          onClick={addTextOverlay} 
-                          className="w-full"
-                          disabled={!videoUrl}
-                        >
+                        
+                        <div className="flex flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs text-muted-foreground">Color:</label>
+                            <input
+                              type="color"
+                              value={currentTextColor}
+                              onChange={(e) => setCurrentTextColor(e.target.value)}
+                              className="w-8 h-8 rounded cursor-pointer"
+                            />
+                          </div>
+                          
+                          <select
+                            value={currentTextFont}
+                            onChange={(e) => setCurrentTextFont(e.target.value)}
+                            className="px-2 py-1 rounded text-xs bg-muted border-border"
+                          >
+                            {fontOptions.map((font) => (
+                              <option key={font.id} value={font.id}>{font.name}</option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={currentTextAnimation}
+                            onChange={(e) => setCurrentTextAnimation(e.target.value)}
+                            className="px-2 py-1 rounded text-xs bg-muted border-border"
+                          >
+                            {textAnimations.map((anim) => (
+                              <option key={anim.id} value={anim.id}>{anim.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <Button onClick={addTextOverlay} className="w-full" disabled={!videoUrl}>
                           <Check className="mr-2 h-4 w-4" />
                           Add Text
                         </Button>
@@ -535,63 +899,89 @@ const VideoEditor = () => {
                           <p className="text-xs text-muted-foreground">
                             Active overlays: {textOverlays.length}
                           </p>
-                          {textOverlays.map((overlay) => (
-                            <div 
-                              key={overlay.id}
-                              className="text-xs p-2 bg-muted/50 rounded flex justify-between items-center"
-                            >
-                              <span className="truncate">{overlay.text}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeOverlay(overlay.id)}
-                                className="h-6 w-6 p-0"
+                          <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                            {textOverlays.map((overlay) => (
+                              <div 
+                                key={overlay.id}
+                                className="text-xs p-2 bg-muted/50 rounded flex justify-between items-center"
                               >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
+                                <span className="truncate">{overlay.text}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeOverlay(overlay.id)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </TabsContent>
+                    </div>
+                  </TabsContent>
 
-                    {/* Stickers Tab */}
-                    <TabsContent value="stickers" className="space-y-3 mt-4">
-                      <h3 className="font-semibold text-sm">Add Stickers</h3>
-                      <div className="grid grid-cols-4 gap-2">
-                        {stickers.map((sticker, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            className="h-14 text-3xl p-0"
-                            onClick={() => addStickerOverlay(sticker)}
-                            disabled={!videoUrl}
-                          >
-                            {sticker}
-                          </Button>
-                        ))}
+                  {/* Stickers Tab */}
+                  <TabsContent value="stickers">
+                    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                      {stickers.map((sticker, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-12 text-2xl p-0"
+                          onClick={() => addStickerOverlay(sticker)}
+                          disabled={!videoUrl}
+                        >
+                          {sticker}
+                        </Button>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  {/* Trim Tab */}
+                  <TabsContent value="trim">
+                    {duration > 0 ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium flex items-center gap-2">
+                              Start: {formatTime(duration * trimStart / 100)}
+                            </label>
+                            <Slider
+                              value={[trimStart]}
+                              onValueChange={([value]) => setTrimStart(Math.min(value, trimEnd - 1))}
+                              min={0}
+                              max={100}
+                              step={1}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium flex items-center gap-2">
+                              End: {formatTime(duration * trimEnd / 100)}
+                            </label>
+                            <Slider
+                              value={[trimEnd]}
+                              onValueChange={([value]) => setTrimEnd(Math.max(value, trimStart + 1))}
+                              min={0}
+                              max={100}
+                              step={1}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Final duration: {formatTime((duration * (trimEnd - trimStart)) / 100)}
+                        </p>
                       </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-
-              {/* Quick Tips */}
-              <Card className="glass-effect">
-                <CardContent className="p-4 space-y-2">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    Quick Tips
-                  </h3>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Click text/stickers to remove them</li>
-                    <li>• Use speed slider for slow-mo or fast effects</li>
-                    <li>• Trim sliders cut your video duration</li>
-                    <li>• Try combining filters with text overlays</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Upload a video to enable trimming
+                      </p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
@@ -607,19 +997,17 @@ const VideoEditor = () => {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Preview */}
             {videoUrl && (
               <div className="aspect-video rounded-lg overflow-hidden bg-black">
                 <video
                   src={videoUrl}
                   className="w-full h-full object-cover"
-                  style={{ filter: selectedFilter.cssFilter }}
+                  style={getVideoStyles()}
                   controls
                 />
               </div>
             )}
 
-            {/* Caption */}
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Add a caption (optional)
@@ -633,7 +1021,6 @@ const VideoEditor = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={postToFeed}
