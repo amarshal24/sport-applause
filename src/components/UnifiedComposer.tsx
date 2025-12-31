@@ -465,7 +465,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
         }
 
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
+        expiresAt.setHours(expiresAt.getHours() + 8);
 
         const { error } = await supabase.from("stories").insert({
           user_id: user.id,
@@ -477,7 +477,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
         toast({
           title: "Story posted!",
-          description: "Your story is now live for 24 hours.",
+          description: "Your story is now live for 8 hours.",
         });
       } else {
         const { error } = await supabase.from("posts").insert({
