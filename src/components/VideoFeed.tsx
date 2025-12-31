@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1 } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -306,6 +306,7 @@ const VideoFeed = () => {
                       <AutoPlayVideo 
                         src={post.video_url} 
                         postId={post.id}
+                        onDoubleTap={() => handleApplause(post.id)}
                       />
                     ) : post.image_url ? (
                       <img
@@ -447,11 +448,21 @@ const VideoFeed = () => {
   );
 };
 
-// AutoPlay Video Component with Intersection Observer
-const AutoPlayVideo = ({ src, postId }: { src: string; postId: string }) => {
+// AutoPlay Video Component with Intersection Observer and Double-Tap to Like
+const AutoPlayVideo = ({ 
+  src, 
+  postId, 
+  onDoubleTap 
+}: { 
+  src: string; 
+  postId: string;
+  onDoubleTap?: () => void;
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [showHeart, setShowHeart] = useState(false);
+  const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -484,17 +495,43 @@ const AutoPlayVideo = ({ src, postId }: { src: string; postId: string }) => {
     }
   };
 
+  const handleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      setShowHeart(true);
+      onDoubleTap?.();
+      setTimeout(() => setShowHeart(false), 1000);
+    }
+    lastTapRef.current = now;
+  };
+
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" onClick={handleTap}>
       <video
         ref={videoRef}
         src={src}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover cursor-pointer"
         loop
         muted={isMuted}
         playsInline
         preload="metadata"
       />
+      
+      {/* Heart animation on double-tap */}
+      {showHeart && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <Heart 
+            className="h-24 w-24 text-red-500 fill-red-500 animate-scale-in"
+            style={{
+              animation: 'heartPop 1s ease-out forwards'
+            }}
+          />
+        </div>
+      )}
+      
       <div className="absolute top-3 left-3 z-10">
         <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
           <Play className="h-3 w-3" />
@@ -505,7 +542,10 @@ const AutoPlayVideo = ({ src, postId }: { src: string; postId: string }) => {
         size="sm"
         variant="secondary"
         className="absolute bottom-3 right-3 z-10 h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
-        onClick={toggleMute}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleMute();
+        }}
       >
         {isMuted ? (
           <VolumeX className="h-4 w-4" />
@@ -513,6 +553,23 @@ const AutoPlayVideo = ({ src, postId }: { src: string; postId: string }) => {
           <Volume2 className="h-4 w-4" />
         )}
       </Button>
+      
+      <style>{`
+        @keyframes heartPop {
+          0% {
+            transform: scale(0);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };
