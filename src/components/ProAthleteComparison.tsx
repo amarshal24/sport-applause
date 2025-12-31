@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,12 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  History,
+  Save,
+  Trash2,
+  Clock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 // Combine benchmark averages by sport
@@ -91,6 +97,18 @@ interface MatchResult {
   overallAnalysis: string;
 }
 
+interface ComparisonHistoryItem {
+  id: string;
+  sport: string;
+  height: string;
+  weight: string;
+  position: string | null;
+  stats: Record<string, unknown>;
+  matches: AthleteMatch[];
+  overall_analysis: string | null;
+  created_at: string;
+}
+
 const ProAthleteComparison = () => {
   const [sport, setSport] = useState("");
   const [height, setHeight] = useState("");
@@ -98,6 +116,13 @@ const ProAthleteComparison = () => {
   const [position, setPosition] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<MatchResult | null>(null);
+  
+  // History state
+  const [history, setHistory] = useState<ComparisonHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Sport-specific stats
   const [ppg, setPpg] = useState(""); // Points per game (basketball)
@@ -119,6 +144,112 @@ const ProAthleteComparison = () => {
   const [broadJump, setBroadJump] = useState("");
   const [wingspan, setWingspan] = useState("");
   const [agility, setAgility] = useState(""); // 3-cone drill
+
+  // Check auth and load history
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUserId(session?.user?.id ?? null);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load history when user is authenticated and history panel is opened
+  useEffect(() => {
+    if (userId && showHistory) {
+      loadHistory();
+    }
+  }, [userId, showHistory]);
+
+  const loadHistory = async () => {
+    if (!userId) return;
+    
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("comparison_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setHistory(data as unknown as ComparisonHistoryItem[] || []);
+    } catch (error) {
+      console.error("Error loading history:", error);
+      toast.error("Failed to load comparison history");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const saveToHistory = async () => {
+    if (!userId || !result) {
+      toast.error("Please sign in to save comparisons");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const insertData = {
+        user_id: userId,
+        sport,
+        height,
+        weight,
+        position: position || null,
+        stats: buildStats() || {},
+        matches: JSON.parse(JSON.stringify(result.matches)),
+        overall_analysis: result.overallAnalysis,
+      };
+      const { error } = await supabase.from("comparison_history").insert([insertData] as never);
+
+      if (error) throw error;
+      toast.success("Comparison saved to history!");
+      if (showHistory) loadHistory();
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast.error("Failed to save comparison");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteFromHistory = async (id: string) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("comparison_history")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      setHistory((prev) => prev.filter((item) => item.id !== id));
+      toast.success("Comparison deleted");
+    } catch (error) {
+      console.error("Error deleting:", error);
+      toast.error("Failed to delete comparison");
+    }
+  };
+
+  const loadFromHistory = (item: ComparisonHistoryItem) => {
+    setResult({
+      matches: item.matches,
+      overallAnalysis: item.overall_analysis || "",
+    });
+    setSport(item.sport);
+    setHeight(item.height);
+    setWeight(item.weight);
+    setPosition(item.position || "");
+    setShowHistory(false);
+  };
 
   const getPositionOptions = () => {
     switch (sport) {
@@ -236,15 +367,103 @@ const ProAthleteComparison = () => {
   return (
     <Card className="glass-effect">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          Pro Athlete Comparison
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Enter your stats to find professional athletes with similar profiles
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Pro Athlete Comparison
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter your stats to find professional athletes with similar profiles
+            </p>
+          </div>
+          {userId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-2"
+            >
+              <History className="w-4 h-4" />
+              History
+              {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* History Panel */}
+        <AnimatePresence>
+          {showHistory && userId && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 rounded-xl bg-muted/30 border border-border mb-4">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4" />
+                  Recent Comparisons
+                </h4>
+                {isLoadingHistory ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No saved comparisons yet. Run a comparison and save it!
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {history.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors group"
+                      >
+                        <button
+                          onClick={() => loadFromHistory(item)}
+                          className="flex-1 text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {item.sport}
+                            </Badge>
+                            {item.position && (
+                              <Badge variant="outline" className="text-xs">
+                                {item.position}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                            <span>{item.height} • {item.weight}</span>
+                            <span>•</span>
+                            <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {item.matches.length} pro matches found
+                          </div>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteFromHistory(item.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {!result ? (
           <>
             {/* Basic Info */}
@@ -744,9 +963,26 @@ const ProAthleteComparison = () => {
                 ))}
               </div>
 
-              <Button variant="outline" onClick={resetForm} className="w-full">
-                Compare Another Athlete
-              </Button>
+              <div className="flex gap-2">
+                {userId && (
+                  <Button
+                    variant="secondary"
+                    onClick={saveToHistory}
+                    disabled={isSaving}
+                    className="flex-1"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save to History
+                  </Button>
+                )}
+                <Button variant="outline" onClick={resetForm} className="flex-1">
+                  Compare Another Athlete
+                </Button>
+              </div>
             </motion.div>
           </AnimatePresence>
         )}

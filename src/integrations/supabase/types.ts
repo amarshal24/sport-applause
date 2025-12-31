@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      comparison_history: {
+        Row: {
+          created_at: string
+          height: string
+          id: string
+          matches: Json
+          overall_analysis: string | null
+          position: string | null
+          sport: string
+          stats: Json | null
+          user_id: string
+          weight: string
+        }
+        Insert: {
+          created_at?: string
+          height: string
+          id?: string
+          matches: Json
+          overall_analysis?: string | null
+          position?: string | null
+          sport: string
+          stats?: Json | null
+          user_id: string
+          weight: string
+        }
+        Update: {
+          created_at?: string
+          height?: string
+          id?: string
+          matches?: Json
+          overall_analysis?: string | null
+          position?: string | null
+          sport?: string
+          stats?: Json | null
+          user_id?: string
+          weight?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
