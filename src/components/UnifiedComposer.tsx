@@ -105,9 +105,10 @@ const moods: Mood[] = [
 
 interface UnifiedComposerProps {
   onPostCreated?: () => void;
+  initialMode?: "post" | "story";
 }
 
-const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
+const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedComposerProps) => {
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -115,7 +116,11 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [postType, setPostType] = useState<"post" | "story">("post");
+  const [postType, setPostType] = useState<"post" | "story">(initialMode);
+
+  useEffect(() => {
+    setPostType(initialMode);
+  }, [initialMode]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
