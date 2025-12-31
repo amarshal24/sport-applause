@@ -43,6 +43,8 @@ interface MusicTrack {
   isCustom?: boolean;
   trimStart?: number;
   trimEnd?: number;
+  fadeIn?: number;
+  fadeOut?: number;
 }
 
 const musicLibrary: MusicTrack[] = [
@@ -177,21 +179,26 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
     setMusicDialogOpen(false);
   };
 
-  const handleTrimComplete = (startTime: number, endTime: number) => {
+  const handleTrimComplete = (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => {
     if (pendingTrimTrack) {
       const trimmedTrack = {
         ...pendingTrimTrack,
         trimStart: startTime,
         trimEnd: endTime,
+        fadeIn,
+        fadeOut,
       };
       setSelectedMusic(trimmedTrack);
       setShowTrimmer(false);
       setPendingTrimTrack(null);
       
       const duration = Math.round(endTime - startTime);
+      const fadeInfo = fadeIn > 0 || fadeOut > 0 
+        ? ` with ${fadeIn > 0 ? `${fadeIn.toFixed(1)}s fade in` : ''}${fadeIn > 0 && fadeOut > 0 ? ' and ' : ''}${fadeOut > 0 ? `${fadeOut.toFixed(1)}s fade out` : ''}`
+        : '';
       toast({
         title: "Music trimmed!",
-        description: `"${trimmedTrack.title}" (${duration}s) will play when others view your post.`,
+        description: `"${trimmedTrack.title}" (${duration}s)${fadeInfo} will play when others view your post.`,
       });
     }
   };
@@ -477,6 +484,8 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
           music_title: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : null,
           music_start_time: selectedMusic?.trimStart ?? 0,
           music_end_time: selectedMusic?.trimEnd ?? null,
+          music_fade_in: selectedMusic?.fadeIn ?? 0,
+          music_fade_out: selectedMusic?.fadeOut ?? 0,
         });
 
         if (error) throw error;

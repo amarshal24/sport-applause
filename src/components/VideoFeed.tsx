@@ -36,6 +36,8 @@ interface Post {
   music_title: string | null;
   music_start_time: number | null;
   music_end_time: number | null;
+  music_fade_in: number | null;
+  music_fade_out: number | null;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -57,6 +59,9 @@ const VideoFeed = () => {
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const fadeIntervalRef = useRef<number | null>(null);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -72,6 +77,8 @@ const VideoFeed = () => {
           music_title,
           music_start_time,
           music_end_time,
+          music_fade_in,
+          music_fade_out,
           likes_count,
           comments_count,
           created_at,
@@ -123,6 +130,12 @@ const VideoFeed = () => {
   const handlePlayMusic = (post: Post) => {
     if (!post.music_url) return;
 
+    // Clean up previous playback
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+
     if (playingMusic === post.id) {
       audioRef.current?.pause();
       setPlayingMusic(null);
@@ -130,39 +143,76 @@ const VideoFeed = () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      
       const audio = new Audio(post.music_url);
       audioRef.current = audio;
-      audio.volume = musicMuted ? 0 : 0.5;
       
-      // Set start time if trimmed
+      // Set up Web Audio API for fade effects
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaElementSource(audio);
+      gainNodeRef.current = audioContextRef.current.createGain();
+      source.connect(gainNodeRef.current);
+      gainNodeRef.current.connect(audioContextRef.current.destination);
+      
       const startTime = post.music_start_time || 0;
       const endTime = post.music_end_time;
+      const fadeIn = post.music_fade_in || 0;
+      const fadeOut = post.music_fade_out || 0;
       
       audio.currentTime = startTime;
+      
+      // Apply fade in
+      if (fadeIn > 0 && gainNodeRef.current) {
+        gainNodeRef.current.gain.setValueAtTime(0, audioContextRef.current.currentTime);
+        gainNodeRef.current.gain.linearRampToValueAtTime(
+          musicMuted ? 0 : 0.5, 
+          audioContextRef.current.currentTime + fadeIn
+        );
+      } else if (gainNodeRef.current) {
+        gainNodeRef.current.gain.setValueAtTime(musicMuted ? 0 : 0.5, audioContextRef.current.currentTime);
+      }
+      
       audio.play();
       setPlayingMusic(post.id);
       
-      // Handle end time for trimmed music
+      // Handle end time and fade out
       if (endTime) {
-        const checkTime = () => {
+        fadeIntervalRef.current = window.setInterval(() => {
           if (audio.currentTime >= endTime) {
             audio.pause();
             setPlayingMusic(null);
-          } else if (playingMusic === post.id) {
-            requestAnimationFrame(checkTime);
+            if (fadeIntervalRef.current) {
+              clearInterval(fadeIntervalRef.current);
+              fadeIntervalRef.current = null;
+            }
+          } else if (fadeOut > 0 && gainNodeRef.current && audioContextRef.current) {
+            const timeUntilEnd = endTime - audio.currentTime;
+            if (timeUntilEnd <= fadeOut) {
+              const fadeProgress = (timeUntilEnd / fadeOut) * (musicMuted ? 0 : 0.5);
+              gainNodeRef.current.gain.setValueAtTime(fadeProgress, audioContextRef.current.currentTime);
+            }
           }
-        };
-        requestAnimationFrame(checkTime);
+        }, 50);
       }
       
-      audio.onended = () => setPlayingMusic(null);
+      audio.onended = () => {
+        setPlayingMusic(null);
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current);
+          fadeIntervalRef.current = null;
+        }
+      };
     }
   };
 
   const toggleMute = () => {
-    setMusicMuted(!musicMuted);
-    if (audioRef.current) {
-      audioRef.current.volume = musicMuted ? 0.5 : 0;
+    const newMuted = !musicMuted;
+    setMusicMuted(newMuted);
+    if (gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current.gain.setValueAtTime(newMuted ? 0 : 0.5, audioContextRef.current.currentTime);
     }
   };
 
@@ -172,6 +222,12 @@ const VideoFeed = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
       }
     };
   }, []);

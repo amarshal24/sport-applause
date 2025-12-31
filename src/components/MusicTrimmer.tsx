@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface MusicTrimmerProps {
   audioUrl: string;
-  onTrimComplete: (startTime: number, endTime: number) => void;
+  onTrimComplete: (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => void;
   onCancel: () => void;
 }
 
@@ -23,8 +23,12 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
   const [isPlaying, setIsPlaying] = useState(false);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
+  const [fadeIn, setFadeIn] = useState(0);
+  const [fadeOut, setFadeOut] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const animationRef = useRef<number>();
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     const audio = new Audio(audioUrl);
@@ -86,10 +90,47 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
       setIsPlaying(false);
     } else {
       audioRef.current.currentTime = trimStart;
+      
+      // Set up Web Audio API for fade preview
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+        const source = audioContextRef.current.createMediaElementSource(audioRef.current);
+        gainNodeRef.current = audioContextRef.current.createGain();
+        source.connect(gainNodeRef.current);
+        gainNodeRef.current.connect(audioContextRef.current.destination);
+      }
+      
+      // Apply fade in
+      if (gainNodeRef.current && fadeIn > 0) {
+        gainNodeRef.current.gain.setValueAtTime(0, audioContextRef.current!.currentTime);
+        gainNodeRef.current.gain.linearRampToValueAtTime(1, audioContextRef.current!.currentTime + fadeIn);
+      } else if (gainNodeRef.current) {
+        gainNodeRef.current.gain.setValueAtTime(1, audioContextRef.current!.currentTime);
+      }
+      
       audioRef.current.play();
       setIsPlaying(true);
     }
   };
+
+  // Handle fade out during playback
+  useEffect(() => {
+    if (isPlaying && gainNodeRef.current && audioContextRef.current && fadeOut > 0) {
+      const checkFadeOut = () => {
+        if (audioRef.current && gainNodeRef.current && audioContextRef.current) {
+          const timeUntilEnd = trimEnd - audioRef.current.currentTime;
+          if (timeUntilEnd <= fadeOut && timeUntilEnd > 0) {
+            const fadeProgress = timeUntilEnd / fadeOut;
+            gainNodeRef.current.gain.setValueAtTime(fadeProgress, audioContextRef.current.currentTime);
+          }
+        }
+        if (isPlaying) {
+          requestAnimationFrame(checkFadeOut);
+        }
+      };
+      checkFadeOut();
+    }
+  }, [isPlaying, fadeOut, trimEnd]);
 
   const handleTrimChange = (values: number[]) => {
     const [start, end] = values;
@@ -108,8 +149,10 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    onTrimComplete(trimStart, trimEnd);
+    onTrimComplete(trimStart, trimEnd, fadeIn, fadeOut);
   };
+
+  const maxFadeDuration = Math.min((trimEnd - trimStart) / 2, 5);
 
   // Generate waveform bars (visual representation)
   const waveformBars = Array.from({ length: 50 }, (_, i) => ({
@@ -209,6 +252,45 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">End:</span>
           <span className="font-mono font-medium">{formatTime(trimEnd)}</span>
+        </div>
+      </div>
+
+      {/* Fade Controls */}
+      <div className="space-y-3 pt-2 border-t border-border">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Fade Effects</span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Fade In</span>
+              <span className="font-mono font-medium">{fadeIn.toFixed(1)}s</span>
+            </div>
+            <Slider
+              value={[fadeIn]}
+              min={0}
+              max={maxFadeDuration}
+              step={0.1}
+              onValueChange={([value]) => setFadeIn(value)}
+              className="cursor-pointer"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Fade Out</span>
+              <span className="font-mono font-medium">{fadeOut.toFixed(1)}s</span>
+            </div>
+            <Slider
+              value={[fadeOut]}
+              min={0}
+              max={maxFadeDuration}
+              step={0.1}
+              onValueChange={([value]) => setFadeOut(value)}
+              className="cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
