@@ -58,6 +58,16 @@ const ProAthleteComparison = () => {
   const [passingYards, setPassingYards] = useState(""); // Football
   const [rushingYards, setRushingYards] = useState(""); // Football
 
+  // Athletic performance metrics
+  const [verticalJump, setVerticalJump] = useState("");
+  const [fortyYardDash, setFortyYardDash] = useState("");
+  const [benchPress, setBenchPress] = useState("");
+  const [squat, setSquat] = useState("");
+  const [shuttleRun, setShuttleRun] = useState("");
+  const [broadJump, setBroadJump] = useState("");
+  const [wingspan, setWingspan] = useState("");
+  const [agility, setAgility] = useState(""); // 3-cone drill
+
   const getPositionOptions = () => {
     switch (sport) {
       case "Basketball":
@@ -78,6 +88,7 @@ const ProAthleteComparison = () => {
   const buildStats = () => {
     const stats: Record<string, string | number> = {};
     
+    // Sport-specific stats
     if (sport === "Basketball") {
       if (ppg) stats.ppg = parseFloat(ppg);
       if (rpg) stats.rpg = parseFloat(rpg);
@@ -92,6 +103,16 @@ const ProAthleteComparison = () => {
       if (passingYards) stats.passingYards = parseInt(passingYards);
       if (rushingYards) stats.rushingYards = parseInt(rushingYards);
     }
+
+    // Athletic performance metrics (universal)
+    if (verticalJump) stats.verticalJump = `${verticalJump} inches`;
+    if (fortyYardDash) stats.fortyYardDash = `${fortyYardDash} seconds`;
+    if (benchPress) stats.benchPress = `${benchPress} lbs`;
+    if (squat) stats.squat = `${squat} lbs`;
+    if (shuttleRun) stats.shuttleRun = `${shuttleRun} seconds`;
+    if (broadJump) stats.broadJump = `${broadJump} inches`;
+    if (wingspan) stats.wingspan = wingspan;
+    if (agility) stats.threeCone = `${agility} seconds`;
     
     return Object.keys(stats).length > 0 ? stats : undefined;
   };
@@ -149,6 +170,14 @@ const ProAthleteComparison = () => {
     setEra("");
     setPassingYards("");
     setRushingYards("");
+    setVerticalJump("");
+    setFortyYardDash("");
+    setBenchPress("");
+    setSquat("");
+    setShuttleRun("");
+    setBroadJump("");
+    setWingspan("");
+    setAgility("");
     setResult(null);
   };
 
@@ -344,6 +373,97 @@ const ProAthleteComparison = () => {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Athletic Performance Metrics */}
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Athletic Performance (Optional)
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Vertical Jump</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        placeholder="inches"
+                        value={verticalJump}
+                        onChange={(e) => setVerticalJump(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>40-Yard Dash</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="seconds"
+                        value={fortyYardDash}
+                        onChange={(e) => setFortyYardDash(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Bench Press</Label>
+                      <Input
+                        type="number"
+                        placeholder="lbs"
+                        value={benchPress}
+                        onChange={(e) => setBenchPress(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Squat</Label>
+                      <Input
+                        type="number"
+                        placeholder="lbs"
+                        value={squat}
+                        onChange={(e) => setSquat(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Broad Jump</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        placeholder="inches"
+                        value={broadJump}
+                        onChange={(e) => setBroadJump(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Shuttle Run</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="seconds"
+                        value={shuttleRun}
+                        onChange={(e) => setShuttleRun(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>3-Cone Drill</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="seconds"
+                        value={agility}
+                        onChange={(e) => setAgility(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Wingspan</Label>
+                      <Input
+                        placeholder='e.g., 6&apos;8"'
+                        value={wingspan}
+                        onChange={(e) => setWingspan(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}
