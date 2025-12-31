@@ -24,8 +24,15 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
   
   const sounds = useGameSounds();
 
+  // Cleanup sounds on unmount or back
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    return () => {
+      sounds.stopBgMusic();
+    };
+  }, [sounds]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
     if (isPlaying && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(t => {
@@ -39,7 +46,9 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
       sounds.stopBgMusic();
       onScore(score);
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [isPlaying, timeLeft, score, onScore, soundEnabled, sounds]);
 
   useEffect(() => {

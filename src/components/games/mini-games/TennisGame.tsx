@@ -28,11 +28,22 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
   
   const sounds = useGameSounds();
 
+  // Cleanup sounds on unmount or back
+  useEffect(() => {
+    return () => {
+      sounds.stopBgMusic();
+    };
+  }, [sounds]);
+
   const checkHit = useCallback((ballPos: Position) => {
     setIsHitting(true);
     
-    if (playerPosition === ballPos) {
-      setScore(s => s + (streak >= 3 ? 2 : 1));
+    const isHit = playerPosition === ballPos;
+    const currentScore = isHit ? score + (streak >= 3 ? 2 : 1) : score;
+    const newLives = isHit ? lives : lives - 1;
+    
+    if (isHit) {
+      setScore(currentScore);
       setStreak(s => s + 1);
       setResult("hit");
       setSpeed(s => Math.max(800, s - 50));
@@ -43,7 +54,7 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
     } else {
       setResult("miss");
       setStreak(0);
-      setLives(l => l - 1);
+      setLives(newLives);
       if (soundEnabled) sounds.playMiss();
     }
 
@@ -52,41 +63,58 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
       setBallY(20);
       setIsHitting(false);
       
-      if (lives <= 1 && playerPosition !== ballPos) {
+      // Check game over with the updated lives value
+      if (newLives <= 0) {
         setIsPlaying(false);
         if (soundEnabled) sounds.playGameOver();
         sounds.stopBgMusic();
-        onScore(score + (playerPosition === ballPos ? 1 : 0));
+        onScore(currentScore);
       }
     }, 800);
   }, [playerPosition, streak, lives, score, onScore, soundEnabled, sounds]);
 
   useEffect(() => {
-    if (!isPlaying || isHitting) return;
+    if (!isPlaying || isHitting || lives <= 0) return;
+
+    let ballInterval: ReturnType<typeof setInterval>;
+    let isCancelled = false;
 
     const serveBall = () => {
+      if (isCancelled) return;
+      
       const positions: Position[] = ["left", "center", "right"];
       const newPosition = positions[Math.floor(Math.random() * positions.length)];
       setBallPosition(newPosition);
       setBallY(20);
 
-      const interval = setInterval(() => {
+      ballInterval = setInterval(() => {
+        if (isCancelled) {
+          clearInterval(ballInterval);
+          return;
+        }
         setBallY(prev => {
           if (prev >= 75) {
-            clearInterval(interval);
-            setTimeout(() => checkHit(newPosition), 100);
+            clearInterval(ballInterval);
+            if (!isCancelled) {
+              setTimeout(() => {
+                if (!isCancelled) checkHit(newPosition);
+              }, 100);
+            }
             return 75;
           }
           return prev + 5;
         });
       }, speed / 20);
-
-      return () => clearInterval(interval);
     };
 
     const timeout = setTimeout(serveBall, 500);
-    return () => clearTimeout(timeout);
-  }, [isPlaying, isHitting, speed, checkHit]);
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeout);
+      if (ballInterval) clearInterval(ballInterval);
+    };
+  }, [isPlaying, isHitting, speed, checkHit, lives]);
 
   const startGame = () => {
     setScore(0);

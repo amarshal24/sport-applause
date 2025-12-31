@@ -26,6 +26,13 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
   
   const sounds = useGameSounds();
 
+  // Cleanup sounds on unmount or back
+  useEffect(() => {
+    return () => {
+      sounds.stopBgMusic();
+    };
+  }, [sounds]);
+
   useEffect(() => {
     if (round >= maxRounds && isPlaying) {
       setIsPlaying(false);
@@ -39,6 +46,7 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
     setScore(0);
     setRound(0);
     setIsPlaying(true);
+    setIsKicking(false);
     setBallPosition(null);
     setGoalkeeperPosition(null);
     setResult(null);
