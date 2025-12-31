@@ -1,12 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow } from "date-fns";
 
 const SPORTS_CATEGORIES = [
-  "All Sports",
+  "All",
   "Basketball",
   "Football",
   "Soccer",
@@ -21,127 +24,86 @@ const SPORTS_CATEGORIES = [
   "Volleyball",
   "Track & Field",
   "Swimming",
-  "Cycling",
-  "Skateboarding",
-  "Surfing",
-  "Snowboarding",
-  "Skiing",
-  "Wrestling",
-  "Gymnastics",
-  "Lacrosse",
-  "Softball",
-  "Badminton",
-  "Table Tennis",
-  "Martial Arts",
-  "Motorsports",
-  "Esports",
-  "Media",
   "Fitness",
 ];
 
-const MOCK_VIDEOS = [
-  {
-    id: 1,
-    sport: "Basketball",
-    title: "Incredible buzzer beater from downtown!",
-    author: "CourtKing23",
-    authorType: "Athlete",
-    applause: 12500,
-    thumbnail: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
-  },
-  {
-    id: 2,
-    sport: "Football",
-    title: "Game-winning touchdown catch",
-    author: "GridironGuru",
-    authorType: "Commentator",
-    applause: 8900,
-    thumbnail: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80",
-  },
-  {
-    id: 3,
-    sport: "Soccer",
-    title: "Impossible goal from midfield",
-    author: "FootyFanatic",
-    authorType: "Entertainment",
-    applause: 15200,
-    thumbnail: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80",
-  },
-  {
-    id: 4,
-    sport: "Baseball",
-    title: "Walk-off home run in the 9th!",
-    author: "DiamondPro",
-    authorType: "Athlete",
-    applause: 7300,
-    thumbnail: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&q=80",
-  },
-  {
-    id: 5,
-    sport: "Media",
-    title: "Breaking down the championship game | Sports Talk",
-    author: "TheSportsPod",
-    authorType: "Media",
-    applause: 9800,
-    thumbnail: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80",
-  },
-  {
-    id: 6,
-    sport: "Media",
-    title: "Weekly NFL Power Rankings Podcast",
-    author: "GridironTalk",
-    authorType: "Media",
-    applause: 6500,
-    thumbnail: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&q=80",
-  },
-  {
-    id: 7,
-    sport: "Fitness",
-    title: "30-min HIIT workout for athletes",
-    author: "FitCoachMike",
-    authorType: "Fitness",
-    applause: 11400,
-    thumbnail: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
-  },
-  {
-    id: 8,
-    sport: "Fitness",
-    title: "Pre-game warm up routine",
-    author: "AthletePro",
-    authorType: "Fitness",
-    applause: 8200,
-    thumbnail: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80",
-  },
-];
+interface Post {
+  id: string;
+  content: string;
+  image_url: string | null;
+  video_url: string | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    sports: string[] | null;
+  };
+}
 
 const VideoFeed = () => {
-  const [selectedSport, setSelectedSport] = useState("All Sports");
-  const [applausedVideos, setApplausedVideos] = useState<number[]>([]);
+  const [selectedSport, setSelectedSport] = useState("All");
+  const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url,
+            sports
+          )
+        `)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts, refreshKey]);
 
   const handleRefresh = useCallback(async () => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshKey(prev => prev + 1);
+    await fetchPosts();
     toast.success("Feed refreshed!");
-  }, []);
+  }, [fetchPosts]);
 
   const { containerRef, isRefreshing, pullDistance, pullProgress } = usePullToRefresh({
     onRefresh: handleRefresh,
     threshold: 80,
   });
 
-  const handleApplause = (videoId: number) => {
-    if (applausedVideos.includes(videoId)) {
-      setApplausedVideos(applausedVideos.filter(id => id !== videoId));
+  const handleApplause = (postId: string) => {
+    if (applausedVideos.includes(postId)) {
+      setApplausedVideos(applausedVideos.filter(id => id !== postId));
     } else {
-      setApplausedVideos([...applausedVideos, videoId]);
+      setApplausedVideos([...applausedVideos, postId]);
     }
   };
 
-  const filteredVideos = selectedSport === "All Sports" 
-    ? MOCK_VIDEOS 
-    : MOCK_VIDEOS.filter(v => v.sport === selectedSport);
+  const filteredPosts = selectedSport === "All" 
+    ? posts 
+    : posts.filter(p => p.profiles?.sports?.some(s => 
+        s.toLowerCase().includes(selectedSport.toLowerCase())
+      ));
 
   return (
     <section ref={containerRef} className="relative">
@@ -189,65 +151,110 @@ const VideoFeed = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
-          {filteredVideos.map((video) => (
-            <div
-              key={video.id}
-              className="group bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:shadow-glow"
-            >
-              <div className="relative aspect-[9/16] overflow-hidden">
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                />
-                <Badge className="absolute top-3 left-3 bg-primary/90 text-primary-foreground z-10">
-                  {video.sport}
-                </Badge>
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No posts yet. Be the first to share!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
+            {filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className="group bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:shadow-glow"
+              >
+                {/* Video or Image */}
+                {(post.video_url || post.image_url) && (
+                  <div className="relative aspect-video overflow-hidden bg-muted">
+                    {post.video_url ? (
+                      <>
+                        <video
+                          src={post.video_url}
+                          className="w-full h-full object-cover"
+                          controls
+                          preload="metadata"
+                          playsInline
+                        />
+                        <div className="absolute top-3 left-3 z-10">
+                          <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
+                            <Play className="h-3 w-3" />
+                            Video
+                          </Badge>
+                        </div>
+                      </>
+                    ) : post.image_url ? (
+                      <img
+                        src={post.image_url}
+                        alt="Post media"
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : null}
+                  </div>
+                )}
 
-              <div className="p-4">
-                <h3 className="font-semibold mb-2 line-clamp-2">{video.title}</h3>
-                
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                  <span className="flex items-center gap-1">
-                    {video.author}
-                    <Badge variant="outline" className="ml-1 text-xs">
-                      {video.authorType}
-                    </Badge>
-                  </span>
+                <div className="p-4">
+                  {/* Author info */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={post.profiles?.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {post.profiles?.username?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {post.profiles?.full_name || post.profiles?.username || "Anonymous"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                    {post.profiles?.sports?.[0] && (
+                      <Badge variant="outline" className="text-xs">
+                        {post.profiles.sports[0]}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  {post.content && (
+                    <p className="text-sm mb-3 line-clamp-3">{post.content}</p>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-4 pt-2 border-t border-border">
+                    <button
+                      onClick={() => handleApplause(post.id)}
+                      className={`flex items-center gap-1 transition-colors ${
+                        applausedVideos.includes(post.id)
+                          ? "text-primary"
+                          : "text-muted-foreground hover:text-primary"
+                      }`}
+                    >
+                      <span className="text-lg">👏</span>
+                      <span className="text-sm font-medium">
+                        {post.likes_count + (applausedVideos.includes(post.id) ? 1 : 0)}
+                      </span>
+                    </button>
+
+                    <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <MessageSquare className="h-5 w-5" />
+                      <span className="text-sm">{post.comments_count}</span>
+                    </button>
+
+                    <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleApplause(video.id)}
-                    className={`flex items-center gap-1 transition-colors ${
-                      applausedVideos.includes(video.id)
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-primary"
-                    }`}
-                  >
-                    <span className="text-lg">👏</span>
-                    <span className="text-sm font-medium">
-                      {video.applause + (applausedVideos.includes(video.id) ? 1 : 0)}
-                    </span>
-                  </button>
-
-                  <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="text-sm">Comment</span>
-                  </button>
-
-                  <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
