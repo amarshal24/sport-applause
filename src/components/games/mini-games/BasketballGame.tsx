@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGameSounds } from "@/hooks/useGameSounds";
 
 interface Props {
   onBack: () => void;
@@ -19,19 +20,27 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
   const [shotResult, setShotResult] = useState<"score" | "miss" | null>(null);
   const [hoopPosition, setHoopPosition] = useState(50);
   const [streak, setStreak] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  const sounds = useGameSounds();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isPlaying && timeLeft > 0) {
       timer = setInterval(() => {
-        setTimeLeft(t => t - 1);
+        setTimeLeft(t => {
+          if (soundEnabled && t <= 5 && t > 0) sounds.playTick();
+          return t - 1;
+        });
       }, 1000);
     } else if (timeLeft === 0 && isPlaying) {
       setIsPlaying(false);
+      if (soundEnabled) sounds.playGameOver();
+      sounds.stopBgMusic();
       onScore(score);
     }
     return () => clearInterval(timer);
-  }, [isPlaying, timeLeft, score, onScore]);
+  }, [isPlaying, timeLeft, score, onScore, soundEnabled, sounds]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -51,27 +60,36 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
     setIsPlaying(true);
     setStreak(0);
     setBallPosition({ x: 50, y: 80 });
+    if (soundEnabled) {
+      sounds.playGameStart();
+      sounds.startBgMusic("fast");
+    }
   };
 
   const shoot = useCallback(() => {
     if (!isPlaying || isShot) return;
 
     setIsShot(true);
+    if (soundEnabled) sounds.playShoot();
     const accuracy = Math.abs(ballPosition.x - hoopPosition);
-    const isScore = accuracy < 15;
+    const isScoreResult = accuracy < 15;
 
-    // Animate ball to hoop
     setBallPosition({ x: hoopPosition, y: 25 });
 
     setTimeout(() => {
-      if (isScore) {
+      if (isScoreResult) {
         const points = streak >= 2 ? 3 : 2;
         setScore(s => s + points);
         setShotResult("score");
         setStreak(s => s + 1);
+        if (soundEnabled) {
+          sounds.playScore();
+          if (streak >= 2) sounds.playStreak(streak);
+        }
       } else {
         setShotResult("miss");
         setStreak(0);
+        if (soundEnabled) sounds.playMiss();
       }
 
       setTimeout(() => {
@@ -80,14 +98,24 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
         setBallPosition({ x: 30 + Math.random() * 40, y: 80 });
       }, 500);
     }, 400);
-  }, [isPlaying, isShot, ballPosition.x, hoopPosition, streak]);
+  }, [isPlaying, isShot, ballPosition.x, hoopPosition, streak, soundEnabled, sounds]);
 
   const moveBall = (direction: "left" | "right") => {
     if (!isPlaying || isShot) return;
+    if (soundEnabled) sounds.playClick();
     setBallPosition(prev => ({
       ...prev,
       x: Math.max(10, Math.min(90, prev.x + (direction === "left" ? -10 : 10)))
     }));
+  };
+
+  const toggleSound = () => {
+    if (soundEnabled) {
+      sounds.stopBgMusic();
+    } else if (isPlaying) {
+      sounds.startBgMusic("fast");
+    }
+    setSoundEnabled(prev => !prev);
   };
 
   return (
@@ -99,6 +127,14 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
             Back
           </Button>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSound}
+              className="text-white hover:bg-white/20 h-8 w-8"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </Button>
             <div className="text-center">
               <div className="text-2xl font-bold">{score}</div>
               <div className="text-xs text-white/70">Score</div>
@@ -121,23 +157,18 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
           className="relative h-80 bg-gradient-to-b from-blue-400 to-blue-600 overflow-hidden cursor-pointer"
           onClick={shoot}
         >
-          {/* Court floor */}
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-orange-700 to-orange-500" />
           
-          {/* Backboard */}
           <motion.div
             className="absolute top-8 w-16 h-12 bg-white border-4 border-red-500 rounded"
             style={{ left: `calc(${hoopPosition}% - 32px)` }}
             animate={{ left: `calc(${hoopPosition}% - 32px)` }}
             transition={{ type: "spring", stiffness: 100 }}
           >
-            {/* Hoop */}
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-3 border-4 border-orange-500 rounded-full" />
-            {/* Net */}
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-2xl">🥅</div>
           </motion.div>
 
-          {/* Basketball */}
           <motion.div
             className="absolute text-5xl"
             style={{ 
@@ -157,7 +188,6 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
             🏀
           </motion.div>
 
-          {/* Shot result */}
           <AnimatePresence>
             {shotResult && (
               <motion.div
@@ -173,7 +203,6 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
             )}
           </AnimatePresence>
 
-          {/* Instructions overlay */}
           {!isPlaying && (
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
               <motion.div
@@ -198,7 +227,6 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
           )}
         </div>
 
-        {/* Controls */}
         {isPlaying && (
           <div className="p-4 bg-muted/30 flex justify-center gap-4">
             <Button 
@@ -227,7 +255,6 @@ const BasketballGame = ({ onBack, onScore, highScore }: Props) => {
           </div>
         )}
 
-        {/* Game over */}
         {!isPlaying && timeLeft === 0 && (
           <div className="p-6 text-center">
             <h3 className="text-2xl font-bold mb-2">Game Over!</h3>
