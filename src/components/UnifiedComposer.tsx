@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload } from "lucide-react";
+import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } from "lucide-react";
+import MusicTrimmer from "@/components/MusicTrimmer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
@@ -40,6 +41,8 @@ interface MusicTrack {
   mood: string;
   url: string;
   isCustom?: boolean;
+  trimStart?: number;
+  trimEnd?: number;
 }
 
 const musicLibrary: MusicTrack[] = [
@@ -120,6 +123,8 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   const [customMusicFile, setCustomMusicFile] = useState<File | null>(null);
   const [customMusicPreview, setCustomMusicPreview] = useState<string | null>(null);
   const [musicUploadProgress, setMusicUploadProgress] = useState<number>(0);
+  const [showTrimmer, setShowTrimmer] = useState(false);
+  const [pendingTrimTrack, setPendingTrimTrack] = useState<MusicTrack | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
@@ -161,16 +166,47 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   };
 
   const handleSelectMusic = (track: MusicTrack) => {
-    setSelectedMusic(track);
     if (audioRef.current) {
       audioRef.current.pause();
     }
     setPreviewingTrack(null);
+    
+    // For library tracks, allow optional trimming
+    setPendingTrimTrack(track);
+    setShowTrimmer(true);
     setMusicDialogOpen(false);
-    toast({
-      title: "Music attached!",
-      description: `"${track.title}" will play when others view your post.`,
-    });
+  };
+
+  const handleTrimComplete = (startTime: number, endTime: number) => {
+    if (pendingTrimTrack) {
+      const trimmedTrack = {
+        ...pendingTrimTrack,
+        trimStart: startTime,
+        trimEnd: endTime,
+      };
+      setSelectedMusic(trimmedTrack);
+      setShowTrimmer(false);
+      setPendingTrimTrack(null);
+      
+      const duration = Math.round(endTime - startTime);
+      toast({
+        title: "Music trimmed!",
+        description: `"${trimmedTrack.title}" (${duration}s) will play when others view your post.`,
+      });
+    }
+  };
+
+  const handleTrimCancel = () => {
+    // If canceling trim, still add the music but without trim
+    if (pendingTrimTrack) {
+      setSelectedMusic(pendingTrimTrack);
+      toast({
+        title: "Music attached!",
+        description: `"${pendingTrimTrack.title}" will play when others view your post.`,
+      });
+    }
+    setShowTrimmer(false);
+    setPendingTrimTrack(null);
   };
 
   const handleRemoveMusic = () => {
@@ -232,13 +268,10 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
           isCustom: true,
         };
         
-        setSelectedMusic(customTrack);
+        // Show trimmer for custom uploads
+        setPendingTrimTrack(customTrack);
+        setShowTrimmer(true);
         setMusicDialogOpen(false);
-        
-        toast({
-          title: "Music attached!",
-          description: `"${fileName}" will play when others view your post.`,
-        });
       });
     }
   };
@@ -442,6 +475,8 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
           video_url: videoUrl,
           music_url: musicUrl,
           music_title: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : null,
+          music_start_time: selectedMusic?.trimStart ?? 0,
+          music_end_time: selectedMusic?.trimEnd ?? null,
         });
 
         if (error) throw error;
@@ -562,8 +597,19 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
               </div>
             )}
 
+            {/* Music Trimmer Dialog */}
+            {showTrimmer && pendingTrimTrack && (
+              <div className="mb-3 p-4 bg-card border border-border rounded-lg animate-fade-in">
+                <MusicTrimmer
+                  audioUrl={pendingTrimTrack.url}
+                  onTrimComplete={handleTrimComplete}
+                  onCancel={handleTrimCancel}
+                />
+              </div>
+            )}
+
             {/* Selected Music Preview */}
-            {selectedMusic && (
+            {selectedMusic && !showTrimmer && (
               <div className="mb-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between animate-fade-in">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -571,16 +617,36 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
                   </div>
                   <div>
                     <p className="text-sm font-medium">{selectedMusic.title}</p>
-                    <p className="text-xs text-muted-foreground">{selectedMusic.artist} • {selectedMusic.duration}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedMusic.artist} • {selectedMusic.duration}
+                      {selectedMusic.trimStart !== undefined && selectedMusic.trimEnd !== undefined && (
+                        <span className="ml-1 text-primary">
+                          (trimmed: {Math.round(selectedMusic.trimEnd - selectedMusic.trimStart)}s)
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleRemoveMusic}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setPendingTrimTrack(selectedMusic);
+                      setShowTrimmer(true);
+                    }}
+                    title="Edit trim"
+                  >
+                    <Scissors className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleRemoveMusic}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
 
