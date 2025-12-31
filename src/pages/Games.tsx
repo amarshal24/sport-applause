@@ -3,11 +3,11 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Trophy, Timer, Target, Zap, Medal } from "lucide-react";
+import { Brain, Trophy, Timer, Target, Zap, Sparkles } from "lucide-react";
 import { useState } from "react";
 import SportsTrivia from "@/components/games/SportsTrivia";
 import GuessTheSport from "@/components/games/GuessTheSport";
-import AthleteMatch from "@/components/games/AthleteMatch";
+import SportsAnimator from "@/components/games/SportsAnimator";
 
 const Games = () => {
   const { t } = useTranslation();
@@ -31,12 +31,12 @@ const Games = () => {
       component: GuessTheSport,
     },
     {
-      id: "athlete-match",
-      title: t("games.athleteMatch"),
-      description: t("games.matchDesc"),
-      icon: Medal,
-      color: "from-orange-500 to-red-500",
-      component: AthleteMatch,
+      id: "sports-animator",
+      title: t("games.sportsAnimator"),
+      description: t("games.animatorDesc"),
+      icon: Sparkles,
+      color: "from-pink-500 to-purple-500",
+      component: SportsAnimator,
     },
   ];
 
@@ -116,11 +116,11 @@ const Games = () => {
                   </div>
                   <div className="space-y-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Medal className="w-5 h-5 text-primary" />
+                      <Sparkles className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold">{t("games.athleteMatch")}</h3>
+                    <h3 className="font-semibold">{t("games.sportsAnimator")}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {t("games.matchDesc")}
+                      {t("games.animatorDesc")}
                     </p>
                   </div>
                 </div>
