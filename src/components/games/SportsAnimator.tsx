@@ -7,6 +7,10 @@ import BasketballGame from "./mini-games/BasketballGame";
 import SoccerGame from "./mini-games/SoccerGame";
 import FootballGame from "./mini-games/FootballGame";
 import TennisGame from "./mini-games/TennisGame";
+import HockeyGame from "./mini-games/HockeyGame";
+import BaseballGame from "./mini-games/BaseballGame";
+import GolfGame from "./mini-games/GolfGame";
+import VolleyballGame from "./mini-games/VolleyballGame";
 
 interface Props {
   onBack: () => void;
@@ -25,6 +29,10 @@ const sportGames: SportGame[] = [
   { id: "soccer", name: "Soccer", emoji: "⚽", color: "from-green-400 to-green-600", description: "Score penalty kicks!" },
   { id: "football", name: "Football", emoji: "🏈", color: "from-amber-600 to-yellow-500", description: "Throw the perfect pass!" },
   { id: "tennis", name: "Tennis", emoji: "🎾", color: "from-yellow-400 to-lime-500", description: "Return the volley!" },
+  { id: "hockey", name: "Hockey", emoji: "🏒", color: "from-blue-400 to-cyan-500", description: "Shoot past the goalie!" },
+  { id: "baseball", name: "Baseball", emoji: "⚾", color: "from-red-400 to-red-600", description: "Hit home runs!" },
+  { id: "golf", name: "Golf", emoji: "⛳", color: "from-emerald-400 to-green-600", description: "Sink putts in 9 holes!" },
+  { id: "volleyball", name: "Volleyball", emoji: "🏐", color: "from-sky-400 to-blue-500", description: "Keep the rally going!" },
 ];
 
 const SportsAnimator = ({ onBack }: Props) => {
@@ -52,6 +60,14 @@ const SportsAnimator = ({ onBack }: Props) => {
         return <FootballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("football", s)} highScore={highScores.football || 0} />;
       case "tennis":
         return <TennisGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("tennis", s)} highScore={highScores.tennis || 0} />;
+      case "hockey":
+        return <HockeyGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("hockey", s)} highScore={highScores.hockey || 0} />;
+      case "baseball":
+        return <BaseballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("baseball", s)} highScore={highScores.baseball || 0} />;
+      case "golf":
+        return <GolfGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("golf", s)} highScore={highScores.golf || 0} />;
+      case "volleyball":
+        return <VolleyballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("volleyball", s)} highScore={highScores.volleyball || 0} />;
       default:
         return null;
     }
