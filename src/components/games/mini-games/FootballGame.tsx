@@ -25,8 +25,15 @@ const FootballGame = ({ onBack, onScore, highScore }: Props) => {
   
   const sounds = useGameSounds();
 
+  // Cleanup sounds on unmount or back
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    return () => {
+      sounds.stopBgMusic();
+    };
+  }, [sounds]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
     if (isPlaying && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(t => {
@@ -36,11 +43,14 @@ const FootballGame = ({ onBack, onScore, highScore }: Props) => {
       }, 1000);
     } else if (timeLeft === 0 && isPlaying) {
       setIsPlaying(false);
+      setIsPoweringUp(false);
       if (soundEnabled) sounds.playGameOver();
       sounds.stopBgMusic();
       onScore(score);
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [isPlaying, timeLeft, score, onScore, soundEnabled, sounds]);
 
   useEffect(() => {
@@ -57,7 +67,7 @@ const FootballGame = ({ onBack, onScore, highScore }: Props) => {
   }, [isPlaying, ballThrown]);
 
   useEffect(() => {
-    let powerInterval: NodeJS.Timeout;
+    let powerInterval: ReturnType<typeof setInterval>;
     if (isPoweringUp && isPlaying) {
       powerInterval = setInterval(() => {
         setPower(p => {
@@ -67,7 +77,9 @@ const FootballGame = ({ onBack, onScore, highScore }: Props) => {
         });
       }, 50);
     }
-    return () => clearInterval(powerInterval);
+    return () => {
+      if (powerInterval) clearInterval(powerInterval);
+    };
   }, [isPoweringUp, isPlaying, soundEnabled, sounds]);
 
   const startGame = () => {
@@ -271,12 +283,12 @@ const FootballGame = ({ onBack, onScore, highScore }: Props) => {
             </div>
             <Button 
               size="lg"
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-              onMouseDown={startPowerUp}
-              onMouseUp={throwBall}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white select-none touch-none"
+              onMouseDown={(e) => { e.preventDefault(); startPowerUp(); }}
+              onMouseUp={(e) => { e.preventDefault(); throwBall(); }}
               onMouseLeave={() => isPoweringUp && throwBall()}
-              onTouchStart={startPowerUp}
-              onTouchEnd={throwBall}
+              onTouchStart={(e) => { e.preventDefault(); startPowerUp(); }}
+              onTouchEnd={(e) => { e.preventDefault(); throwBall(); }}
             >
               {isPoweringUp ? "RELEASE TO THROW! 🏈" : "HOLD TO POWER UP"}
             </Button>
