@@ -62,6 +62,32 @@ const backgrounds = [
   { id: "rainbow", name: "Rainbow", emoji: "🌈", gradient: "from-red-400 via-yellow-400 to-blue-400" },
 ];
 
+const expressions = [
+  { id: "happy", name: "Happy", emoji: "😊" },
+  { id: "excited", name: "Excited", emoji: "🤩" },
+  { id: "cool", name: "Cool", emoji: "😎" },
+  { id: "determined", name: "Determined", emoji: "😤" },
+  { id: "celebrating", name: "Celebrating", emoji: "🥳" },
+  { id: "focused", name: "Focused", emoji: "🧐" },
+];
+
+const accessories = [
+  { id: "none", name: "None", emoji: "❌" },
+  { id: "crown", name: "Crown", emoji: "👑" },
+  { id: "medal", name: "Medal", emoji: "🏅" },
+  { id: "trophy", name: "Trophy", emoji: "🏆" },
+  { id: "star", name: "Star", emoji: "⭐" },
+  { id: "fire", name: "Fire", emoji: "🔥" },
+  { id: "lightning", name: "Lightning", emoji: "⚡" },
+  { id: "rainbow", name: "Rainbow", emoji: "🌈" },
+];
+
+const sizes = [
+  { id: "small", name: "Small", scale: 0.6 },
+  { id: "medium", name: "Medium", scale: 1 },
+  { id: "large", name: "Large", scale: 1.4 },
+];
+
 const getAnimationVariants = (animationId: string) => {
   switch (animationId) {
     case "bounce":
@@ -105,6 +131,9 @@ const SportsAnimator = ({ onBack }: Props) => {
   const [selectedCharacter, setSelectedCharacter] = useState<Character>(characters[0]);
   const [selectedAnimation, setSelectedAnimation] = useState<string>("bounce");
   const [selectedBackground, setSelectedBackground] = useState(backgrounds[0]);
+  const [selectedExpression, setSelectedExpression] = useState(expressions[0]);
+  const [selectedAccessory, setSelectedAccessory] = useState(accessories[0]);
+  const [selectedSize, setSelectedSize] = useState(sizes[1]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -150,6 +179,9 @@ const SportsAnimator = ({ onBack }: Props) => {
     setSelectedCharacter(characters[0]);
     setSelectedAnimation("bounce");
     setSelectedBackground(backgrounds[0]);
+    setSelectedExpression(expressions[0]);
+    setSelectedAccessory(accessories[0]);
+    setSelectedSize(sizes[1]);
     setIsPlaying(true);
   };
 
@@ -382,15 +414,42 @@ const SportsAnimator = ({ onBack }: Props) => {
               )}
             </AnimatePresence>
 
-            {/* Character */}
+            {/* Character with expression and accessory */}
             <motion.div
-              className="text-8xl cursor-pointer select-none"
+              className="cursor-pointer select-none flex flex-col items-center relative"
+              style={{ fontSize: `${6 * selectedSize.scale}rem` }}
               animate={isPlaying ? getAnimationVariants(selectedAnimation) : {}}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handlePlay}
             >
-              {selectedCharacter.emoji}
+              {/* Accessory above */}
+              {selectedAccessory.id !== "none" && (
+                <motion.div 
+                  className="absolute -top-8"
+                  style={{ fontSize: `${2.5 * selectedSize.scale}rem` }}
+                  animate={{ 
+                    y: [0, -5, 0],
+                    rotate: selectedAccessory.id === "fire" || selectedAccessory.id === "lightning" ? [-5, 5, -5] : 0
+                  }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  {selectedAccessory.emoji}
+                </motion.div>
+              )}
+              
+              {/* Main character */}
+              <span>{selectedCharacter.emoji}</span>
+              
+              {/* Expression below */}
+              <motion.div 
+                className="absolute -bottom-6"
+                style={{ fontSize: `${2 * selectedSize.scale}rem` }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              >
+                {selectedExpression.emoji}
+              </motion.div>
             </motion.div>
 
             {/* Equipment floating around */}
@@ -601,10 +660,78 @@ const SportsAnimator = ({ onBack }: Props) => {
             </div>
           </div>
 
+          {/* Expression Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-center">Choose Expression</h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              {expressions.map((expr) => (
+                <motion.button
+                  key={expr.id}
+                  onClick={() => setSelectedExpression(expr)}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    selectedExpression.id === expr.id 
+                      ? 'border-primary bg-primary/20 shadow-lg' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-2xl mb-1">{expr.emoji}</div>
+                  <div className="text-xs font-medium">{expr.name}</div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          {/* Accessory Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-center">Choose Accessory</h3>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {accessories.map((acc) => (
+                <motion.button
+                  key={acc.id}
+                  onClick={() => setSelectedAccessory(acc)}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    selectedAccessory.id === acc.id 
+                      ? 'border-primary bg-primary/20 shadow-lg' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-2xl mb-1">{acc.emoji}</div>
+                  <div className="text-xs font-medium">{acc.name}</div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          {/* Size Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-center">Choose Size</h3>
+            <div className="flex justify-center gap-4">
+              {sizes.map((size) => (
+                <motion.button
+                  key={size.id}
+                  onClick={() => setSelectedSize(size)}
+                  className={`px-6 py-3 rounded-xl border-2 transition-all ${
+                    selectedSize.id === size.id 
+                      ? 'border-primary bg-primary/20 shadow-lg' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-sm font-medium">{size.name}</div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
           {/* Fun tip */}
           <div className="text-center p-4 bg-primary/10 rounded-xl">
             <p className="text-sm text-muted-foreground">
-              💡 <span className="font-medium">Tip:</span> {user ? "Save to your gallery to keep your favorite creations!" : "Sign in to save creations to your personal gallery!"} Tap the character to see confetti!
+              💡 <span className="font-medium">Tip:</span> {user ? "Save to your gallery to keep your favorite creations!" : "Sign in to save creations to your personal gallery!"} Mix expressions and accessories for unique characters!
             </p>
           </div>
         </CardContent>
