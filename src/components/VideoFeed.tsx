@@ -34,6 +34,8 @@ interface Post {
   video_url: string | null;
   music_url: string | null;
   music_title: string | null;
+  music_start_time: number | null;
+  music_end_time: number | null;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -68,6 +70,8 @@ const VideoFeed = () => {
           video_url,
           music_url,
           music_title,
+          music_start_time,
+          music_end_time,
           likes_count,
           comments_count,
           created_at,
@@ -126,11 +130,32 @@ const VideoFeed = () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      audioRef.current = new Audio(post.music_url);
-      audioRef.current.volume = musicMuted ? 0 : 0.5;
-      audioRef.current.play();
+      const audio = new Audio(post.music_url);
+      audioRef.current = audio;
+      audio.volume = musicMuted ? 0 : 0.5;
+      
+      // Set start time if trimmed
+      const startTime = post.music_start_time || 0;
+      const endTime = post.music_end_time;
+      
+      audio.currentTime = startTime;
+      audio.play();
       setPlayingMusic(post.id);
-      audioRef.current.onended = () => setPlayingMusic(null);
+      
+      // Handle end time for trimmed music
+      if (endTime) {
+        const checkTime = () => {
+          if (audio.currentTime >= endTime) {
+            audio.pause();
+            setPlayingMusic(null);
+          } else if (playingMusic === post.id) {
+            requestAnimationFrame(checkTime);
+          }
+        };
+        requestAnimationFrame(checkTime);
+      }
+      
+      audio.onended = () => setPlayingMusic(null);
     }
   };
 

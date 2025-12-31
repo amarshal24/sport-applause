@@ -272,6 +272,8 @@ export type Database = {
           id: string
           image_url: string | null
           likes_count: number
+          music_end_time: number | null
+          music_start_time: number | null
           music_title: string | null
           music_url: string | null
           updated_at: string
@@ -285,6 +287,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number
+          music_end_time?: number | null
+          music_start_time?: number | null
           music_title?: string | null
           music_url?: string | null
           updated_at?: string
@@ -298,6 +302,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number
+          music_end_time?: number | null
+          music_start_time?: number | null
           music_title?: string | null
           music_url?: string | null
           updated_at?: string
