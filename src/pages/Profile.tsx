@@ -3,11 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
 import FavoriteVideos from "@/components/FavoriteVideos";
 import TopFiveVideos from "@/components/TopFiveVideos";
 import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SportIcon } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera } from "lucide-react";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import { toast } from "sonner";
 
@@ -38,7 +40,6 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      // Fetch profile and posts in parallel for faster loading
       fetchData();
     }
   }, [user]);
@@ -107,25 +108,18 @@ const Profile = () => {
     fetchProfile();
   };
 
-  const fetchPosts = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setPosts(data || []);
-    setLoading(false);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         <Sidebar />
+        <MobileNav />
         <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
           <div className="px-4 lg:px-6 py-6">
-            <div className="animate-pulse">Loading...</div>
+            <div className="animate-pulse space-y-4">
+              <div className="h-32 bg-muted/30 rounded-xl" />
+              <div className="h-48 bg-muted/30 rounded-xl" />
+            </div>
           </div>
         </main>
       </div>
@@ -136,121 +130,152 @@ const Profile = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <Sidebar />
+      <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="px-4 lg:px-6 py-6 max-w-5xl mx-auto w-full">
-          {/* Top 5 Highlights Section */}
-          <div className="mb-8">
-            <TopFiveVideos isOwnProfile={true} />
-          </div>
+        <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto w-full space-y-6">
+          
+          {/* Profile Header Card */}
+          <Card className="glass-effect border-border/50 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                {/* Avatar Section */}
+                <div className="relative group shrink-0">
+                  <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
+                  <AnimatedAvatar
+                    videoUrl={profile?.profile_video_url}
+                    imageUrl={profile?.avatar_url}
+                    fallback={profile?.username?.[0]?.toUpperCase() || "U"}
+                    className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
+                    showPlayIcon
+                  />
+                  {profile?.sports && profile.sports.length > 0 && (
+                    <SportIcon 
+                      sportId={profile.sports[0]} 
+                      className="absolute -bottom-1 -right-1 w-7 h-7 p-1 border-2 shadow-steel z-20"
+                    />
+                  )}
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute -top-1 -right-1 rounded-full h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                    onClick={() => setShowVideoRecorder(true)}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
 
-          {/* Favorite Videos Section */}
-          <div className="mb-6">
-            <FavoriteVideos />
-          </div>
+                {/* Info Section */}
+                <div className="flex-1 text-center sm:text-left space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <h1 className="text-xl font-display font-bold text-foreground">
+                      {profile?.username}
+                    </h1>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="hover-lift"
+                      onClick={handleEditProfile}
+                    >
+                      <Edit className="w-3.5 h-3.5 mr-1.5" />
+                      Edit Profile
+                    </Button>
+                  </div>
+                  
+                  {profile?.full_name && (
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {profile.full_name}
+                    </p>
+                  )}
 
-          {/* Unified Composer - Sticky */}
-          <div className="sticky top-20 z-40 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4 lg:-mx-6 lg:px-6">
-            <UnifiedComposer />
-          </div>
+                  {/* Stats Row */}
+                  <div className="flex items-center justify-center sm:justify-start gap-6">
+                    <div className="text-center sm:text-left">
+                      <span className="font-bold text-foreground">{posts.length}</span>
+                      <span className="text-sm text-muted-foreground ml-1">Posts</span>
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <span className="font-bold text-foreground">0</span>
+                      <span className="text-sm text-muted-foreground ml-1">Followers</span>
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <span className="font-bold text-foreground">0</span>
+                      <span className="text-sm text-muted-foreground ml-1">Following</span>
+                    </div>
+                  </div>
 
-          {/* Profile Header */}
-          <div className="flex flex-col items-center py-6 space-y-4 animate-slide-up">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
-              <AnimatedAvatar
-                videoUrl={profile?.profile_video_url}
-                imageUrl={profile?.avatar_url}
-                fallback={profile?.username?.[0]?.toUpperCase() || "U"}
-                className="h-24 w-24 md:h-28 md:w-28 border-4 border-primary/30 shadow-glow relative z-10"
-                showPlayIcon
-              />
-              {profile?.sports && profile.sports.length > 0 && (
-                <SportIcon 
-                  sportId={profile.sports[0]} 
-                  className="absolute -bottom-1 -right-1 w-8 h-8 p-1.5 border-2 shadow-steel z-20"
-                />
-              )}
-              {/* Video Upload Button */}
-              <Button
-                size="icon"
-                variant="outline"
-                className="absolute top-0 right-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                onClick={() => setShowVideoRecorder(true)}
-              >
-                <Video className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="text-center space-y-1">
-              <h1 className="text-2xl font-display font-bold text-foreground">
-                {profile?.username}
-              </h1>
-              {profile?.full_name && (
-                <p className="text-sm text-muted-foreground">
-                  {profile.full_name}
-                </p>
-              )}
-            </div>
-
-            {/* Stats Row */}
-            <div className="flex items-center gap-6 py-2">
-              <div className="text-center">
-                <div className="text-xl font-bold text-foreground">{posts.length}</div>
-                <div className="text-xs text-muted-foreground">Posts</div>
+                  {/* Bio */}
+                  {profile?.bio && (
+                    <p className="text-sm text-foreground/80 max-w-md">
+                      {profile.bio}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="h-4 w-px bg-border" />
-              <div className="text-center">
-                <div className="text-xl font-bold text-foreground">0</div>
-                <div className="text-xs text-muted-foreground">Followers</div>
-              </div>
-              <div className="h-4 w-px bg-border" />
-              <div className="text-center">
-                <div className="text-xl font-bold text-foreground">0</div>
-                <div className="text-xs text-muted-foreground">Following</div>
-              </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Bio */}
-            {profile?.bio && (
-              <p className="text-sm text-foreground text-center max-w-md px-4">
-                {profile.bio}
-              </p>
-            )}
+          {/* Quick Actions - Create Post */}
+          <Card className="glass-effect border-border/50">
+            <CardContent className="p-4">
+              <UnifiedComposer onPostCreated={fetchData} />
+            </CardContent>
+          </Card>
 
-            {/* Edit Profile Button */}
-            <Button 
-              variant="outline" 
-              className="w-full max-w-xs hover-lift"
-              onClick={handleEditProfile}
-            >
-              Edit Profile
-            </Button>
-          </div>
+          {/* Top 5 Highlights */}
+          <Card className="glass-effect border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Top 5 Highlights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopFiveVideos isOwnProfile={true} />
+            </CardContent>
+          </Card>
 
-          {/* Tabs Section */}
+          {/* Favorite Videos */}
+          <Card className="glass-effect border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary" />
+                Favorite Videos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FavoriteVideos />
+            </CardContent>
+          </Card>
+
+          {/* Content Tabs */}
           <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full grid grid-cols-5 h-12 border-y border-border bg-transparent rounded-none glass-effect">
-              <TabsTrigger value="posts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
-                <Grid3x3 className="h-5 w-5" />
+            <TabsList className="w-full grid grid-cols-5 h-12 bg-muted/30 rounded-lg p-1">
+              <TabsTrigger value="posts" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Grid3x3 className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Posts</span>
               </TabsTrigger>
-              <TabsTrigger value="podcasts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
-                <Music className="h-5 w-5" />
+              <TabsTrigger value="podcasts" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Music className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Podcasts</span>
               </TabsTrigger>
-              <TabsTrigger value="streams" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
-                <Radio className="h-5 w-5" />
+              <TabsTrigger value="streams" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Radio className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Streams</span>
               </TabsTrigger>
-              <TabsTrigger value="liked" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
-                <Heart className="h-5 w-5" />
+              <TabsTrigger value="liked" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Liked</span>
               </TabsTrigger>
-              <TabsTrigger value="saved" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-glow rounded-none transition-all">
-                <Bookmark className="h-5 w-5" />
+              <TabsTrigger value="saved" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Bookmark className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Saved</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="posts" className="mt-0">
+            <TabsContent value="posts" className="mt-4">
               {posts.length > 0 ? (
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-3 gap-1 rounded-lg overflow-hidden">
                   {posts.map((post) => (
                     <div 
                       key={post.id}
@@ -262,6 +287,12 @@ const Profile = () => {
                           alt="Post" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                      ) : post.video_url ? (
+                        <video 
+                          src={post.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted/50">
                           <p className="text-xs text-muted-foreground p-2 text-center line-clamp-3">
@@ -270,49 +301,47 @@ const Profile = () => {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="flex items-center gap-4 text-foreground">
-                        <div className="flex items-center gap-1">
-                          <Sparkles className="h-5 w-5 fill-current" />
-                          <span className="font-semibold">{post.likes_count} claps</span>
-                        </div>
+                        <div className="flex items-center gap-1 text-foreground">
+                          <Sparkles className="h-4 w-4 fill-current" />
+                          <span className="font-semibold text-sm">{post.likes_count}</span>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Grid3x3 className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No posts yet</h3>
-                  <p className="text-sm text-muted-foreground">When you share posts, they'll appear here</p>
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Grid3x3 className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <h3 className="text-base font-semibold text-foreground mb-1">No posts yet</h3>
+                  <p className="text-sm text-muted-foreground">Share your first post above!</p>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="podcasts" className="mt-6">
+            <TabsContent value="podcasts" className="mt-4">
               <Suspense fallback={<div className="animate-pulse h-40 bg-muted/30 rounded-lg" />}>
                 <PodcastUploader onUploadComplete={fetchData} />
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="streams" className="mt-6">
+            <TabsContent value="streams" className="mt-4">
               <Suspense fallback={<div className="animate-pulse h-40 bg-muted/30 rounded-lg" />}>
                 <LiveStreamManager />
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="liked" className="mt-0">
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Heart className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No liked posts</h3>
+            <TabsContent value="liked" className="mt-4">
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Heart className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                <h3 className="text-base font-semibold text-foreground mb-1">No liked posts</h3>
                 <p className="text-sm text-muted-foreground">Posts you like will appear here</p>
               </div>
             </TabsContent>
 
-            <TabsContent value="saved" className="mt-0">
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Bookmark className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No saved posts</h3>
+            <TabsContent value="saved" className="mt-4">
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Bookmark className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                <h3 className="text-base font-semibold text-foreground mb-1">No saved posts</h3>
                 <p className="text-sm text-muted-foreground">Posts you save will appear here</p>
               </div>
             </TabsContent>
