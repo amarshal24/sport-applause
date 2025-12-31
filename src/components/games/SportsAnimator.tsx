@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, Trophy, Gamepad2, Award, Users, Target } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy, Gamepad2, Award, Users, Target, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import BasketballGame from "./mini-games/BasketballGame";
 import SoccerGame from "./mini-games/SoccerGame";
@@ -15,6 +15,7 @@ import Leaderboard from "./Leaderboard";
 import AchievementsDisplay from "./AchievementsDisplay";
 import MultiplayerLobby from "./MultiplayerLobby";
 import DailyChallenges from "./DailyChallenges";
+import FriendsPanel from "@/components/friends/FriendsPanel";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import { useDailyChallenges } from "@/hooks/useDailyChallenges";
 import { MultiplayerMatch } from "@/hooks/useMultiplayer";
@@ -170,18 +171,22 @@ const SportsAnimator = ({ onBack }: Props) => {
       </Button>
 
       <Tabs defaultValue="games" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-6 mb-6">
           <TabsTrigger value="games" className="gap-2">
             <Gamepad2 className="w-4 h-4" />
             <span className="hidden sm:inline">Games</span>
           </TabsTrigger>
           <TabsTrigger value="multiplayer" className="gap-2">
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Multiplayer</span>
+            <span className="hidden sm:inline">1v1</span>
+          </TabsTrigger>
+          <TabsTrigger value="friends" className="gap-2">
+            <UserPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Friends</span>
           </TabsTrigger>
           <TabsTrigger value="challenges" className="gap-2">
             <Target className="w-4 h-4" />
-            <span className="hidden sm:inline">Challenges</span>
+            <span className="hidden sm:inline">Daily</span>
           </TabsTrigger>
           <TabsTrigger value="leaderboard" className="gap-2">
             <Trophy className="w-4 h-4" />
@@ -304,6 +309,15 @@ const SportsAnimator = ({ onBack }: Props) => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="friends">
+          <FriendsPanel 
+            onChallengeFriend={(friendId) => {
+              // For now, just go to multiplayer - could be enhanced to auto-invite
+              setMultiplayerGame('basketball');
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="challenges">

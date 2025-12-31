@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_invites: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          invitee_email: string | null
+          inviter_id: string
+          status: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code: string
+          invitee_email?: string | null
+          inviter_id: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string | null
+          inviter_id?: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       comparison_history: {
         Row: {
           created_at: string
@@ -151,6 +184,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      friendships: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       game_scores: {
         Row: {
