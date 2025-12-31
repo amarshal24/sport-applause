@@ -29,6 +29,7 @@ import { SPORTS } from "@/constants/sports";
 import ContactAthleteModal from "@/components/ContactAthleteModal";
 import AthleteSearch from "@/components/AthleteSearch";
 import AthleteComparison from "@/components/AthleteComparison";
+import ProAthleteComparison from "@/components/ProAthleteComparison";
 
 interface RecruitingVideo {
   id: string;
@@ -535,6 +536,11 @@ const Recruiting = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Pro Athlete Comparison Tool */}
+          <div className="mb-6">
+            <ProAthleteComparison />
+          </div>
 
           {/* NBA Athlete Comparison Tool */}
           <div className="mb-6">
