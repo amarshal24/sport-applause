@@ -17,7 +17,59 @@ import {
   Target,
   TrendingUp,
   Star,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
+
+// Combine benchmark averages by sport
+const COMBINE_BENCHMARKS: Record<string, {
+  label: string;
+  metrics: {
+    verticalJump?: { avg: number; elite: number; unit: string };
+    fortyYardDash?: { avg: number; elite: number; unit: string };
+    benchPress?: { avg: number; elite: number; unit: string };
+    broadJump?: { avg: number; elite: number; unit: string };
+    shuttleRun?: { avg: number; elite: number; unit: string };
+    threeCone?: { avg: number; elite: number; unit: string };
+  };
+}> = {
+  Football: {
+    label: "NFL Combine",
+    metrics: {
+      verticalJump: { avg: 33, elite: 40, unit: "in" },
+      fortyYardDash: { avg: 4.65, elite: 4.35, unit: "s" },
+      benchPress: { avg: 225, elite: 30, unit: "reps" }, // 225lb bench reps
+      broadJump: { avg: 118, elite: 130, unit: "in" },
+      shuttleRun: { avg: 4.35, elite: 4.0, unit: "s" },
+      threeCone: { avg: 7.1, elite: 6.7, unit: "s" },
+    },
+  },
+  Basketball: {
+    label: "NBA Draft Combine",
+    metrics: {
+      verticalJump: { avg: 32, elite: 40, unit: "in" },
+      fortyYardDash: { avg: 3.35, elite: 3.1, unit: "s" }, // 3/4 court sprint
+      benchPress: { avg: 185, elite: 15, unit: "reps" },
+      broadJump: { avg: 110, elite: 125, unit: "in" },
+      shuttleRun: { avg: 3.2, elite: 2.9, unit: "s" }, // Lane agility
+    },
+  },
+  Baseball: {
+    label: "MLB Combine",
+    metrics: {
+      fortyYardDash: { avg: 4.5, elite: 4.2, unit: "s" }, // 60-yard dash time/1.5
+    },
+  },
+  Soccer: {
+    label: "MLS Combine",
+    metrics: {
+      verticalJump: { avg: 26, elite: 32, unit: "in" },
+      fortyYardDash: { avg: 4.7, elite: 4.4, unit: "s" },
+      shuttleRun: { avg: 4.5, elite: 4.1, unit: "s" },
+    },
+  },
+};
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -464,6 +516,132 @@ const ProAthleteComparison = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Combine Benchmark Comparison */}
+                  {COMBINE_BENCHMARKS[sport] && (verticalJump || fortyYardDash || benchPress || broadJump || shuttleRun || agility) && (
+                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-muted/30 border border-primary/10">
+                      <h5 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary" />
+                        {COMBINE_BENCHMARKS[sport].label} Comparison
+                      </h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {verticalJump && COMBINE_BENCHMARKS[sport].metrics.verticalJump && (() => {
+                          const val = parseFloat(verticalJump);
+                          const bench = COMBINE_BENCHMARKS[sport].metrics.verticalJump!;
+                          const diff = val - bench.avg;
+                          const isElite = val >= bench.elite;
+                          return (
+                            <div className={`p-3 rounded-lg border ${isElite ? 'bg-green-500/10 border-green-500/30' : diff >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/50 border-muted'}`}>
+                              <div className="text-xs text-muted-foreground mb-1">Vertical Jump</div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">{val}{bench.unit}</span>
+                                <div className={`flex items-center gap-1 text-xs ${isElite ? 'text-green-500' : diff >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {diff > 0 ? <ArrowUp className="w-3 h-3" /> : diff < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                  {Math.abs(diff).toFixed(1)} vs avg
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Avg: {bench.avg}{bench.unit} | Elite: {bench.elite}{bench.unit}+
+                              </div>
+                              {isElite && <Badge className="mt-2 text-xs bg-green-500">Elite Level</Badge>}
+                            </div>
+                          );
+                        })()}
+
+                        {fortyYardDash && COMBINE_BENCHMARKS[sport].metrics.fortyYardDash && (() => {
+                          const val = parseFloat(fortyYardDash);
+                          const bench = COMBINE_BENCHMARKS[sport].metrics.fortyYardDash!;
+                          const diff = bench.avg - val; // Lower is better
+                          const isElite = val <= bench.elite;
+                          return (
+                            <div className={`p-3 rounded-lg border ${isElite ? 'bg-green-500/10 border-green-500/30' : diff >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/50 border-muted'}`}>
+                              <div className="text-xs text-muted-foreground mb-1">40-Yard Dash</div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">{val}{bench.unit}</span>
+                                <div className={`flex items-center gap-1 text-xs ${isElite ? 'text-green-500' : diff >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {diff > 0 ? <ArrowUp className="w-3 h-3" /> : diff < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                  {Math.abs(diff).toFixed(2)}s vs avg
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Avg: {bench.avg}{bench.unit} | Elite: {bench.elite}{bench.unit}
+                              </div>
+                              {isElite && <Badge className="mt-2 text-xs bg-green-500">Elite Level</Badge>}
+                            </div>
+                          );
+                        })()}
+
+                        {broadJump && COMBINE_BENCHMARKS[sport].metrics.broadJump && (() => {
+                          const val = parseFloat(broadJump);
+                          const bench = COMBINE_BENCHMARKS[sport].metrics.broadJump!;
+                          const diff = val - bench.avg;
+                          const isElite = val >= bench.elite;
+                          return (
+                            <div className={`p-3 rounded-lg border ${isElite ? 'bg-green-500/10 border-green-500/30' : diff >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/50 border-muted'}`}>
+                              <div className="text-xs text-muted-foreground mb-1">Broad Jump</div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">{val}{bench.unit}</span>
+                                <div className={`flex items-center gap-1 text-xs ${isElite ? 'text-green-500' : diff >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {diff > 0 ? <ArrowUp className="w-3 h-3" /> : diff < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                  {Math.abs(diff).toFixed(1)} vs avg
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Avg: {bench.avg}{bench.unit} | Elite: {bench.elite}{bench.unit}+
+                              </div>
+                              {isElite && <Badge className="mt-2 text-xs bg-green-500">Elite Level</Badge>}
+                            </div>
+                          );
+                        })()}
+
+                        {shuttleRun && COMBINE_BENCHMARKS[sport].metrics.shuttleRun && (() => {
+                          const val = parseFloat(shuttleRun);
+                          const bench = COMBINE_BENCHMARKS[sport].metrics.shuttleRun!;
+                          const diff = bench.avg - val; // Lower is better
+                          const isElite = val <= bench.elite;
+                          return (
+                            <div className={`p-3 rounded-lg border ${isElite ? 'bg-green-500/10 border-green-500/30' : diff >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/50 border-muted'}`}>
+                              <div className="text-xs text-muted-foreground mb-1">Shuttle Run</div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">{val}{bench.unit}</span>
+                                <div className={`flex items-center gap-1 text-xs ${isElite ? 'text-green-500' : diff >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {diff > 0 ? <ArrowUp className="w-3 h-3" /> : diff < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                  {Math.abs(diff).toFixed(2)}s vs avg
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Avg: {bench.avg}{bench.unit} | Elite: {bench.elite}{bench.unit}
+                              </div>
+                              {isElite && <Badge className="mt-2 text-xs bg-green-500">Elite Level</Badge>}
+                            </div>
+                          );
+                        })()}
+
+                        {agility && COMBINE_BENCHMARKS[sport].metrics.threeCone && (() => {
+                          const val = parseFloat(agility);
+                          const bench = COMBINE_BENCHMARKS[sport].metrics.threeCone!;
+                          const diff = bench.avg - val; // Lower is better
+                          const isElite = val <= bench.elite;
+                          return (
+                            <div className={`p-3 rounded-lg border ${isElite ? 'bg-green-500/10 border-green-500/30' : diff >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/50 border-muted'}`}>
+                              <div className="text-xs text-muted-foreground mb-1">3-Cone Drill</div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">{val}{bench.unit}</span>
+                                <div className={`flex items-center gap-1 text-xs ${isElite ? 'text-green-500' : diff >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {diff > 0 ? <ArrowUp className="w-3 h-3" /> : diff < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                  {Math.abs(diff).toFixed(2)}s vs avg
+                                </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Avg: {bench.avg}{bench.unit} | Elite: {bench.elite}{bench.unit}
+                              </div>
+                              {isElite && <Badge className="mt-2 text-xs bg-green-500">Elite Level</Badge>}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
