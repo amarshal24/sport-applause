@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,8 @@ interface Post {
   content: string;
   image_url: string | null;
   video_url: string | null;
+  music_url: string | null;
+  music_title: string | null;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -50,6 +52,9 @@ const VideoFeed = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playingMusic, setPlayingMusic] = useState<string | null>(null);
+  const [musicMuted, setMusicMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -57,7 +62,16 @@ const VideoFeed = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(`
-          *,
+          id,
+          content,
+          image_url,
+          video_url,
+          music_url,
+          music_title,
+          likes_count,
+          comments_count,
+          created_at,
+          user_id,
           profiles:user_id (
             username,
             full_name,
@@ -67,6 +81,9 @@ const VideoFeed = () => {
         `)
         .order("created_at", { ascending: false })
         .limit(20);
+
+      if (error) throw error;
+      setPosts(data || []);
 
       if (error) throw error;
       setPosts(data || []);
@@ -98,6 +115,41 @@ const VideoFeed = () => {
       setApplausedVideos([...applausedVideos, postId]);
     }
   };
+
+  const handlePlayMusic = (post: Post) => {
+    if (!post.music_url) return;
+
+    if (playingMusic === post.id) {
+      audioRef.current?.pause();
+      setPlayingMusic(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      audioRef.current = new Audio(post.music_url);
+      audioRef.current.volume = musicMuted ? 0 : 0.5;
+      audioRef.current.play();
+      setPlayingMusic(post.id);
+      audioRef.current.onended = () => setPlayingMusic(null);
+    }
+  };
+
+  const toggleMute = () => {
+    setMusicMuted(!musicMuted);
+    if (audioRef.current) {
+      audioRef.current.volume = musicMuted ? 0.5 : 0;
+    }
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const filteredPosts = selectedSport === "All" 
     ? posts 
@@ -223,6 +275,71 @@ const VideoFeed = () => {
                   {/* Content */}
                   {post.content && (
                     <p className="text-sm mb-3 line-clamp-3">{post.content}</p>
+                  )}
+
+                  {/* Music Player */}
+                  {post.music_url && (
+                    <div 
+                      className={`mb-3 p-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+                        playingMusic === post.id 
+                          ? "bg-primary/20 border border-primary/30" 
+                          : "bg-muted/50 hover:bg-muted"
+                      }`}
+                      onClick={() => handlePlayMusic(post)}
+                    >
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlayMusic(post);
+                        }}
+                      >
+                        {playingMusic === post.id ? (
+                          <Pause className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <Music className="h-3 w-3 text-primary flex-shrink-0" />
+                          <p className="text-xs font-medium truncate">{post.music_title}</p>
+                        </div>
+                        {playingMusic === post.id && (
+                          <div className="flex gap-0.5 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <div 
+                                key={i}
+                                className="w-1 bg-primary rounded-full animate-pulse"
+                                style={{ 
+                                  height: `${Math.random() * 12 + 4}px`,
+                                  animationDelay: `${i * 0.1}s`
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {playingMusic === post.id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMute();
+                          }}
+                        >
+                          {musicMuted ? (
+                            <VolumeX className="h-4 w-4" />
+                          ) : (
+                            <Volume2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   )}
 
                   {/* Actions */}

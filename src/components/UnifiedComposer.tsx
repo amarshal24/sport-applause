@@ -1,16 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Image, Video, ChevronRight, Music } from "lucide-react";
+import { Image, Video, ChevronRight, Music, X, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { getSportIcon } from "@/constants/sports";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const postSchema = z.object({
   content: z.string().trim().min(1, { message: "Post cannot be empty" }).max(5000, { message: "Post is too long" }),
@@ -23,6 +30,27 @@ interface Mood {
   color: string;
   gradient: string;
 }
+
+// Royalty-free music library
+interface MusicTrack {
+  id: string;
+  title: string;
+  artist: string;
+  duration: string;
+  mood: string;
+  url: string;
+}
+
+const musicLibrary: MusicTrack[] = [
+  { id: "1", title: "Victory Anthem", artist: "Sports Beats", duration: "2:45", mood: "energetic", url: "https://cdn.pixabay.com/audio/2024/11/01/audio_06bc1f4e85.mp3" },
+  { id: "2", title: "Champion's Rise", artist: "Athletic Sounds", duration: "3:12", mood: "motivated", url: "https://cdn.pixabay.com/audio/2024/09/14/audio_2e31a36ffb.mp3" },
+  { id: "3", title: "Warm Up Flow", artist: "Gym Vibes", duration: "2:30", mood: "chill", url: "https://cdn.pixabay.com/audio/2024/08/08/audio_c51be6afe9.mp3" },
+  { id: "4", title: "Focus Mode", artist: "Zen Athletics", duration: "3:00", mood: "focused", url: "https://cdn.pixabay.com/audio/2024/05/16/audio_166af04339.mp3" },
+  { id: "5", title: "Game Day Energy", artist: "Sports Beats", duration: "2:55", mood: "pumped", url: "https://cdn.pixabay.com/audio/2024/11/04/audio_e4c0ce3e27.mp3" },
+  { id: "6", title: "Winning Moment", artist: "Victory Lane", duration: "2:20", mood: "victorious", url: "https://cdn.pixabay.com/audio/2024/10/22/audio_c9e6b2bf6f.mp3" },
+  { id: "7", title: "Training Montage", artist: "Workout Mix", duration: "3:30", mood: "energetic", url: "https://cdn.pixabay.com/audio/2024/09/22/audio_e67bcb74e9.mp3" },
+  { id: "8", title: "Cool Down", artist: "Relaxed Beats", duration: "2:40", mood: "chill", url: "https://cdn.pixabay.com/audio/2024/07/30/audio_9ade1be24e.mp3" },
+];
 
 const moods: Mood[] = [
   {
@@ -85,6 +113,10 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
+  const [musicDialogOpen, setMusicDialogOpen] = useState(false);
+  const [previewingTrack, setPreviewingTrack] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
 
@@ -107,6 +139,39 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   }, [user]);
 
   const SportIcon = userSport ? getSportIcon(userSport) : Music;
+
+  const handlePreviewTrack = (track: MusicTrack) => {
+    if (previewingTrack === track.id) {
+      audioRef.current?.pause();
+      setPreviewingTrack(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      audioRef.current = new Audio(track.url);
+      audioRef.current.volume = 0.5;
+      audioRef.current.play();
+      setPreviewingTrack(track.id);
+      audioRef.current.onended = () => setPreviewingTrack(null);
+    }
+  };
+
+  const handleSelectMusic = (track: MusicTrack) => {
+    setSelectedMusic(track);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setPreviewingTrack(null);
+    setMusicDialogOpen(false);
+    toast({
+      title: "Music attached!",
+      description: `"${track.title}" will play when others view your post.`,
+    });
+  };
+
+  const handleRemoveMusic = () => {
+    setSelectedMusic(null);
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -256,7 +321,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
 
         const { error } = await supabase.from("stories").insert({
           user_id: user.id,
-          image_url: imageUrl || videoPreview, // Use video thumbnail or video URL for stories
+          image_url: imageUrl || videoPreview,
           expires_at: expiresAt.toISOString(),
         });
 
@@ -272,13 +337,19 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
           content: content.trim() || (videoFile ? "Check out this video!" : ""),
           image_url: imageUrl,
           video_url: videoUrl,
+          music_url: selectedMusic?.url || null,
+          music_title: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : null,
         });
 
         if (error) throw error;
 
         toast({
           title: "Post created!",
-          description: videoUrl ? "Your video post is now live." : "Your post is now live.",
+          description: selectedMusic 
+            ? `Your post with "${selectedMusic.title}" is now live.` 
+            : videoUrl 
+              ? "Your video post is now live." 
+              : "Your post is now live.",
         });
       }
 
@@ -289,6 +360,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
       setVideoPreview(null);
       setUploadProgress(0);
       setSelectedMood(null);
+      setSelectedMusic(null);
       onPostCreated?.();
     } catch (error: any) {
       toast({
@@ -381,6 +453,28 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
               </div>
             )}
 
+            {/* Selected Music Preview */}
+            {selectedMusic && (
+              <div className="mb-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <Music className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{selectedMusic.title}</p>
+                    <p className="text-xs text-muted-foreground">{selectedMusic.artist} • {selectedMusic.duration}</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleRemoveMusic}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
             {isSubmitting && uploadProgress > 0 && (
               <div className="mb-3">
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
@@ -397,7 +491,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
             )}
 
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -430,6 +524,74 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
                   className="hidden"
                   onChange={handleVideoSelect}
                 />
+                
+                {/* Music Selection Dialog */}
+                <Dialog open={musicDialogOpen} onOpenChange={setMusicDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant={selectedMusic ? "secondary" : "ghost"} 
+                      size="sm"
+                      disabled={isSubmitting || postType === "story"}
+                    >
+                      <Music className="h-4 w-4 mr-2" />
+                      {selectedMusic ? "Change Music" : "Add Music"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Music className="h-5 w-5 text-primary" />
+                        Add Music to Your Post
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Choose a track that will play when others view your post.
+                      </p>
+                      <div className="space-y-2">
+                        {musicLibrary.map((track) => (
+                          <div
+                            key={track.id}
+                            className={cn(
+                              "p-3 rounded-lg border transition-all cursor-pointer hover:border-primary",
+                              selectedMusic?.id === track.id 
+                                ? "border-primary bg-primary/5" 
+                                : "border-border"
+                            )}
+                            onClick={() => handleSelectMusic(track)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-10 w-10 rounded-full p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePreviewTrack(track);
+                                }}
+                              >
+                                {previewingTrack === track.id ? (
+                                  <Pause className="h-4 w-4" />
+                                ) : (
+                                  <Play className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{track.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {track.artist} • {track.duration}
+                                </p>
+                              </div>
+                              <span className="text-xs text-muted-foreground capitalize px-2 py-1 bg-muted rounded">
+                                {track.mood}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <div className="flex gap-2">
