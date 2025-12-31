@@ -78,10 +78,13 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [postType, setPostType] = useState<"post" | "story">("post");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
 
@@ -117,6 +120,10 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
         return;
       }
 
+      // Clear video if selecting image
+      setVideoFile(null);
+      setVideoPreview(null);
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -124,6 +131,62 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 100 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Video must be less than 100MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!file.type.startsWith("video/")) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a video file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Clear image if selecting video
+      setImageFile(null);
+      setImagePreview(null);
+
+      setVideoFile(file);
+      const videoUrl = URL.createObjectURL(file);
+      setVideoPreview(videoUrl);
+    }
+  };
+
+  const uploadVideo = async (file: File) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+
+    setUploadProgress(10);
+
+    const { error: uploadError } = await supabase.storage
+      .from("post-videos")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    setUploadProgress(80);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("post-videos")
+      .getPublicUrl(fileName);
+
+    setUploadProgress(100);
+    return publicUrl;
   };
 
   const uploadImage = async (file: File, bucketName: string) => {
@@ -167,16 +230,21 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
 
     try {
       let imageUrl: string | null = null;
+      let videoUrl: string | null = null;
 
       if (imageFile) {
         imageUrl = await uploadImage(imageFile, postType === "story" ? "stories" : "posts");
       }
 
+      if (videoFile) {
+        videoUrl = await uploadVideo(videoFile);
+      }
+
       if (postType === "story") {
-        if (!imageUrl) {
+        if (!imageUrl && !videoFile) {
           toast({
-            title: "Image required",
-            description: "Stories must include an image",
+            title: "Media required",
+            description: "Stories must include an image or video",
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -188,7 +256,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
 
         const { error } = await supabase.from("stories").insert({
           user_id: user.id,
-          image_url: imageUrl,
+          image_url: imageUrl || videoPreview, // Use video thumbnail or video URL for stories
           expires_at: expiresAt.toISOString(),
         });
 
@@ -201,21 +269,25 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
       } else {
         const { error } = await supabase.from("posts").insert({
           user_id: user.id,
-          content: content.trim(),
+          content: content.trim() || (videoFile ? "Check out this video!" : ""),
           image_url: imageUrl,
+          video_url: videoUrl,
         });
 
         if (error) throw error;
 
         toast({
           title: "Post created!",
-          description: "Your post is now live.",
+          description: videoUrl ? "Your video post is now live." : "Your post is now live.",
         });
       }
 
       setContent("");
       setImageFile(null);
       setImagePreview(null);
+      setVideoFile(null);
+      setVideoPreview(null);
+      setUploadProgress(0);
       setSelectedMood(null);
       onPostCreated?.();
     } catch (error: any) {
@@ -284,12 +356,53 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
               </div>
             )}
 
+            {videoPreview && (
+              <div className="relative mb-3">
+                <video
+                  src={videoPreview}
+                  className="rounded-lg max-h-64 w-full object-cover"
+                  controls
+                  preload="metadata"
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    if (videoPreview) {
+                      URL.revokeObjectURL(videoPreview);
+                    }
+                    setVideoFile(null);
+                    setVideoPreview(null);
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+
+            {isSubmitting && uploadProgress > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => document.getElementById("unified-image-upload")?.click()}
+                  disabled={isSubmitting}
                 >
                   <Image className="h-4 w-4 mr-2" />
                   Photo
@@ -301,10 +414,22 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
                   className="hidden"
                   onChange={handleImageSelect}
                 />
-                <Button variant="ghost" size="sm" disabled>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => document.getElementById("unified-video-upload")?.click()}
+                  disabled={isSubmitting}
+                >
                   <Video className="h-4 w-4 mr-2" />
                   Video
                 </Button>
+                <input
+                  id="unified-video-upload"
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleVideoSelect}
+                />
               </div>
 
               <div className="flex gap-2">
@@ -324,7 +449,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || (!content.trim() && !imageFile)}
+                  disabled={isSubmitting || (!content.trim() && !imageFile && !videoFile)}
                   size="sm"
                 >
                   {isSubmitting ? "Posting..." : "Share"}
