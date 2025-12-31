@@ -4,6 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+const POSITIVE_EMOJIS = ["❤️", "🔥", "👏", "💪", "🙌", "⚡"];
 
 interface Story {
   id: string;
@@ -18,6 +24,12 @@ interface Story {
   };
 }
 
+interface StoryReaction {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 interface StoryViewerProps {
   stories: Story[];
   initialIndex: number;
@@ -26,8 +38,12 @@ interface StoryViewerProps {
 }
 
 const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
+  const [reactions, setReactions] = useState<Record<string, StoryReaction[]>>({});
+  const [floatingEmoji, setFloatingEmoji] = useState<string | null>(null);
 
   const currentStory = stories[currentIndex];
 
@@ -36,19 +52,90 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
   }, [initialIndex]);
 
   useEffect(() => {
+    if (!open || !currentStory) return;
+    fetchReactions(currentStory.id);
+  }, [open, currentStory?.id]);
+
+  const fetchReactions = async (storyId: string) => {
+    const { data } = await supabase
+      .from("story_reactions")
+      .select("emoji, user_id")
+      .eq("story_id", storyId);
+
+    if (data) {
+      const emojiCounts: Record<string, { count: number; hasReacted: boolean }> = {};
+      
+      data.forEach((reaction) => {
+        if (!emojiCounts[reaction.emoji]) {
+          emojiCounts[reaction.emoji] = { count: 0, hasReacted: false };
+        }
+        emojiCounts[reaction.emoji].count++;
+        if (reaction.user_id === user?.id) {
+          emojiCounts[reaction.emoji].hasReacted = true;
+        }
+      });
+
+      const reactionList: StoryReaction[] = Object.entries(emojiCounts).map(
+        ([emoji, { count, hasReacted }]) => ({ emoji, count, hasReacted })
+      );
+
+      setReactions((prev) => ({ ...prev, [storyId]: reactionList }));
+    }
+  };
+
+  const handleReaction = async (emoji: string) => {
+    if (!user || !currentStory) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to react to stories",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show floating emoji animation
+    setFloatingEmoji(emoji);
+    setTimeout(() => setFloatingEmoji(null), 1000);
+
+    const storyReactions = reactions[currentStory.id] || [];
+    const existingReaction = storyReactions.find((r) => r.hasReacted);
+
+    try {
+      if (existingReaction) {
+        // Update existing reaction
+        await supabase
+          .from("story_reactions")
+          .update({ emoji })
+          .eq("story_id", currentStory.id)
+          .eq("user_id", user.id);
+      } else {
+        // Insert new reaction
+        await supabase.from("story_reactions").insert({
+          story_id: currentStory.id,
+          user_id: user.id,
+          emoji,
+        });
+      }
+
+      fetchReactions(currentStory.id);
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+    }
+  };
+
+  useEffect(() => {
     if (!open) {
       setProgress(0);
       return;
     }
 
-    const duration = 5000; // 5 seconds per story
+    const duration = 5000;
     const interval = 50;
     const increment = (interval / duration) * 100;
 
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          // Move to next story
           if (currentIndex < stories.length - 1) {
             setCurrentIndex(currentIndex + 1);
             return 0;
@@ -81,6 +168,8 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
   };
 
   if (!currentStory) return null;
+
+  const currentReactions = reactions[currentStory.id] || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,17 +234,71 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
           />
         </div>
 
+        {/* Floating Emoji Animation */}
+        <AnimatePresence>
+          {floatingEmoji && (
+            <motion.div
+              initial={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 0, scale: 2, y: -100 }}
+              exit={{ opacity: 0 }}
+              className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30 text-6xl pointer-events-none"
+            >
+              {floatingEmoji}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Reaction counts display */}
+        {currentReactions.length > 0 && (
+          <div className="absolute bottom-24 left-4 z-20 flex gap-2 flex-wrap">
+            {currentReactions.map((reaction) => (
+              <div
+                key={reaction.emoji}
+                className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1"
+              >
+                <span className="text-lg">{reaction.emoji}</span>
+                <span className="text-white text-sm font-medium">{reaction.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Reaction buttons */}
+        <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center gap-2 px-4">
+          {POSITIVE_EMOJIS.map((emoji) => {
+            const hasReacted = currentReactions.some(
+              (r) => r.emoji === emoji && r.hasReacted
+            );
+            return (
+              <Button
+                key={emoji}
+                variant="ghost"
+                size="icon"
+                className={`text-2xl hover:bg-white/20 hover:scale-125 transition-all ${
+                  hasReacted ? "bg-white/30 ring-2 ring-white" : ""
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReaction(emoji);
+                }}
+              >
+                {emoji}
+              </Button>
+            );
+          })}
+        </div>
+
         {/* Navigation areas */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-1/3 cursor-pointer z-10"
+          className="absolute left-0 top-0 bottom-24 w-1/3 cursor-pointer z-10"
           onClick={goToPrevious}
         />
         <div
-          className="absolute right-0 top-0 bottom-0 w-1/3 cursor-pointer z-10"
+          className="absolute right-0 top-0 bottom-24 w-1/3 cursor-pointer z-10"
           onClick={goToNext}
         />
 
-        {/* Navigation buttons (visible on hover) */}
+        {/* Navigation buttons */}
         {currentIndex > 0 && (
           <Button
             variant="ghost"
