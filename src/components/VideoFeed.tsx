@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1 } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -303,21 +303,10 @@ const VideoFeed = () => {
                 {(post.video_url || post.image_url) && (
                   <div className="relative aspect-video overflow-hidden bg-muted">
                     {post.video_url ? (
-                      <>
-                        <video
-                          src={post.video_url}
-                          className="w-full h-full object-cover"
-                          controls
-                          preload="metadata"
-                          playsInline
-                        />
-                        <div className="absolute top-3 left-3 z-10">
-                          <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
-                            <Play className="h-3 w-3" />
-                            Video
-                          </Badge>
-                        </div>
-                      </>
+                      <AutoPlayVideo 
+                        src={post.video_url} 
+                        postId={post.id}
+                      />
                     ) : post.image_url ? (
                       <img
                         src={post.image_url}
@@ -455,6 +444,76 @@ const VideoFeed = () => {
         )}
       </div>
     </section>
+  );
+};
+
+// AutoPlay Video Component with Intersection Observer
+const AutoPlayVideo = ({ src, postId }: { src: string; postId: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting);
+          if (entry.isIntersecting) {
+            video.play().catch(() => {
+              // Autoplay blocked, user interaction needed
+            });
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  return (
+    <div className="relative w-full h-full">
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-full object-cover"
+        loop
+        muted={isMuted}
+        playsInline
+        preload="metadata"
+      />
+      <div className="absolute top-3 left-3 z-10">
+        <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
+          <Play className="h-3 w-3" />
+          Video
+        </Badge>
+      </div>
+      <Button
+        size="sm"
+        variant="secondary"
+        className="absolute bottom-3 right-3 z-10 h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
+        onClick={toggleMute}
+      >
+        {isMuted ? (
+          <VolumeX className="h-4 w-4" />
+        ) : (
+          <Volume2 className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
   );
 };
 
