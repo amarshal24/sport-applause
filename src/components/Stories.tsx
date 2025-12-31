@@ -16,7 +16,11 @@ interface Story {
   };
 }
 
-const Stories = () => {
+interface StoriesProps {
+  onCreateStory?: () => void;
+}
+
+const Stories = ({ onCreateStory }: StoriesProps) => {
   const { user } = useAuth();
   const [stories, setStories] = useState<Story[]>([]);
 
@@ -47,7 +51,10 @@ const Stories = () => {
     <div className="glass-effect rounded-xl shadow-card p-4 mb-6 animate-fade-in">
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         {/* Create Story */}
-        <div className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group">
+        <div 
+          className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+          onClick={onCreateStory}
+        >
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-border group-hover:border-primary group-hover:shadow-glow transition-all duration-300">
               <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
