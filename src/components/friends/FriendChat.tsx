@@ -10,12 +10,14 @@ import {
   Send,
   ArrowLeft,
   Loader2,
-  User,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useChat, ChatConversation } from '@/hooks/useChat';
+import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
+import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FriendChatProps {
@@ -26,6 +28,7 @@ interface FriendChatProps {
 const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) => {
   const { user } = useAuth();
   const { friends } = useFriends();
+  const { toast } = useToast();
   const [selectedRecipient, setSelectedRecipient] = useState<string | null>(initialRecipientId || null);
   const [recipientProfile, setRecipientProfile] = useState<{ username: string; avatarUrl: string | null } | null>(null);
   
@@ -33,14 +36,19 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
     messages, 
     conversations, 
     isLoading, 
-    sendMessage, 
+    sendMessage,
+    uploadImage,
     getTotalUnread 
   } = useChat(selectedRecipient || undefined);
   
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get recipient profile from friends or conversations
   useEffect(() => {
@@ -79,13 +87,72 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
     }
   }, [selectedRecipient]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image under 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || isSending) return;
+    if ((!newMessage.trim() && !selectedImage) || isSending) return;
     
     setIsSending(true);
-    const success = await sendMessage(newMessage);
+    let imageUrl: string | undefined;
+
+    // Upload image if selected
+    if (selectedImage) {
+      setIsUploading(true);
+      imageUrl = (await uploadImage(selectedImage)) || undefined;
+      setIsUploading(false);
+      
+      if (!imageUrl && selectedImage) {
+        toast({
+          title: 'Upload failed',
+          description: 'Failed to upload image',
+          variant: 'destructive',
+        });
+        setIsSending(false);
+        return;
+      }
+    }
+
+    const success = await sendMessage(newMessage, imageUrl);
     if (success) {
       setNewMessage('');
+      clearImage();
     }
     setIsSending(false);
   };
@@ -167,7 +234,17 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
                           : 'bg-muted rounded-bl-md'
                       }`}
                     >
-                      <p className="text-sm break-words">{message.content}</p>
+                      {message.imageUrl && (
+                        <img 
+                          src={message.imageUrl} 
+                          alt="Shared image"
+                          className="rounded-lg max-w-full mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(message.imageUrl!, '_blank')}
+                        />
+                      )}
+                      {message.content && (
+                        <p className="text-sm break-words">{message.content}</p>
+                      )}
                       <p className={`text-xs mt-1 ${
                         message.isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'
                       }`}>
@@ -182,9 +259,45 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
           )}
         </ScrollArea>
 
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="px-4 pt-2">
+            <div className="relative inline-block">
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="h-20 rounded-lg object-cover"
+              />
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute -top-2 -right-2 w-6 h-6"
+                onClick={clearImage}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <div className="p-4 border-t border-border/50">
           <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSending || isUploading}
+            >
+              <ImageIcon className="w-5 h-5" />
+            </Button>
             <Input
               ref={inputRef}
               placeholder="Type a message..."
@@ -196,10 +309,10 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
             />
             <Button
               onClick={handleSend}
-              disabled={!newMessage.trim() || isSending}
+              disabled={(!newMessage.trim() && !selectedImage) || isSending}
               size="icon"
             >
-              {isSending ? (
+              {isSending || isUploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
