@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, Trophy, Gamepad2, Award, Users, Target, UserPlus } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy, Gamepad2, Award, Users, Target, UserPlus, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import BasketballGame from "./mini-games/BasketballGame";
 import SoccerGame from "./mini-games/SoccerGame";
@@ -16,6 +16,7 @@ import AchievementsDisplay from "./AchievementsDisplay";
 import MultiplayerLobby from "./MultiplayerLobby";
 import DailyChallenges from "./DailyChallenges";
 import FriendsPanel from "@/components/friends/FriendsPanel";
+import FriendChat from "@/components/friends/FriendChat";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import { useDailyChallenges } from "@/hooks/useDailyChallenges";
 import { MultiplayerMatch } from "@/hooks/useMultiplayer";
@@ -171,30 +172,34 @@ const SportsAnimator = ({ onBack }: Props) => {
       </Button>
 
       <Tabs defaultValue="games" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 mb-6">
-          <TabsTrigger value="games" className="gap-2">
+        <TabsList className="grid w-full grid-cols-7 mb-6">
+          <TabsTrigger value="games" className="gap-1 px-2">
             <Gamepad2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Games</span>
+            <span className="hidden lg:inline">Games</span>
           </TabsTrigger>
-          <TabsTrigger value="multiplayer" className="gap-2">
+          <TabsTrigger value="multiplayer" className="gap-1 px-2">
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">1v1</span>
+            <span className="hidden lg:inline">1v1</span>
           </TabsTrigger>
-          <TabsTrigger value="friends" className="gap-2">
+          <TabsTrigger value="friends" className="gap-1 px-2">
             <UserPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Friends</span>
+            <span className="hidden lg:inline">Friends</span>
           </TabsTrigger>
-          <TabsTrigger value="challenges" className="gap-2">
+          <TabsTrigger value="chat" className="gap-1 px-2">
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden lg:inline">Chat</span>
+          </TabsTrigger>
+          <TabsTrigger value="challenges" className="gap-1 px-2">
             <Target className="w-4 h-4" />
-            <span className="hidden sm:inline">Daily</span>
+            <span className="hidden lg:inline">Daily</span>
           </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="gap-2">
+          <TabsTrigger value="leaderboard" className="gap-1 px-2">
             <Trophy className="w-4 h-4" />
-            <span className="hidden sm:inline">Leaderboard</span>
+            <span className="hidden lg:inline">Ranks</span>
           </TabsTrigger>
-          <TabsTrigger value="achievements" className="gap-2">
+          <TabsTrigger value="achievements" className="gap-1 px-2">
             <Award className="w-4 h-4" />
-            <span className="hidden sm:inline">Badges</span>
+            <span className="hidden lg:inline">Badges</span>
           </TabsTrigger>
         </TabsList>
 
@@ -318,6 +323,10 @@ const SportsAnimator = ({ onBack }: Props) => {
               setMultiplayerGame('basketball');
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="chat">
+          <FriendChat />
         </TabsContent>
 
         <TabsContent value="challenges">
