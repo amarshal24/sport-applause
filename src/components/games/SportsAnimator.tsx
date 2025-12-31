@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, RotateCcw, Play, Pause } from "lucide-react";
+import { ArrowLeft, Sparkles, RotateCcw, Play, Pause, Download, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import html2canvas from "html2canvas";
+import { toast } from "sonner";
 
 interface Props {
   onBack: () => void;
@@ -86,6 +88,8 @@ const SportsAnimator = ({ onBack }: Props) => {
   const [selectedBackground, setSelectedBackground] = useState(backgrounds[0]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const handlePlay = () => {
     setIsPlaying(!isPlaying);
@@ -100,6 +104,100 @@ const SportsAnimator = ({ onBack }: Props) => {
     setSelectedAnimation("bounce");
     setSelectedBackground(backgrounds[0]);
     setIsPlaying(true);
+  };
+
+  const captureImage = async (): Promise<string | null> => {
+    if (!previewRef.current) return null;
+    
+    // Pause animation for clean capture
+    const wasPlaying = isPlaying;
+    setIsPlaying(false);
+    
+    // Wait for animation to stop
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const dataUrl = canvas.toDataURL("image/png");
+      
+      // Resume animation if it was playing
+      if (wasPlaying) setIsPlaying(true);
+      
+      return dataUrl;
+    } catch (error) {
+      console.error("Error capturing image:", error);
+      if (wasPlaying) setIsPlaying(true);
+      return null;
+    }
+  };
+
+  const handleSaveImage = async () => {
+    setIsSaving(true);
+    try {
+      const dataUrl = await captureImage();
+      if (!dataUrl) {
+        toast.error("Failed to capture image");
+        return;
+      }
+      
+      const link = document.createElement("a");
+      link.download = `sports-animator-${selectedCharacter.sport.toLowerCase()}-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast.success("Image saved! 🎨");
+    } catch (error) {
+      toast.error("Failed to save image");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setIsSaving(true);
+    try {
+      const dataUrl = await captureImage();
+      if (!dataUrl) {
+        toast.error("Failed to capture image");
+        return;
+      }
+      
+      // Convert data URL to blob for sharing
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `sports-animator-${selectedCharacter.sport.toLowerCase()}.png`, { type: "image/png" });
+      
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "My Sports Animation",
+          text: `Check out my ${selectedCharacter.sport} animation! 🏆`,
+          files: [file],
+        });
+        toast.success("Shared successfully! 🎉");
+      } else if (navigator.share) {
+        // Fallback: share without file
+        await navigator.share({
+          title: "My Sports Animation",
+          text: `Check out my ${selectedCharacter.sport} animation with ${selectedAnimation} effect! 🏆`,
+        });
+        toast.success("Shared successfully! 🎉");
+      } else {
+        // Copy to clipboard as fallback
+        await navigator.clipboard.writeText(`Check out my ${selectedCharacter.sport} animation! 🏆`);
+        toast.success("Link copied to clipboard! 📋");
+      }
+    } catch (error) {
+      if ((error as Error).name !== "AbortError") {
+        toast.error("Failed to share");
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -126,6 +224,7 @@ const SportsAnimator = ({ onBack }: Props) => {
         <CardContent className="p-6 space-y-6">
           {/* Animation Preview */}
           <div 
+            ref={previewRef}
             className={`relative h-64 rounded-2xl bg-gradient-to-br ${selectedBackground.gradient} flex items-center justify-center overflow-hidden shadow-xl`}
           >
             {/* Confetti effect */}
@@ -187,7 +286,7 @@ const SportsAnimator = ({ onBack }: Props) => {
           </div>
 
           {/* Controls */}
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-3">
             <Button
               onClick={handlePlay}
               className={`${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
@@ -198,6 +297,24 @@ const SportsAnimator = ({ onBack }: Props) => {
             <Button variant="outline" onClick={handleReset}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleSaveImage}
+              disabled={isSaving}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleShare}
+              disabled={isSaving}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:from-blue-600 hover:to-cyan-600"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
             </Button>
           </div>
 
