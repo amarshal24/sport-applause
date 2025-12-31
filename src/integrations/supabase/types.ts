@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      animator_creations: {
+        Row: {
+          animation_type: string
+          background_type: string
+          character_sport: string
+          created_at: string
+          id: string
+          image_url: string
+          user_id: string
+        }
+        Insert: {
+          animation_type: string
+          background_type: string
+          character_sport: string
+          created_at?: string
+          id?: string
+          image_url: string
+          user_id: string
+        }
+        Update: {
+          animation_type?: string
+          background_type?: string
+          character_sport?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
