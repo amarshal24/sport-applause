@@ -273,6 +273,8 @@ export type Database = {
           image_url: string | null
           likes_count: number
           music_end_time: number | null
+          music_fade_in: number | null
+          music_fade_out: number | null
           music_start_time: number | null
           music_title: string | null
           music_url: string | null
@@ -288,6 +290,8 @@ export type Database = {
           image_url?: string | null
           likes_count?: number
           music_end_time?: number | null
+          music_fade_in?: number | null
+          music_fade_out?: number | null
           music_start_time?: number | null
           music_title?: string | null
           music_url?: string | null
@@ -303,6 +307,8 @@ export type Database = {
           image_url?: string | null
           likes_count?: number
           music_end_time?: number | null
+          music_fade_in?: number | null
+          music_fade_out?: number | null
           music_start_time?: number | null
           music_title?: string | null
           music_url?: string | null
