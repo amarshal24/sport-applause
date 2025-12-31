@@ -1,10 +1,19 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, RotateCcw, Play, Pause, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Sparkles, RotateCcw, Play, Pause, Download, Share2, Image, Trash2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Props {
   onBack: () => void;
@@ -15,6 +24,15 @@ interface Character {
   emoji: string;
   color: string;
   equipment: string;
+}
+
+interface SavedCreation {
+  id: string;
+  image_url: string;
+  character_sport: string;
+  animation_type: string;
+  background_type: string;
+  created_at: string;
 }
 
 const characters: Character[] = [
@@ -83,13 +101,42 @@ const getAnimationVariants = (animationId: string) => {
 };
 
 const SportsAnimator = ({ onBack }: Props) => {
+  const { user } = useAuth();
   const [selectedCharacter, setSelectedCharacter] = useState<Character>(characters[0]);
   const [selectedAnimation, setSelectedAnimation] = useState<string>("bounce");
   const [selectedBackground, setSelectedBackground] = useState(backgrounds[0]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedCreations, setSavedCreations] = useState<SavedCreation[]>([]);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const fetchSavedCreations = async () => {
+    if (!user) return;
+    
+    setIsLoadingGallery(true);
+    try {
+      const { data, error } = await supabase
+        .from('animator_creations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setSavedCreations(data || []);
+    } catch (error) {
+      console.error("Error fetching creations:", error);
+    } finally {
+      setIsLoadingGallery(false);
+    }
+  };
+
+  useEffect(() => {
+    if (galleryOpen && user) {
+      fetchSavedCreations();
+    }
+  }, [galleryOpen, user]);
 
   const handlePlay = () => {
     setIsPlaying(!isPlaying);
@@ -109,11 +156,9 @@ const SportsAnimator = ({ onBack }: Props) => {
   const captureImage = async (): Promise<string | null> => {
     if (!previewRef.current) return null;
     
-    // Pause animation for clean capture
     const wasPlaying = isPlaying;
     setIsPlaying(false);
     
-    // Wait for animation to stop
     await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
@@ -125,7 +170,6 @@ const SportsAnimator = ({ onBack }: Props) => {
       
       const dataUrl = canvas.toDataURL("image/png");
       
-      // Resume animation if it was playing
       if (wasPlaying) setIsPlaying(true);
       
       return dataUrl;
@@ -158,6 +202,91 @@ const SportsAnimator = ({ onBack }: Props) => {
     }
   };
 
+  const handleSaveToGallery = async () => {
+    if (!user) {
+      toast.error("Please sign in to save to gallery");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const dataUrl = await captureImage();
+      if (!dataUrl) {
+        toast.error("Failed to capture image");
+        return;
+      }
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      // Upload to storage
+      const fileName = `${user.id}/${Date.now()}-${selectedCharacter.sport.toLowerCase()}.png`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('animator-creations')
+        .upload(fileName, blob, { contentType: 'image/png' });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('animator-creations')
+        .getPublicUrl(fileName);
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('animator_creations')
+        .insert({
+          user_id: user.id,
+          image_url: urlData.publicUrl,
+          character_sport: selectedCharacter.sport,
+          animation_type: selectedAnimation,
+          background_type: selectedBackground.id,
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success("Saved to gallery! 🎨");
+      fetchSavedCreations();
+    } catch (error) {
+      console.error("Error saving to gallery:", error);
+      toast.error("Failed to save to gallery");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteCreation = async (creation: SavedCreation) => {
+    if (!user) return;
+
+    try {
+      // Extract file path from URL
+      const urlParts = creation.image_url.split('/animator-creations/');
+      const filePath = urlParts[1];
+
+      // Delete from storage
+      if (filePath) {
+        await supabase.storage
+          .from('animator-creations')
+          .remove([filePath]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from('animator_creations')
+        .delete()
+        .eq('id', creation.id);
+
+      if (error) throw error;
+
+      setSavedCreations(prev => prev.filter(c => c.id !== creation.id));
+      toast.success("Creation deleted!");
+    } catch (error) {
+      console.error("Error deleting creation:", error);
+      toast.error("Failed to delete");
+    }
+  };
+
   const handleShare = async () => {
     setIsSaving(true);
     try {
@@ -167,7 +296,6 @@ const SportsAnimator = ({ onBack }: Props) => {
         return;
       }
       
-      // Convert data URL to blob for sharing
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       const file = new File([blob], `sports-animator-${selectedCharacter.sport.toLowerCase()}.png`, { type: "image/png" });
@@ -180,14 +308,12 @@ const SportsAnimator = ({ onBack }: Props) => {
         });
         toast.success("Shared successfully! 🎉");
       } else if (navigator.share) {
-        // Fallback: share without file
         await navigator.share({
           title: "My Sports Animation",
           text: `Check out my ${selectedCharacter.sport} animation with ${selectedAnimation} effect! 🏆`,
         });
         toast.success("Shared successfully! 🎉");
       } else {
-        // Copy to clipboard as fallback
         await navigator.clipboard.writeText(`Check out my ${selectedCharacter.sport} animation! 🏆`);
         toast.success("Link copied to clipboard! 📋");
       }
@@ -302,11 +428,21 @@ const SportsAnimator = ({ onBack }: Props) => {
               variant="outline" 
               onClick={handleSaveImage}
               disabled={isSaving}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
             >
               <Download className="w-4 h-4 mr-2" />
-              Save
+              Download
             </Button>
+            {user && (
+              <Button 
+                variant="outline" 
+                onClick={handleSaveToGallery}
+                disabled={isSaving}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Image className="w-4 h-4 mr-2" />
+                Save to Gallery
+              </Button>
+            )}
             <Button 
               variant="outline" 
               onClick={handleShare}
@@ -316,6 +452,85 @@ const SportsAnimator = ({ onBack }: Props) => {
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
+            
+            {/* Gallery Button */}
+            {user && (
+              <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600">
+                    <Image className="w-4 h-4 mr-2" />
+                    My Gallery
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl flex items-center gap-2">
+                      <Sparkles className="w-6 h-6 text-primary" />
+                      My Creations Gallery
+                    </DialogTitle>
+                  </DialogHeader>
+                  
+                  {isLoadingGallery ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : savedCreations.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Image className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg">No creations yet!</p>
+                      <p className="text-sm">Save your first animation to see it here.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                      {savedCreations.map((creation) => (
+                        <motion.div
+                          key={creation.id}
+                          className="relative group rounded-xl overflow-hidden shadow-lg"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          <img 
+                            src={creation.image_url} 
+                            alt={`${creation.character_sport} animation`}
+                            className="w-full aspect-square object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <p className="text-white text-sm font-medium">{creation.character_sport}</p>
+                              <p className="text-white/70 text-xs">{creation.animation_type} • {creation.background_type}</p>
+                              <div className="flex gap-2 mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = creation.image_url;
+                                    link.download = `creation-${creation.id}.png`;
+                                    link.click();
+                                  }}
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="flex-1"
+                                  onClick={() => handleDeleteCreation(creation)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {/* Character Selection */}
@@ -389,7 +604,7 @@ const SportsAnimator = ({ onBack }: Props) => {
           {/* Fun tip */}
           <div className="text-center p-4 bg-primary/10 rounded-xl">
             <p className="text-sm text-muted-foreground">
-              💡 <span className="font-medium">Tip:</span> Tap the character to see confetti! Mix different sports, animations, and backgrounds to create fun combinations!
+              💡 <span className="font-medium">Tip:</span> {user ? "Save to your gallery to keep your favorite creations!" : "Sign in to save creations to your personal gallery!"} Tap the character to see confetti!
             </p>
           </div>
         </CardContent>
