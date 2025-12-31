@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, Trophy, Gamepad2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Trophy, Gamepad2, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import BasketballGame from "./mini-games/BasketballGame";
 import SoccerGame from "./mini-games/SoccerGame";
@@ -11,6 +11,10 @@ import HockeyGame from "./mini-games/HockeyGame";
 import BaseballGame from "./mini-games/BaseballGame";
 import GolfGame from "./mini-games/GolfGame";
 import VolleyballGame from "./mini-games/VolleyballGame";
+import Leaderboard from "./Leaderboard";
+import AchievementsDisplay from "./AchievementsDisplay";
+import { useGameProgress } from "@/hooks/useGameProgress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Props {
   onBack: () => void;
@@ -37,37 +41,58 @@ const sportGames: SportGame[] = [
 
 const SportsAnimator = ({ onBack }: Props) => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
-  const [highScores, setHighScores] = useState<Record<string, number>>({});
+  const [localHighScores, setLocalHighScores] = useState<Record<string, number>>({});
+  const [maxStreak, setMaxStreak] = useState(0);
+  
+  const { userScores, userAchievements, submitScore, refreshData } = useGameProgress();
 
-  const updateHighScore = (gameId: string, score: number) => {
-    setHighScores(prev => ({
+  // Merge local and remote high scores
+  const highScores = { ...localHighScores };
+  Object.entries(userScores).forEach(([gameId, score]) => {
+    highScores[gameId] = Math.max(highScores[gameId] || 0, score);
+  });
+
+  const handleGameComplete = async (gameId: string, score: number, streak: number = 0) => {
+    // Update local high score
+    setLocalHighScores(prev => ({
       ...prev,
       [gameId]: Math.max(prev[gameId] || 0, score)
     }));
+    setMaxStreak(Math.max(maxStreak, streak));
+    
+    // Submit to database
+    await submitScore(gameId, score, streak);
   };
 
   const handleBackToMenu = () => {
     setSelectedGame(null);
+    refreshData();
   };
 
   const renderGame = () => {
+    const gameProps = (gameId: string) => ({
+      onBack: handleBackToMenu,
+      onScore: (score: number, streak?: number) => handleGameComplete(gameId, score, streak || 0),
+      highScore: highScores[gameId] || 0,
+    });
+
     switch (selectedGame) {
       case "basketball":
-        return <BasketballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("basketball", s)} highScore={highScores.basketball || 0} />;
+        return <BasketballGame {...gameProps("basketball")} />;
       case "soccer":
-        return <SoccerGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("soccer", s)} highScore={highScores.soccer || 0} />;
+        return <SoccerGame {...gameProps("soccer")} />;
       case "football":
-        return <FootballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("football", s)} highScore={highScores.football || 0} />;
+        return <FootballGame {...gameProps("football")} />;
       case "tennis":
-        return <TennisGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("tennis", s)} highScore={highScores.tennis || 0} />;
+        return <TennisGame {...gameProps("tennis")} />;
       case "hockey":
-        return <HockeyGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("hockey", s)} highScore={highScores.hockey || 0} />;
+        return <HockeyGame {...gameProps("hockey")} />;
       case "baseball":
-        return <BaseballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("baseball", s)} highScore={highScores.baseball || 0} />;
+        return <BaseballGame {...gameProps("baseball")} />;
       case "golf":
-        return <GolfGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("golf", s)} highScore={highScores.golf || 0} />;
+        return <GolfGame {...gameProps("golf")} />;
       case "volleyball":
-        return <VolleyballGame onBack={handleBackToMenu} onScore={(s) => updateHighScore("volleyball", s)} highScore={highScores.volleyball || 0} />;
+        return <VolleyballGame {...gameProps("volleyball")} />;
       default:
         return null;
     }
@@ -78,11 +103,11 @@ const SportsAnimator = ({ onBack }: Props) => {
       <div className="max-w-4xl mx-auto animate-fade-in">
         <Button 
           variant="ghost" 
-          onClick={onBack}
+          onClick={handleBackToMenu}
           className="mb-6 hover:bg-primary/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Games
+          Back to Menu
         </Button>
         {renderGame()}
       </div>
@@ -90,77 +115,101 @@ const SportsAnimator = ({ onBack }: Props) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
+    <div className="max-w-5xl mx-auto animate-fade-in space-y-6">
       <Button 
         variant="ghost" 
         onClick={onBack}
-        className="mb-6 hover:bg-primary/10"
+        className="hover:bg-primary/10"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Games
       </Button>
 
-      <Card className="glass-effect overflow-hidden">
-        <CardHeader className="text-center bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white">
-          <CardTitle className="text-3xl font-display flex items-center justify-center gap-3">
-            <Gamepad2 className="w-8 h-8" />
-            Sports Mini-Games
-            <Sparkles className="w-8 h-8" />
-          </CardTitle>
-          <p className="text-white/80">Choose a sport and play animated mini-games!</p>
-        </CardHeader>
+      <Tabs defaultValue="games" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="games" className="gap-2">
+            <Gamepad2 className="w-4 h-4" />
+            Games
+          </TabsTrigger>
+          <TabsTrigger value="leaderboard" className="gap-2">
+            <Trophy className="w-4 h-4" />
+            Leaderboard
+          </TabsTrigger>
+          <TabsTrigger value="achievements" className="gap-2">
+            <Award className="w-4 h-4" />
+            Achievements
+          </TabsTrigger>
+        </TabsList>
 
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {sportGames.map((game, index) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <button
-                  onClick={() => setSelectedGame(game.id)}
-                  className={`w-full p-6 rounded-2xl bg-gradient-to-br ${game.color} text-white shadow-lg hover:scale-105 transition-transform duration-200 text-left group`}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.span 
-                      className="text-5xl"
-                      animate={{ rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      {game.emoji}
-                    </motion.span>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold">{game.name}</h3>
-                      <p className="text-white/80 text-sm">{game.description}</p>
-                      {highScores[game.id] > 0 && (
-                        <div className="flex items-center gap-1 mt-2 text-yellow-200">
-                          <Trophy className="w-4 h-4" />
-                          <span className="text-sm font-medium">Best: {highScores[game.id]}</span>
-                        </div>
-                      )}
-                    </div>
-                    <motion.div
-                      className="text-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    >
-                      ▶
-                    </motion.div>
-                  </div>
-                </button>
-              </motion.div>
-            ))}
-          </div>
+        <TabsContent value="games">
+          <Card className="glass-effect overflow-hidden">
+            <CardHeader className="text-center bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white">
+              <CardTitle className="text-3xl font-display flex items-center justify-center gap-3">
+                <Gamepad2 className="w-8 h-8" />
+                Sports Mini-Games
+                <Sparkles className="w-8 h-8" />
+              </CardTitle>
+              <p className="text-white/80">Choose a sport and play animated mini-games!</p>
+            </CardHeader>
 
-          <div className="mt-8 text-center">
-            <p className="text-muted-foreground text-sm">
-              🎮 Tap or click to play • 🏆 Beat your high scores!
-            </p>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {sportGames.map((game, index) => (
+                  <motion.div
+                    key={game.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <button
+                      onClick={() => setSelectedGame(game.id)}
+                      className={`w-full p-4 rounded-2xl bg-gradient-to-br ${game.color} text-white shadow-lg hover:scale-105 transition-transform duration-200 text-left group`}
+                    >
+                      <div className="flex flex-col items-center text-center gap-2">
+                        <motion.span 
+                          className="text-4xl"
+                          animate={{ rotate: [0, -10, 10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          {game.emoji}
+                        </motion.span>
+                        <h3 className="text-lg font-bold">{game.name}</h3>
+                        <p className="text-white/80 text-xs">{game.description}</p>
+                        {highScores[game.id] > 0 && (
+                          <div className="flex items-center gap-1 text-yellow-200">
+                            <Trophy className="w-3 h-3" />
+                            <span className="text-xs font-medium">{highScores[game.id]}</span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-6 text-center">
+                <p className="text-muted-foreground text-sm">
+                  🎮 Tap or click to play • 🏆 Beat your high scores • 🎖️ Unlock achievements!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <Leaderboard compact />
+            <AchievementsDisplay unlockedAchievements={userAchievements} compact />
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="leaderboard">
+          <Leaderboard />
+        </TabsContent>
+
+        <TabsContent value="achievements">
+          <AchievementsDisplay unlockedAchievements={userAchievements} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
