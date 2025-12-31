@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGameSounds } from "@/hooks/useGameSounds";
 
 interface Props {
   onBack: () => void;
@@ -21,13 +22,18 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
   const [ballPosition, setBallPosition] = useState<KickDirection | null>(null);
   const [goalkeeperPosition, setGoalkeeperPosition] = useState<KickDirection | null>(null);
   const [result, setResult] = useState<"goal" | "saved" | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  const sounds = useGameSounds();
 
   useEffect(() => {
     if (round >= maxRounds && isPlaying) {
       setIsPlaying(false);
+      if (soundEnabled) sounds.playGameOver();
+      sounds.stopBgMusic();
       onScore(score);
     }
-  }, [round, maxRounds, isPlaying, score, onScore]);
+  }, [round, maxRounds, isPlaying, score, onScore, soundEnabled, sounds]);
 
   const startGame = () => {
     setScore(0);
@@ -36,6 +42,10 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
     setBallPosition(null);
     setGoalkeeperPosition(null);
     setResult(null);
+    if (soundEnabled) {
+      sounds.playGameStart();
+      sounds.startBgMusic("medium");
+    }
   };
 
   const kick = useCallback((direction: KickDirection) => {
@@ -43,8 +53,8 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
 
     setIsKicking(true);
     setBallPosition(direction);
+    if (soundEnabled) sounds.playShoot();
 
-    // Goalkeeper dives randomly
     const diveOptions: KickDirection[] = ["left", "center", "right"];
     const goalieDive = diveOptions[Math.floor(Math.random() * diveOptions.length)];
     
@@ -56,8 +66,10 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
         if (isGoal) {
           setScore(s => s + 1);
           setResult("goal");
+          if (soundEnabled) sounds.playScore();
         } else {
           setResult("saved");
+          if (soundEnabled) sounds.playMiss();
         }
 
         setTimeout(() => {
@@ -69,7 +81,16 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
         }, 1000);
       }, 300);
     }, 200);
-  }, [isPlaying, isKicking]);
+  }, [isPlaying, isKicking, soundEnabled, sounds]);
+
+  const toggleSound = () => {
+    if (soundEnabled) {
+      sounds.stopBgMusic();
+    } else if (isPlaying) {
+      sounds.startBgMusic("medium");
+    }
+    setSoundEnabled(prev => !prev);
+  };
 
   const getBallTransform = () => {
     if (!ballPosition) return { x: 0, y: 0 };
@@ -98,6 +119,14 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
             Back
           </Button>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSound}
+              className="text-white hover:bg-white/20 h-8 w-8"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </Button>
             <div className="text-center">
               <div className="text-2xl font-bold">{score}/{round}</div>
               <div className="text-xs text-white/70">Goals</div>
@@ -112,14 +141,11 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
 
       <CardContent className="p-0">
         <div className="relative h-80 bg-gradient-to-b from-sky-400 to-green-500 overflow-hidden">
-          {/* Goal */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-24 border-4 border-white rounded-t-lg bg-white/10">
-            {/* Goal net pattern */}
             <div className="absolute inset-0 opacity-30" style={{
               backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 8px, white 8px, white 9px), repeating-linear-gradient(90deg, transparent, transparent 8px, white 8px, white 9px)"
             }} />
             
-            {/* Goalkeeper */}
             <motion.div
               className="absolute bottom-0 left-1/2 -translate-x-1/2 text-5xl"
               animate={goalkeeperPosition ? getGoalkeeperTransform() : { x: 0 }}
@@ -129,14 +155,10 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
             </motion.div>
           </div>
 
-          {/* Field markings */}
           <div className="absolute bottom-0 left-0 right-0 h-32 border-t-4 border-white/30" />
           <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-32 h-16 border-2 border-white/30 rounded-t-full" />
-          
-          {/* Penalty spot */}
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full" />
 
-          {/* Ball */}
           <motion.div
             className="absolute bottom-16 left-1/2 -translate-x-1/2 text-5xl"
             animate={ballPosition ? getBallTransform() : { x: 0, y: 0, scale: 1 }}
@@ -145,7 +167,6 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
             ⚽
           </motion.div>
 
-          {/* Result overlay */}
           <AnimatePresence>
             {result && (
               <motion.div
@@ -161,7 +182,6 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
             )}
           </AnimatePresence>
 
-          {/* Instructions overlay */}
           {!isPlaying && round === 0 && (
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
               <motion.div
@@ -186,7 +206,6 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
           )}
         </div>
 
-        {/* Controls */}
         {isPlaying && !isKicking && (
           <div className="p-4 bg-muted/30">
             <p className="text-center text-sm text-muted-foreground mb-3">Choose where to kick!</p>
@@ -222,7 +241,6 @@ const SoccerGame = ({ onBack, onScore, highScore }: Props) => {
           </div>
         )}
 
-        {/* Game over */}
         {!isPlaying && round >= maxRounds && (
           <div className="p-6 text-center">
             <h3 className="text-2xl font-bold mb-2">Game Over!</h3>

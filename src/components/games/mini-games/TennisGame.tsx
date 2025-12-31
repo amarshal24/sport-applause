@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGameSounds } from "@/hooks/useGameSounds";
 
 interface Props {
   onBack: () => void;
@@ -23,8 +24,43 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
   const [result, setResult] = useState<"hit" | "miss" | null>(null);
   const [speed, setSpeed] = useState(1500);
   const [lives, setLives] = useState(3);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  const sounds = useGameSounds();
 
-  // Ball coming towards player
+  const checkHit = useCallback((ballPos: Position) => {
+    setIsHitting(true);
+    
+    if (playerPosition === ballPos) {
+      setScore(s => s + (streak >= 3 ? 2 : 1));
+      setStreak(s => s + 1);
+      setResult("hit");
+      setSpeed(s => Math.max(800, s - 50));
+      if (soundEnabled) {
+        sounds.playBounce();
+        if (streak >= 3) sounds.playStreak(streak);
+      }
+    } else {
+      setResult("miss");
+      setStreak(0);
+      setLives(l => l - 1);
+      if (soundEnabled) sounds.playMiss();
+    }
+
+    setTimeout(() => {
+      setResult(null);
+      setBallY(20);
+      setIsHitting(false);
+      
+      if (lives <= 1 && playerPosition !== ballPos) {
+        setIsPlaying(false);
+        if (soundEnabled) sounds.playGameOver();
+        sounds.stopBgMusic();
+        onScore(score + (playerPosition === ballPos ? 1 : 0));
+      }
+    }, 800);
+  }, [playerPosition, streak, lives, score, onScore, soundEnabled, sounds]);
+
   useEffect(() => {
     if (!isPlaying || isHitting) return;
 
@@ -34,12 +70,10 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
       setBallPosition(newPosition);
       setBallY(20);
 
-      // Animate ball coming down
       const interval = setInterval(() => {
         setBallY(prev => {
           if (prev >= 75) {
             clearInterval(interval);
-            // Check if player is in position
             setTimeout(() => checkHit(newPosition), 100);
             return 75;
           }
@@ -52,34 +86,7 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
 
     const timeout = setTimeout(serveBall, 500);
     return () => clearTimeout(timeout);
-  }, [isPlaying, isHitting, speed]);
-
-  const checkHit = useCallback((ballPos: Position) => {
-    setIsHitting(true);
-    
-    if (playerPosition === ballPos) {
-      setScore(s => s + (streak >= 3 ? 2 : 1));
-      setStreak(s => s + 1);
-      setResult("hit");
-      // Speed up after each successful hit
-      setSpeed(s => Math.max(800, s - 50));
-    } else {
-      setResult("miss");
-      setStreak(0);
-      setLives(l => l - 1);
-    }
-
-    setTimeout(() => {
-      setResult(null);
-      setBallY(20);
-      setIsHitting(false);
-      
-      if (lives <= 1 && playerPosition !== ballPos) {
-        setIsPlaying(false);
-        onScore(score + (playerPosition === ballPos ? 1 : 0));
-      }
-    }, 800);
-  }, [playerPosition, streak, lives, score, onScore]);
+  }, [isPlaying, isHitting, speed, checkHit]);
 
   const startGame = () => {
     setScore(0);
@@ -91,11 +98,25 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
     setResult(null);
     setBallY(20);
     setPlayerPosition("center");
+    if (soundEnabled) {
+      sounds.playGameStart();
+      sounds.startBgMusic("medium");
+    }
   };
 
   const movePlayer = (position: Position) => {
     if (!isPlaying) return;
+    if (soundEnabled) sounds.playClick();
     setPlayerPosition(position);
+  };
+
+  const toggleSound = () => {
+    if (soundEnabled) {
+      sounds.stopBgMusic();
+    } else if (isPlaying) {
+      sounds.startBgMusic("medium");
+    }
+    setSoundEnabled(prev => !prev);
   };
 
   const getBallX = () => {
@@ -123,6 +144,14 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
             Back
           </Button>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSound}
+              className="text-white hover:bg-white/20 h-8 w-8"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </Button>
             <div className="text-center">
               <div className="text-2xl font-bold">{score}</div>
               <div className="text-xs text-white/70">Score</div>
@@ -142,15 +171,11 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
 
       <CardContent className="p-0">
         <div className="relative h-80 bg-gradient-to-b from-green-600 to-green-700 overflow-hidden">
-          {/* Court lines */}
           <div className="absolute inset-4 border-2 border-white/50" />
           <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/50" />
           <div className="absolute top-4 bottom-4 left-1/2 w-0.5 bg-white/30" />
-          
-          {/* Net */}
           <div className="absolute top-1/2 left-4 right-4 h-2 bg-white/70 -translate-y-1/2" />
 
-          {/* Ball */}
           <motion.div
             className="absolute text-3xl -translate-x-1/2"
             style={{ left: getBallX() }}
@@ -160,7 +185,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
             🎾
           </motion.div>
 
-          {/* Player */}
           <motion.div
             className="absolute bottom-8 text-5xl -translate-x-1/2"
             animate={{ left: getPlayerX() }}
@@ -169,7 +193,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
             🎾🏃
           </motion.div>
 
-          {/* Position indicators */}
           <div className="absolute bottom-24 left-0 right-0 flex justify-around px-8">
             {(["left", "center", "right"] as Position[]).map((pos) => (
               <div
@@ -179,7 +202,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
             ))}
           </div>
 
-          {/* Result overlay */}
           <AnimatePresence>
             {result && (
               <motion.div
@@ -195,7 +217,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
             )}
           </AnimatePresence>
 
-          {/* Instructions overlay */}
           {!isPlaying && lives === 3 && (
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
               <motion.div
@@ -220,7 +241,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
           )}
         </div>
 
-        {/* Controls */}
         {isPlaying && (
           <div className="p-4 bg-muted/30">
             <p className="text-center text-sm text-muted-foreground mb-3">Move to intercept the ball!</p>
@@ -253,7 +273,6 @@ const TennisGame = ({ onBack, onScore, highScore }: Props) => {
           </div>
         )}
 
-        {/* Game over */}
         {!isPlaying && lives <= 0 && (
           <div className="p-6 text-center">
             <h3 className="text-2xl font-bold mb-2">Game Over!</h3>
