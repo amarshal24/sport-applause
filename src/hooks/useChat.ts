@@ -7,6 +7,7 @@ export interface ChatMessage {
   senderId: string;
   recipientId: string;
   content: string;
+  imageUrl: string | null;
   read: boolean;
   createdAt: string;
   isMine: boolean;
@@ -131,6 +132,7 @@ export const useChat = (recipientId?: string) => {
         senderId: msg.sender_id,
         recipientId: msg.recipient_id,
         content: msg.content,
+        imageUrl: msg.image_url,
         read: msg.read,
         createdAt: msg.created_at,
         isMine: msg.sender_id === user.id
@@ -150,15 +152,16 @@ export const useChat = (recipientId?: string) => {
   }, [user, recipientId]);
 
   // Send a message
-  const sendMessage = useCallback(async (content: string) => {
-    if (!user || !recipientId || !content.trim()) return false;
+  const sendMessage = useCallback(async (content: string, imageUrl?: string) => {
+    if (!user || !recipientId || (!content.trim() && !imageUrl)) return false;
 
     const { error } = await supabase
       .from('chat_messages')
       .insert({
         sender_id: user.id,
         recipient_id: recipientId,
-        content: content.trim()
+        content: content.trim() || '',
+        image_url: imageUrl || null
       });
 
     if (error) {
@@ -168,6 +171,29 @@ export const useChat = (recipientId?: string) => {
 
     return true;
   }, [user, recipientId]);
+
+  // Upload image
+  const uploadImage = useCallback(async (file: File) => {
+    if (!user) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('chat-images')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('chat-images')
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  }, [user]);
 
   // Get total unread count
   const getTotalUnread = useCallback(() => {
@@ -203,6 +229,7 @@ export const useChat = (recipientId?: string) => {
               senderId: payload.new.sender_id,
               recipientId: payload.new.recipient_id,
               content: payload.new.content,
+              imageUrl: payload.new.image_url,
               read: payload.new.read,
               createdAt: payload.new.created_at,
               isMine: false
@@ -236,6 +263,7 @@ export const useChat = (recipientId?: string) => {
               senderId: payload.new.sender_id,
               recipientId: payload.new.recipient_id,
               content: payload.new.content,
+              imageUrl: payload.new.image_url,
               read: payload.new.read,
               createdAt: payload.new.created_at,
               isMine: true
@@ -276,6 +304,7 @@ export const useChat = (recipientId?: string) => {
     conversations,
     isLoading,
     sendMessage,
+    uploadImage,
     getTotalUnread,
     fetchMessages,
     fetchConversations
