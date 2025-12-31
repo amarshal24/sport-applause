@@ -83,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_challenges: {
+        Row: {
+          challenge_date: string
+          challenge_type: string
+          created_at: string
+          description: string
+          game_id: string
+          id: string
+          reward_points: number
+          target_score: number
+        }
+        Insert: {
+          challenge_date?: string
+          challenge_type: string
+          created_at?: string
+          description: string
+          game_id: string
+          id?: string
+          reward_points?: number
+          target_score: number
+        }
+        Update: {
+          challenge_date?: string
+          challenge_type?: string
+          created_at?: string
+          description?: string
+          game_id?: string
+          id?: string
+          reward_points?: number
+          target_score?: number
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -248,6 +281,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      multiplayer_matches: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          game_id: string
+          guest_id: string | null
+          guest_score: number | null
+          host_id: string
+          host_score: number | null
+          id: string
+          started_at: string | null
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          game_id: string
+          guest_id?: string | null
+          guest_score?: number | null
+          host_id: string
+          host_score?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          game_id?: string
+          guest_id?: string | null
+          guest_score?: number | null
+          host_id?: string
+          host_score?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: []
       }
       podcasts: {
         Row: {
@@ -627,6 +702,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_daily_challenges: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "daily_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
