@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Image, Video, ChevronRight, Music, X, Play, Pause } from "lucide-react";
+import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
@@ -39,6 +39,7 @@ interface MusicTrack {
   duration: string;
   mood: string;
   url: string;
+  isCustom?: boolean;
 }
 
 const musicLibrary: MusicTrack[] = [
@@ -116,6 +117,9 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
   const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
   const [musicDialogOpen, setMusicDialogOpen] = useState(false);
   const [previewingTrack, setPreviewingTrack] = useState<string | null>(null);
+  const [customMusicFile, setCustomMusicFile] = useState<File | null>(null);
+  const [customMusicPreview, setCustomMusicPreview] = useState<string | null>(null);
+  const [musicUploadProgress, setMusicUploadProgress] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
@@ -171,6 +175,97 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
 
   const handleRemoveMusic = () => {
     setSelectedMusic(null);
+    if (customMusicPreview) {
+      URL.revokeObjectURL(customMusicPreview);
+    }
+    setCustomMusicFile(null);
+    setCustomMusicPreview(null);
+  };
+
+  const handleCustomMusicSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Music file must be less than 20MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const validTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a", "audio/aac"];
+      if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an MP3, WAV, OGG, M4A, or AAC file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Stop any previewing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPreviewingTrack(null);
+
+      const audioUrl = URL.createObjectURL(file);
+      setCustomMusicFile(file);
+      setCustomMusicPreview(audioUrl);
+
+      // Get duration
+      const audio = new Audio(audioUrl);
+      audio.addEventListener("loadedmetadata", () => {
+        const minutes = Math.floor(audio.duration / 60);
+        const seconds = Math.floor(audio.duration % 60);
+        const duration = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        
+        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        const customTrack: MusicTrack = {
+          id: `custom-${Date.now()}`,
+          title: fileName,
+          artist: "Your Upload",
+          duration,
+          mood: "custom",
+          url: audioUrl,
+          isCustom: true,
+        };
+        
+        setSelectedMusic(customTrack);
+        setMusicDialogOpen(false);
+        
+        toast({
+          title: "Music attached!",
+          description: `"${fileName}" will play when others view your post.`,
+        });
+      });
+    }
+  };
+
+  const uploadMusic = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+
+    setMusicUploadProgress(10);
+
+    const { error: uploadError } = await supabase.storage
+      .from("post-music")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    setMusicUploadProgress(80);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("post-music")
+      .getPublicUrl(fileName);
+
+    setMusicUploadProgress(100);
+    return publicUrl;
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,6 +391,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
     try {
       let imageUrl: string | null = null;
       let videoUrl: string | null = null;
+      let musicUrl: string | null = null;
 
       if (imageFile) {
         imageUrl = await uploadImage(imageFile, postType === "story" ? "stories" : "posts");
@@ -303,6 +399,13 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
 
       if (videoFile) {
         videoUrl = await uploadVideo(videoFile);
+      }
+
+      // Upload custom music if selected
+      if (selectedMusic?.isCustom && customMusicFile) {
+        musicUrl = await uploadMusic(customMusicFile);
+      } else if (selectedMusic) {
+        musicUrl = selectedMusic.url;
       }
 
       if (postType === "story") {
@@ -337,7 +440,7 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
           content: content.trim() || (videoFile ? "Check out this video!" : ""),
           image_url: imageUrl,
           video_url: videoUrl,
-          music_url: selectedMusic?.url || null,
+          music_url: musicUrl,
           music_title: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : null,
         });
 
@@ -361,6 +464,12 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
       setUploadProgress(0);
       setSelectedMood(null);
       setSelectedMusic(null);
+      setCustomMusicFile(null);
+      if (customMusicPreview) {
+        URL.revokeObjectURL(customMusicPreview);
+      }
+      setCustomMusicPreview(null);
+      setMusicUploadProgress(0);
       onPostCreated?.();
     } catch (error: any) {
       toast({
@@ -545,9 +654,42 @@ const UnifiedComposer = ({ onPostCreated }: UnifiedComposerProps) => {
                       </DialogTitle>
                     </DialogHeader>
                     <div className="overflow-y-auto flex-1 -mx-6 px-6">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Choose a track that will play when others view your post.
-                      </p>
+                      {/* Upload Custom Music Section */}
+                      <div className="mb-4 p-4 border-2 border-dashed border-border rounded-lg hover:border-primary transition-colors">
+                        <input
+                          id="custom-music-upload"
+                          type="file"
+                          accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                          className="hidden"
+                          onChange={handleCustomMusicSelect}
+                        />
+                        <label 
+                          htmlFor="custom-music-upload"
+                          className="flex flex-col items-center gap-2 cursor-pointer"
+                        >
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Upload className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium text-sm">Upload Your Own Music</p>
+                            <p className="text-xs text-muted-foreground">
+                              MP3, WAV, OGG, M4A, AAC • Max 20MB
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="relative mb-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">
+                            Or choose from library
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         {musicLibrary.map((track) => (
                           <div
