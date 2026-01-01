@@ -463,7 +463,9 @@ const AutoPlayVideo = ({
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const lastTapRef = useRef<number>(0);
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -510,15 +512,39 @@ const AutoPlayVideo = ({
     }
   };
 
+  const togglePlayPause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    if (video.paused) {
+      video.play().catch(() => {});
+      setIsPaused(false);
+    } else {
+      video.pause();
+      setIsPaused(true);
+    }
+  };
+
   const handleTap = () => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
 
+    // Clear any pending single-tap timeout
+    if (tapTimeoutRef.current) {
+      clearTimeout(tapTimeoutRef.current);
+      tapTimeoutRef.current = null;
+    }
+
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected
+      // Double tap detected - like
       setShowHeart(true);
       onDoubleTap?.();
       setTimeout(() => setShowHeart(false), 1000);
+    } else {
+      // Wait to see if this becomes a double tap
+      tapTimeoutRef.current = setTimeout(() => {
+        togglePlayPause();
+      }, DOUBLE_TAP_DELAY);
     }
     lastTapRef.current = now;
   };
@@ -534,6 +560,15 @@ const AutoPlayVideo = ({
         playsInline
         preload="metadata"
       />
+      
+      {/* Pause indicator */}
+      {isPaused && !showHeart && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-black/20">
+          <div className="h-16 w-16 rounded-full bg-background/80 flex items-center justify-center">
+            <Play className="h-8 w-8 text-foreground ml-1" />
+          </div>
+        </div>
+      )}
       
       {/* Heart animation on double-tap */}
       {showHeart && (
