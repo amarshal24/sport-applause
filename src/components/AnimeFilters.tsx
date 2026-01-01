@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type AnimeFilterType = 
@@ -17,6 +17,30 @@ export type AnimeFilterType =
   | "speed-lines"
   | "dramatic-zoom"
   | "sakura";
+
+export interface FilterPreset {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  filter: AnimeFilterType;
+  intensity: number;
+}
+
+export const filterPresets: FilterPreset[] = [
+  { id: "cinematic", name: "Cinematic", icon: "🎬", description: "Epic movie feel", filter: "dramatic-zoom", intensity: 60 },
+  { id: "dreamy", name: "Dreamy", icon: "✨", description: "Soft & ethereal", filter: "anime-soft", intensity: 80 },
+  { id: "action-hero", name: "Action Hero", icon: "💥", description: "Intense action", filter: "speed-lines", intensity: 75 },
+  { id: "romantic", name: "Romantic", icon: "💕", description: "Shoujo romance", filter: "shoujo", intensity: 85 },
+  { id: "noir", name: "Noir", icon: "🖤", description: "Dark manga style", filter: "manga", intensity: 90 },
+  { id: "neon-nights", name: "Neon Nights", icon: "🌃", description: "Cyberpunk vibes", filter: "cyberpunk", intensity: 70 },
+  { id: "nostalgic", name: "Nostalgic", icon: "📼", description: "Retro anime feel", filter: "retro-anime", intensity: 65 },
+  { id: "whimsical", name: "Whimsical", icon: "🏔️", description: "Ghibli magic", filter: "studio-ghibli", intensity: 75 },
+  { id: "spring", name: "Spring Day", icon: "🌸", description: "Cherry blossom", filter: "sakura", intensity: 70 },
+  { id: "bold", name: "Bold Pop", icon: "🎨", description: "Cel-shaded art", filter: "cel-shaded", intensity: 80 },
+  { id: "subtle", name: "Subtle Anime", icon: "🎌", description: "Light enhancement", filter: "anime-classic", intensity: 40 },
+  { id: "vibrant", name: "Vibrant", icon: "🔥", description: "High intensity", filter: "anime-classic", intensity: 100 },
+];
 
 interface AnimeFilterProps {
   selectedFilter: AnimeFilterType;
@@ -512,7 +536,14 @@ const CelShadedEdges = () => {
 
 export const AnimeFilterSelector = ({ selectedFilter, onFilterChange, intensity, onIntensityChange }: AnimeFilterProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"presets" | "filters">("presets");
   const currentFilter = animeFilters.find(f => f.type === selectedFilter) || animeFilters[0];
+
+  const handlePresetSelect = (preset: FilterPreset) => {
+    onFilterChange(preset.filter);
+    onIntensityChange(preset.intensity);
+    setIsExpanded(false);
+  };
 
   return (
     <div className="relative">
@@ -540,59 +571,130 @@ export const AnimeFilterSelector = ({ selectedFilter, onFilterChange, intensity,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 p-2 bg-background/95 backdrop-blur-sm rounded-lg border border-border shadow-lg min-w-[180px] max-h-[320px] overflow-y-auto z-50"
+            className="absolute bottom-full left-0 mb-2 p-2 bg-background/95 backdrop-blur-sm rounded-lg border border-border shadow-lg min-w-[220px] max-h-[380px] overflow-hidden z-50"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-xs font-semibold text-muted-foreground mb-2 px-1 flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              Anime Filters
+            {/* Tab switcher */}
+            <div className="flex gap-1 mb-2 p-0.5 bg-muted/50 rounded-md">
+              <button
+                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  activeTab === "presets" 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setActiveTab("presets")}
+              >
+                <Wand2 className="h-3 w-3" />
+                Presets
+              </button>
+              <button
+                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  activeTab === "filters" 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setActiveTab("filters")}
+              >
+                <Sparkles className="h-3 w-3" />
+                Custom
+              </button>
             </div>
             
-            {/* Intensity Slider */}
-            {selectedFilter !== "none" && (
-              <div className="mb-3 px-1">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-muted-foreground">Intensity</span>
-                  <span className="font-medium text-primary">{intensity}%</span>
-                </div>
-                <Slider
-                  value={[intensity]}
-                  onValueChange={(value) => onIntensityChange(value[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-            )}
-            
-            <div className="grid gap-1">
-              {animeFilters.map((filter) => (
-                <button
-                  key={filter.type}
-                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
-                    selectedFilter === filter.type
-                      ? "bg-primary/20 text-primary"
-                      : "hover:bg-muted"
-                  }`}
-                  onClick={() => {
-                    onFilterChange(filter.type);
-                    if (filter.type !== "none") {
-                      setIsExpanded(true); // Keep open to adjust intensity
-                    } else {
+            <div className="overflow-y-auto max-h-[300px]">
+              {activeTab === "presets" ? (
+                <div className="grid gap-1">
+                  {/* Reset option */}
+                  <button
+                    className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
+                      selectedFilter === "none"
+                        ? "bg-primary/20 text-primary"
+                        : "hover:bg-muted"
+                    }`}
+                    onClick={() => {
+                      onFilterChange("none");
                       setIsExpanded(false);
-                    }
-                  }}
-                >
-                  <span className="text-sm">{filter.icon}</span>
-                  <div className="flex-1">
-                    <div className="font-medium">{filter.label}</div>
-                  </div>
-                  {selectedFilter === filter.type && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    }}
+                  >
+                    <span className="text-sm">🎬</span>
+                    <div className="flex-1">
+                      <div className="font-medium">Original</div>
+                      <div className="text-[10px] text-muted-foreground">No filter</div>
+                    </div>
+                  </button>
+                  
+                  {filterPresets.map((preset) => {
+                    const isActive = selectedFilter === preset.filter && intensity === preset.intensity;
+                    return (
+                      <button
+                        key={preset.id}
+                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
+                          isActive
+                            ? "bg-primary/20 text-primary"
+                            : "hover:bg-muted"
+                        }`}
+                        onClick={() => handlePresetSelect(preset)}
+                      >
+                        <span className="text-sm">{preset.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{preset.name}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">{preset.description}</div>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{preset.intensity}%</span>
+                        {isActive && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  {/* Intensity Slider */}
+                  {selectedFilter !== "none" && (
+                    <div className="mb-3 px-1">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-muted-foreground">Intensity</span>
+                        <span className="font-medium text-primary">{intensity}%</span>
+                      </div>
+                      <Slider
+                        value={[intensity]}
+                        onValueChange={(value) => onIntensityChange(value[0])}
+                        min={0}
+                        max={100}
+                        step={5}
+                        className="w-full"
+                      />
+                    </div>
                   )}
-                </button>
-              ))}
+                  
+                  <div className="grid gap-1">
+                    {animeFilters.map((filter) => (
+                      <button
+                        key={filter.type}
+                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
+                          selectedFilter === filter.type
+                            ? "bg-primary/20 text-primary"
+                            : "hover:bg-muted"
+                        }`}
+                        onClick={() => {
+                          onFilterChange(filter.type);
+                          if (filter.type === "none") {
+                            setIsExpanded(false);
+                          }
+                        }}
+                      >
+                        <span className="text-sm">{filter.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium">{filter.label}</div>
+                        </div>
+                        {selectedFilter === filter.type && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         )}
