@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,6 +21,8 @@ export type AnimeFilterType =
 interface AnimeFilterProps {
   selectedFilter: AnimeFilterType;
   onFilterChange: (filter: AnimeFilterType) => void;
+  intensity: number;
+  onIntensityChange: (intensity: number) => void;
 }
 
 export const animeFilters: { type: AnimeFilterType; label: string; icon: string; description: string }[] = [
@@ -37,51 +40,60 @@ export const animeFilters: { type: AnimeFilterType; label: string; icon: string;
   { type: "dramatic-zoom", label: "Dramatic", icon: "⚡", description: "Intense zoom effect" },
 ];
 
-export const getAnimeFilterStyle = (type: AnimeFilterType): React.CSSProperties => {
+// Helper to interpolate filter values based on intensity (0-100)
+const lerp = (start: number, end: number, intensity: number) => {
+  return start + (end - start) * (intensity / 100);
+};
+
+export const getAnimeFilterStyle = (type: AnimeFilterType, intensity: number = 100): React.CSSProperties => {
+  if (type === "none" || intensity === 0) return {};
+  
+  const i = intensity; // shorthand
+  
   switch (type) {
     case "anime-classic":
       return { 
-        filter: "saturate(1.4) contrast(1.15) brightness(1.05)",
+        filter: `saturate(${lerp(1, 1.4, i)}) contrast(${lerp(1, 1.15, i)}) brightness(${lerp(1, 1.05, i)})`,
       };
     case "anime-soft":
       return { 
-        filter: "saturate(1.2) contrast(1.05) brightness(1.1) blur(0.3px)",
+        filter: `saturate(${lerp(1, 1.2, i)}) contrast(${lerp(1, 1.05, i)}) brightness(${lerp(1, 1.1, i)}) blur(${lerp(0, 0.3, i)}px)`,
       };
     case "manga":
       return { 
-        filter: "grayscale(1) contrast(1.5) brightness(1.1)",
+        filter: `grayscale(${lerp(0, 1, i)}) contrast(${lerp(1, 1.5, i)}) brightness(${lerp(1, 1.1, i)})`,
       };
     case "cel-shaded":
       return { 
-        filter: "saturate(1.6) contrast(1.4) brightness(1.0)",
+        filter: `saturate(${lerp(1, 1.6, i)}) contrast(${lerp(1, 1.4, i)}) brightness(1.0)`,
       };
     case "cyberpunk":
       return { 
-        filter: "saturate(1.8) contrast(1.3) hue-rotate(-10deg) brightness(0.95)",
+        filter: `saturate(${lerp(1, 1.8, i)}) contrast(${lerp(1, 1.3, i)}) hue-rotate(${lerp(0, -10, i)}deg) brightness(${lerp(1, 0.95, i)})`,
       };
     case "studio-ghibli":
       return { 
-        filter: "saturate(1.3) contrast(1.1) brightness(1.08) sepia(0.1)",
+        filter: `saturate(${lerp(1, 1.3, i)}) contrast(${lerp(1, 1.1, i)}) brightness(${lerp(1, 1.08, i)}) sepia(${lerp(0, 0.1, i)})`,
       };
     case "shoujo":
       return { 
-        filter: "saturate(1.25) contrast(1.05) brightness(1.15) hue-rotate(5deg)",
+        filter: `saturate(${lerp(1, 1.25, i)}) contrast(${lerp(1, 1.05, i)}) brightness(${lerp(1, 1.15, i)}) hue-rotate(${lerp(0, 5, i)}deg)`,
       };
     case "retro-anime":
       return { 
-        filter: "saturate(1.1) contrast(1.2) brightness(0.95) sepia(0.15)",
+        filter: `saturate(${lerp(1, 1.1, i)}) contrast(${lerp(1, 1.2, i)}) brightness(${lerp(1, 0.95, i)}) sepia(${lerp(0, 0.15, i)})`,
       };
     case "sakura":
       return { 
-        filter: "saturate(1.2) contrast(1.05) brightness(1.1) hue-rotate(3deg)",
+        filter: `saturate(${lerp(1, 1.2, i)}) contrast(${lerp(1, 1.05, i)}) brightness(${lerp(1, 1.1, i)}) hue-rotate(${lerp(0, 3, i)}deg)`,
       };
     case "speed-lines":
       return { 
-        filter: "saturate(1.3) contrast(1.2) brightness(1.0)",
+        filter: `saturate(${lerp(1, 1.3, i)}) contrast(${lerp(1, 1.2, i)}) brightness(1.0)`,
       };
     case "dramatic-zoom":
       return { 
-        filter: "saturate(1.4) contrast(1.25) brightness(0.95)",
+        filter: `saturate(${lerp(1, 1.4, i)}) contrast(${lerp(1, 1.25, i)}) brightness(${lerp(1, 0.95, i)})`,
       };
     default:
       return {};
@@ -89,11 +101,13 @@ export const getAnimeFilterStyle = (type: AnimeFilterType): React.CSSProperties 
 };
 
 // Overlay effects for each anime filter type
-export const AnimeFilterOverlay = ({ type }: { type: AnimeFilterType }) => {
-  if (type === "none") return null;
+export const AnimeFilterOverlay = ({ type, intensity = 100 }: { type: AnimeFilterType; intensity?: number }) => {
+  if (type === "none" || intensity === 0) return null;
+
+  const opacityStyle = { opacity: intensity / 100 };
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-5">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-5" style={opacityStyle}>
       {type === "shoujo" && <ShoujoSparkles />}
       {type === "cyberpunk" && <CyberpunkScanlines />}
       {type === "retro-anime" && <RetroVHS />}
@@ -496,7 +510,7 @@ const CelShadedEdges = () => {
   );
 };
 
-export const AnimeFilterSelector = ({ selectedFilter, onFilterChange }: AnimeFilterProps) => {
+export const AnimeFilterSelector = ({ selectedFilter, onFilterChange, intensity, onIntensityChange }: AnimeFilterProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const currentFilter = animeFilters.find(f => f.type === selectedFilter) || animeFilters[0];
 
@@ -513,6 +527,9 @@ export const AnimeFilterSelector = ({ selectedFilter, onFilterChange }: AnimeFil
       >
         <Sparkles className="h-3 w-3" />
         <span>{currentFilter.icon}</span>
+        {selectedFilter !== "none" && (
+          <span className="text-[10px] text-muted-foreground">{intensity}%</span>
+        )}
         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </Button>
 
@@ -523,13 +540,32 @@ export const AnimeFilterSelector = ({ selectedFilter, onFilterChange }: AnimeFil
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 p-2 bg-background/95 backdrop-blur-sm rounded-lg border border-border shadow-lg min-w-[160px] max-h-[280px] overflow-y-auto z-50"
+            className="absolute bottom-full left-0 mb-2 p-2 bg-background/95 backdrop-blur-sm rounded-lg border border-border shadow-lg min-w-[180px] max-h-[320px] overflow-y-auto z-50"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-xs font-semibold text-muted-foreground mb-2 px-1 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
               Anime Filters
             </div>
+            
+            {/* Intensity Slider */}
+            {selectedFilter !== "none" && (
+              <div className="mb-3 px-1">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">Intensity</span>
+                  <span className="font-medium text-primary">{intensity}%</span>
+                </div>
+                <Slider
+                  value={[intensity]}
+                  onValueChange={(value) => onIntensityChange(value[0])}
+                  min={0}
+                  max={100}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+            )}
+            
             <div className="grid gap-1">
               {animeFilters.map((filter) => (
                 <button
@@ -541,7 +577,11 @@ export const AnimeFilterSelector = ({ selectedFilter, onFilterChange }: AnimeFil
                   }`}
                   onClick={() => {
                     onFilterChange(filter.type);
-                    setIsExpanded(false);
+                    if (filter.type !== "none") {
+                      setIsExpanded(true); // Keep open to adjust intensity
+                    } else {
+                      setIsExpanded(false);
+                    }
                   }}
                 >
                   <span className="text-sm">{filter.icon}</span>

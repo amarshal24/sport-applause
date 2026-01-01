@@ -469,6 +469,7 @@ const AutoPlayVideo = ({
   const [isPaused, setIsPaused] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [animeFilter, setAnimeFilter] = useState<AnimeFilterType>("none");
+  const [filterIntensity, setFilterIntensity] = useState(100);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -583,7 +584,7 @@ const AutoPlayVideo = ({
         ref={videoRef}
         src={src}
         className="w-full h-full object-cover cursor-pointer"
-        style={getAnimeFilterStyle(animeFilter)}
+        style={getAnimeFilterStyle(animeFilter, filterIntensity)}
         loop
         muted={isMuted}
         playsInline
@@ -591,7 +592,7 @@ const AutoPlayVideo = ({
       />
       
       {/* Anime filter overlay effects */}
-      <AnimeFilterOverlay type={animeFilter} />
+      <AnimeFilterOverlay type={animeFilter} intensity={filterIntensity} />
       
       {/* Pause indicator */}
       {isPaused && !showHeart && (
@@ -689,7 +690,9 @@ const AutoPlayVideo = ({
         {/* Anime filter selector */}
         <AnimeFilterSelector 
           selectedFilter={animeFilter} 
-          onFilterChange={setAnimeFilter} 
+          onFilterChange={setAnimeFilter}
+          intensity={filterIntensity}
+          onIntensityChange={setFilterIntensity}
         />
       </div>
       {/* Progress bar overlay */}
