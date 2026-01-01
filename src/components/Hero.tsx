@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, TrendingUp, Users, Video, GraduationCap, Zap, Heart, Sparkles, Film, Globe, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import LivePreview from "./LivePreview";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -48,6 +49,9 @@ const Hero = () => {
           </div>
         </div>
       </section>
+
+      {/* Live Preview Section */}
+      <LivePreview />
 
       {/* What Makes Us Different Section */}
       <section className="py-20 px-6 bg-muted/30">
