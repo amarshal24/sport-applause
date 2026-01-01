@@ -464,8 +464,11 @@ const AutoPlayVideo = ({
   const [showHeart, setShowHeart] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 
   useEffect(() => {
     const video = videoRef.current;
@@ -604,6 +607,24 @@ const AutoPlayVideo = ({
         )}
       </Button>
       
+      {/* Playback speed control */}
+      <Button
+        size="sm"
+        variant="secondary"
+        className="absolute bottom-3 left-3 z-10 h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
+        onClick={(e) => {
+          e.stopPropagation();
+          const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
+          const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+          const newSpeed = SPEED_OPTIONS[nextIndex];
+          setPlaybackSpeed(newSpeed);
+          if (videoRef.current) {
+            videoRef.current.playbackRate = newSpeed;
+          }
+        }}
+      >
+        {playbackSpeed}x
+      </Button>
       {/* Progress bar overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 z-10">
         <div 
