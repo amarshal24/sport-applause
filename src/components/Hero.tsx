@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, TrendingUp, Users, Video, GraduationCap, Zap, Heart, Sparkles, Film, Globe, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LivePreview from "./LivePreview";
+import DemoVideoModal from "./DemoVideoModal";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const [showDemo, setShowDemo] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,7 +26,7 @@ const Hero = () => {
               and recruiters find the next generation of champions.
             </p>
             
-            <div className="flex flex-wrap gap-4 justify-center mb-12">
+            <div className="flex flex-wrap gap-4 justify-center mb-6">
               <Button 
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow"
@@ -42,6 +45,16 @@ const Hero = () => {
                 Join as Creator
               </Button>
             </div>
+
+            <Button
+              variant="ghost"
+              size="lg"
+              className="mb-8 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowDemo(true)}
+            >
+              <Video className="mr-2 h-5 w-5" />
+              Watch Demo
+            </Button>
             
             <p className="text-sm text-muted-foreground mb-8">
               Athletes • Commentators • Media • Fitness Coaches • Entertainment
@@ -229,6 +242,9 @@ const Hero = () => {
           </div>
         </div>
       </footer>
+
+      {/* Demo Video Modal */}
+      <DemoVideoModal open={showDemo} onOpenChange={setShowDemo} />
     </div>
   );
 };
