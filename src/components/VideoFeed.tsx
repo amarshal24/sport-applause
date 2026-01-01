@@ -462,6 +462,7 @@ const AutoPlayVideo = ({
   const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
+  const [progress, setProgress] = useState(0);
   const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
@@ -486,6 +487,20 @@ const AutoPlayVideo = ({
 
     observer.observe(video);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (video.duration) {
+        setProgress((video.currentTime / video.duration) * 100);
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
   }, []);
 
   const toggleMute = () => {
@@ -553,6 +568,14 @@ const AutoPlayVideo = ({
           <Volume2 className="h-4 w-4" />
         )}
       </Button>
+      
+      {/* Progress bar overlay */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 z-10">
+        <div 
+          className="h-full bg-primary transition-all duration-100 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       
       <style>{`
         @keyframes heartPop {
