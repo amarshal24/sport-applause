@@ -520,6 +520,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          anime_filter_intensity: number | null
+          anime_filter_preference: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -531,6 +533,8 @@ export type Database = {
           username: string
         }
         Insert: {
+          anime_filter_intensity?: number | null
+          anime_filter_preference?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -542,6 +546,8 @@ export type Database = {
           username: string
         }
         Update: {
+          anime_filter_intensity?: number | null
+          anime_filter_preference?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string

@@ -470,10 +470,61 @@ const AutoPlayVideo = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [animeFilter, setAnimeFilter] = useState<AnimeFilterType>("none");
   const [filterIntensity, setFilterIntensity] = useState(100);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
+
+  // Load user's saved filter preferences
+  useEffect(() => {
+    const loadFilterPreferences = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("anime_filter_preference, anime_filter_intensity")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile) {
+          if (profile.anime_filter_preference) {
+            setAnimeFilter(profile.anime_filter_preference as AnimeFilterType);
+          }
+          if (profile.anime_filter_intensity !== null) {
+            setFilterIntensity(profile.anime_filter_intensity);
+          }
+        }
+      }
+      setPrefsLoaded(true);
+    };
+    
+    loadFilterPreferences();
+  }, []);
+
+  // Save filter preference when changed
+  const handleFilterChange = async (filter: AnimeFilterType) => {
+    setAnimeFilter(filter);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ anime_filter_preference: filter })
+        .eq("id", user.id);
+    }
+  };
+
+  // Save intensity preference when changed
+  const handleIntensityChange = async (intensity: number) => {
+    setFilterIntensity(intensity);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ anime_filter_intensity: intensity })
+        .eq("id", user.id);
+    }
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -690,9 +741,9 @@ const AutoPlayVideo = ({
         {/* Anime filter selector */}
         <AnimeFilterSelector 
           selectedFilter={animeFilter} 
-          onFilterChange={setAnimeFilter}
+          onFilterChange={handleFilterChange}
           intensity={filterIntensity}
-          onIntensityChange={setFilterIntensity}
+          onIntensityChange={handleIntensityChange}
         />
       </div>
       {/* Progress bar overlay */}
