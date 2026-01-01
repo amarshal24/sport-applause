@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -614,21 +614,47 @@ const AutoPlayVideo = ({
           Video
         </Badge>
       </div>
-      <Button
-        size="sm"
-        variant="secondary"
-        className="absolute bottom-3 right-3 z-10 h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleMute();
-        }}
-      >
-        {isMuted ? (
-          <VolumeX className="h-4 w-4" />
-        ) : (
-          <Volume2 className="h-4 w-4" />
-        )}
-      </Button>
+      
+      {/* Control buttons container - bottom right */}
+      <div className="absolute bottom-3 right-3 z-10 flex gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
+          onClick={(e) => {
+            e.stopPropagation();
+            const container = videoRef.current?.parentElement;
+            if (!container) return;
+            
+            if (document.fullscreenElement) {
+              document.exitFullscreen();
+            } else {
+              container.requestFullscreen().catch(() => {});
+            }
+          }}
+        >
+          {document.fullscreenElement ? (
+            <Minimize className="h-4 w-4" />
+          ) : (
+            <Maximize className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMute();
+          }}
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4" />
+          ) : (
+            <Volume2 className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
       
       {/* Time display */}
       <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded bg-background/80 text-xs font-medium text-foreground">
