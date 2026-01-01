@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize } from "lucide-react";
+import { AnimeFilterSelector, AnimeFilterOverlay, getAnimeFilterStyle, type AnimeFilterType } from "@/components/AnimeFilters";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -467,6 +468,7 @@ const AutoPlayVideo = ({
   const [duration, setDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [animeFilter, setAnimeFilter] = useState<AnimeFilterType>("none");
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -581,11 +583,15 @@ const AutoPlayVideo = ({
         ref={videoRef}
         src={src}
         className="w-full h-full object-cover cursor-pointer"
+        style={getAnimeFilterStyle(animeFilter)}
         loop
         muted={isMuted}
         playsInline
         preload="metadata"
       />
+      
+      {/* Anime filter overlay effects */}
+      <AnimeFilterOverlay type={animeFilter} />
       
       {/* Pause indicator */}
       {isPaused && !showHeart && (
@@ -661,23 +667,31 @@ const AutoPlayVideo = ({
         {formatTime(currentTime)} / {formatTime(duration)}
       </div>
       {/* Playback speed control */}
-      <Button
-        size="sm"
-        variant="secondary"
-        className="absolute bottom-3 left-3 z-10 h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
-        onClick={(e) => {
-          e.stopPropagation();
-          const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
-          const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
-          const newSpeed = SPEED_OPTIONS[nextIndex];
-          setPlaybackSpeed(newSpeed);
-          if (videoRef.current) {
-            videoRef.current.playbackRate = newSpeed;
-          }
-        }}
-      >
-        {playbackSpeed}x
-      </Button>
+      <div className="absolute bottom-3 left-3 z-10 flex gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
+            const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+            const newSpeed = SPEED_OPTIONS[nextIndex];
+            setPlaybackSpeed(newSpeed);
+            if (videoRef.current) {
+              videoRef.current.playbackRate = newSpeed;
+            }
+          }}
+        >
+          {playbackSpeed}x
+        </Button>
+        
+        {/* Anime filter selector */}
+        <AnimeFilterSelector 
+          selectedFilter={animeFilter} 
+          onFilterChange={setAnimeFilter} 
+        />
+      </div>
       {/* Progress bar overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 z-10">
         <div 
