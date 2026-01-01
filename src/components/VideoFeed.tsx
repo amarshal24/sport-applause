@@ -463,6 +463,8 @@ const AutoPlayVideo = ({
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const lastTapRef = useRef<number>(0);
@@ -501,12 +503,33 @@ const AutoPlayVideo = ({
     const handleTimeUpdate = () => {
       if (video.duration) {
         setProgress((video.currentTime / video.duration) * 100);
+        setCurrentTime(video.currentTime);
       }
     };
 
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    
+    // Set duration if already loaded
+    if (video.duration) {
+      setDuration(video.duration);
+    }
+    
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
   }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -607,6 +630,10 @@ const AutoPlayVideo = ({
         )}
       </Button>
       
+      {/* Time display */}
+      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded bg-background/80 text-xs font-medium text-foreground">
+        {formatTime(currentTime)} / {formatTime(duration)}
+      </div>
       {/* Playback speed control */}
       <Button
         size="sm"
