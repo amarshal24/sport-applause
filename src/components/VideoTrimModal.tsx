@@ -8,7 +8,7 @@ import {
   Play, Pause, Scissors, Repeat2, RotateCcw, X, 
   Type, Sticker, Music, Sparkles, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Timer, Wand2, Download,
-  Zap, RefreshCw, ZoomIn
+  Zap, RefreshCw, ZoomIn, Upload
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -161,6 +161,8 @@ const VideoTrimModal = ({
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [beatPulse, setBeatPulse] = useState(false);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+  const [customMusic, setCustomMusic] = useState<{ name: string; url: string; bpm: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -180,6 +182,10 @@ const VideoTrimModal = ({
       setSelectedMusic(null);
       setIsMusicPlaying(false);
       setBeatPulse(false);
+      if (customMusic) {
+        URL.revokeObjectURL(customMusic.url);
+      }
+      setCustomMusic(null);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -189,7 +195,7 @@ const VideoTrimModal = ({
 
   // Sync music with video playback
   useEffect(() => {
-    if (audioRef.current && selectedMusic) {
+    if (audioRef.current && (selectedMusic || customMusic)) {
       if (isPlaying) {
         audioRef.current.play().catch(() => {});
         setIsMusicPlaying(true);
@@ -198,7 +204,7 @@ const VideoTrimModal = ({
         setIsMusicPlaying(false);
       }
     }
-  }, [isPlaying, selectedMusic]);
+  }, [isPlaying, selectedMusic, customMusic]);
 
   // Music time update
   useEffect(() => {
@@ -212,19 +218,20 @@ const VideoTrimModal = ({
 
   // Beat sync visualization
   useEffect(() => {
-    if (!selectedMusic || !isMusicPlaying) {
+    const currentBpm = selectedMusic?.bpm || customMusic?.bpm;
+    if (!currentBpm || !isMusicPlaying) {
       setBeatPulse(false);
       return;
     }
 
-    const beatInterval = 60000 / selectedMusic.bpm; // ms per beat
+    const beatInterval = 60000 / currentBpm; // ms per beat
     const interval = setInterval(() => {
       setBeatPulse(true);
       setTimeout(() => setBeatPulse(false), 100);
     }, beatInterval);
 
     return () => clearInterval(interval);
-  }, [selectedMusic, isMusicPlaying]);
+  }, [selectedMusic, customMusic, isMusicPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -266,6 +273,7 @@ const VideoTrimModal = ({
 
   const selectMusic = (track: typeof musicTracks[0] | null) => {
     setSelectedMusic(track);
+    setCustomMusic(null);
     if (audioRef.current) {
       if (track) {
         audioRef.current.src = track.url;
@@ -282,6 +290,60 @@ const VideoTrimModal = ({
         toast.success("Music removed");
       }
     }
+  };
+
+  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a", "audio/aac"];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+      toast.error("Please upload an audio file (MP3, WAV, OGG, M4A, AAC)");
+      return;
+    }
+
+    // Create object URL for the uploaded file
+    const url = URL.createObjectURL(file);
+    const trackName = file.name.replace(/\.[^/.]+$/, ""); // Remove file extension
+    
+    const custom = {
+      name: trackName,
+      url: url,
+      bpm: 120 // Default BPM for custom tracks
+    };
+    
+    setCustomMusic(custom);
+    setSelectedMusic(null);
+    
+    if (audioRef.current) {
+      audioRef.current.src = url;
+      audioRef.current.volume = musicVolume;
+      if (isPlaying) {
+        audioRef.current.play().catch(() => {});
+        setIsMusicPlaying(true);
+      }
+    }
+    
+    toast.success(`Added "${trackName}" as background music`);
+    
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeCustomMusic = () => {
+    if (customMusic) {
+      URL.revokeObjectURL(customMusic.url);
+    }
+    setCustomMusic(null);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      setIsMusicPlaying(false);
+    }
+    toast.success("Music removed");
   };
 
   // Apply video effect
@@ -659,7 +721,7 @@ const VideoTrimModal = ({
               />
               <ToolButton 
                 icon={Music} 
-                label={selectedMusic ? "🎵" : "Music"} 
+                label={(selectedMusic || customMusic) ? "🎵" : "Music"} 
                 active={activePanel === "music"}
                 onClick={() => setActivePanel(activePanel === "music" ? "none" : "music")} 
               />
@@ -673,7 +735,7 @@ const VideoTrimModal = ({
 
           {/* Beat Sync Indicator */}
           <AnimatePresence>
-            {selectedMusic && isMusicPlaying && (
+            {(selectedMusic || customMusic) && isMusicPlaying && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -685,8 +747,14 @@ const VideoTrimModal = ({
                   transition={{ duration: 0.1 }}
                   className="flex items-center gap-2 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-full"
                 >
-                  <Music className="w-4 h-4 text-primary" />
-                  <span className="text-white text-xs font-medium">{selectedMusic.name}</span>
+                  {customMusic ? (
+                    <Upload className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Music className="w-4 h-4 text-primary" />
+                  )}
+                  <span className="text-white text-xs font-medium truncate max-w-[120px]">
+                    {customMusic?.name || selectedMusic?.name}
+                  </span>
                   <div className="flex gap-0.5">
                     {[...Array(4)].map((_, i) => (
                       <motion.div
@@ -897,19 +965,88 @@ const VideoTrimModal = ({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-white text-sm font-medium">Background Music</h4>
-                      {selectedMusic && (
+                      {(selectedMusic || customMusic) && (
                         <Button 
                           size="sm" 
                           variant="ghost" 
                           className="text-white/70 h-7"
-                          onClick={() => selectMusic(null)}
+                          onClick={() => customMusic ? removeCustomMusic() : selectMusic(null)}
                         >
                           <X className="w-4 h-4 mr-1" />
                           Remove
                         </Button>
                       )}
                     </div>
-                    <p className="text-white/60 text-xs">Select a track with beat sync for your highlight reel</p>
+                    <p className="text-white/60 text-xs">Select a track or upload your own music</p>
+                    
+                    {/* Upload Custom Music */}
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                        onChange={handleMusicUpload}
+                        className="hidden"
+                        id="music-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "flex-1 border-dashed",
+                          customMusic 
+                            ? "border-primary bg-primary/20 text-primary" 
+                            : "border-white/30 text-white hover:bg-white/20"
+                        )}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {customMusic ? "Change Track" : "Upload Your Music"}
+                      </Button>
+                    </div>
+
+                    {/* Custom Music Display */}
+                    {customMusic && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-primary/20 border border-primary/30 rounded-xl p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/30 flex items-center justify-center">
+                            <Upload className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{customMusic.name}</p>
+                            <p className="text-white/50 text-xs">Custom Upload • {customMusic.bpm} BPM</p>
+                          </div>
+                          <div className="flex gap-1">
+                            {[...Array(4)].map((_, i) => (
+                              <motion.div
+                                key={i}
+                                className="w-1 bg-primary rounded-full"
+                                animate={{ 
+                                  height: beatPulse && isMusicPlaying ? [6, 14, 6] : 6,
+                                }}
+                                transition={{ 
+                                  duration: 0.2, 
+                                  delay: i * 0.05 
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Divider */}
+                    {!customMusic && (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px bg-white/20" />
+                        <span className="text-white/40 text-xs">or choose from library</span>
+                        <div className="flex-1 h-px bg-white/20" />
+                      </div>
+                    )}
                     
                     <ScrollArea className="w-full">
                       <div className="flex gap-3 pb-2">
@@ -934,7 +1071,7 @@ const VideoTrimModal = ({
                       </div>
                     </ScrollArea>
 
-                    {selectedMusic && (
+                    {(selectedMusic || customMusic) && (
                       <div className="space-y-2 pt-2 border-t border-white/10">
                         <div className="flex items-center justify-between">
                           <span className="text-white/70 text-xs">Volume</span>
@@ -948,28 +1085,30 @@ const VideoTrimModal = ({
                           step={5}
                           className="w-full"
                         />
-                        <div className="flex items-center gap-2 pt-2">
-                          <div className="flex-1 flex items-center gap-2">
-                            <Music className="w-4 h-4 text-primary" />
-                            <span className="text-white text-sm">{selectedMusic.name}</span>
-                            <span className="text-white/50 text-xs">• {selectedMusic.bpm} BPM</span>
+                        {selectedMusic && (
+                          <div className="flex items-center gap-2 pt-2">
+                            <div className="flex-1 flex items-center gap-2">
+                              <Music className="w-4 h-4 text-primary" />
+                              <span className="text-white text-sm">{selectedMusic.name}</span>
+                              <span className="text-white/50 text-xs">• {selectedMusic.bpm} BPM</span>
+                            </div>
+                            <div className="flex gap-1">
+                              {[...Array(4)].map((_, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="w-1 bg-primary rounded-full"
+                                  animate={{ 
+                                    height: beatPulse && isMusicPlaying ? [6, 14, 6] : 6,
+                                  }}
+                                  transition={{ 
+                                    duration: 0.2, 
+                                    delay: i * 0.05 
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex gap-1">
-                            {[...Array(4)].map((_, i) => (
-                              <motion.div
-                                key={i}
-                                className="w-1 bg-primary rounded-full"
-                                animate={{ 
-                                  height: beatPulse && isMusicPlaying ? [6, 14, 6] : 6,
-                                }}
-                                transition={{ 
-                                  duration: 0.2, 
-                                  delay: i * 0.05 
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
