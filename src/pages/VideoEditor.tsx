@@ -210,6 +210,22 @@ const VideoEditor = () => {
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
+  // Check for video passed from highlight reel
+  useEffect(() => {
+    const storedUrl = sessionStorage.getItem("editorVideoUrl");
+    const storedTitle = sessionStorage.getItem("editorVideoTitle");
+    
+    if (storedUrl) {
+      setVideoUrl(storedUrl);
+      if (storedTitle) {
+        setPostCaption(`🏆 ${storedTitle}`);
+      }
+      sessionStorage.removeItem("editorVideoUrl");
+      sessionStorage.removeItem("editorVideoTitle");
+      toast.success("Video loaded from highlights!");
+    }
+  }, []);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
