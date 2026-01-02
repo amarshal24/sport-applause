@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
   Trophy, Plus, Play, Upload, X, Share2, Eye, 
-  Trash2, Edit2, ExternalLink
+  Trash2, Edit2, ExternalLink, Repeat2, Wand2
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface TopFiveVideo {
@@ -32,6 +33,7 @@ interface TopFiveVideosProps {
 
 const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [videos, setVideos] = useState<TopFiveVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -39,6 +41,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
   const [selectedVideo, setSelectedVideo] = useState<TopFiveVideo | null>(null);
   const [editingPosition, setEditingPosition] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [reposting, setReposting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -209,6 +212,38 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       .eq("id", video.id);
   };
 
+  const handleEditInEditor = (video: TopFiveVideo) => {
+    // Store video URL in sessionStorage for the editor to pick up
+    sessionStorage.setItem("editorVideoUrl", video.video_url);
+    sessionStorage.setItem("editorVideoTitle", video.title);
+    navigate("/video-editor");
+    toast.success("Opening video in editor...");
+  };
+
+  const handleRepostToFeed = async (video: TopFiveVideo) => {
+    if (!user) {
+      toast.error("Please sign in to repost");
+      return;
+    }
+
+    setReposting(true);
+    try {
+      const { error } = await supabase.from("posts").insert({
+        user_id: user.id,
+        content: `🏆 Check out my highlight: ${video.title}${video.description ? `\n\n${video.description}` : ""}`,
+        video_url: video.video_url,
+      });
+
+      if (error) throw error;
+      toast.success("Reposted to your feed!");
+    } catch (error) {
+      console.error("Repost error:", error);
+      toast.error("Failed to repost video");
+    } finally {
+      setReposting(false);
+    }
+  };
+
   const resetForm = () => {
     setVideoFile(null);
     setTitle("");
@@ -303,6 +338,32 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   size="icon"
                                   variant="secondary"
                                   className="h-7 w-7"
+                                  title="Edit in TikTok-style editor"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditInEditor(video);
+                                  }}
+                                >
+                                  <Wand2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="h-7 w-7"
+                                  title="Repost to feed"
+                                  disabled={reposting}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRepostToFeed(video);
+                                  }}
+                                >
+                                  <Repeat2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="h-7 w-7"
+                                  title="Replace video"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     openUploadModal(position);
@@ -459,19 +520,45 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                     {selectedVideo.description}
                   </p>
                 )}
-                <div className="flex items-center gap-4 mt-3">
+                <div className="flex flex-wrap items-center gap-2 mt-3">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Eye className="w-4 h-4" />
                     {selectedVideo.views_count + 1} views
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleShare(selectedVideo)}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
+                  <div className="flex gap-2 ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleShare(selectedVideo)}
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                    {isOwnProfile && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowVideoPlayer(false);
+                            handleEditInEditor(selectedVideo);
+                          }}
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          disabled={reposting}
+                          onClick={() => handleRepostToFeed(selectedVideo)}
+                        >
+                          <Repeat2 className="w-4 h-4 mr-2" />
+                          Repost
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
