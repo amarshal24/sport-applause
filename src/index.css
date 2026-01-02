@@ -243,3 +243,24 @@ All colors MUST be HSL.
   80% { transform: translate(0); filter: hue-rotate(0deg); }
   100% { transform: translate(0); filter: hue-rotate(0deg); opacity: 1; }
 }
+
+/* Lightning Strike Animations */
+@keyframes lightning-strike {
+  0% { opacity: 0; transform: scaleY(0) translateY(-20px); }
+  5% { opacity: 1; transform: scaleY(1) translateY(0); }
+  8% { opacity: 0.6; }
+  10% { opacity: 1; }
+  12% { opacity: 0.4; }
+  15% { opacity: 0.9; }
+  20% { opacity: 0; transform: scaleY(1) translateY(0); }
+  100% { opacity: 0; }
+}
+
+@keyframes lightning-flash {
+  0% { opacity: 0; }
+  5% { opacity: 0.15; }
+  8% { opacity: 0; }
+  10% { opacity: 0.1; }
+  15% { opacity: 0; }
+  100% { opacity: 0; }
+}
