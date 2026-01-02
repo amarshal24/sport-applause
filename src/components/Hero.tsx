@@ -16,6 +16,114 @@ const Hero = () => {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&q=50&fm=webp&auto=format&fit=crop')] bg-cover bg-center opacity-20" />
         
+        {/* Animated Lightning Bolts Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Lightning Bolt 1 */}
+          <svg
+            className="absolute w-32 h-64 opacity-0 animate-[lightning-strike_4s_ease-in-out_infinite]"
+            style={{ left: '10%', top: '5%', animationDelay: '0s' }}
+            viewBox="0 0 100 200"
+            fill="none"
+          >
+            <path
+              d="M50 0 L30 80 L50 80 L25 200 L60 100 L40 100 L60 0 Z"
+              fill="url(#lightning-gradient-1)"
+              className="drop-shadow-[0_0_15px_hsl(var(--primary))]"
+            />
+            <defs>
+              <linearGradient id="lightning-gradient-1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                <stop offset="50%" stopColor="hsl(var(--secondary))" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Lightning Bolt 2 */}
+          <svg
+            className="absolute w-24 h-48 opacity-0 animate-[lightning-strike_5s_ease-in-out_infinite]"
+            style={{ right: '15%', top: '10%', animationDelay: '1.5s' }}
+            viewBox="0 0 100 200"
+            fill="none"
+          >
+            <path
+              d="M50 0 L30 80 L50 80 L25 200 L60 100 L40 100 L60 0 Z"
+              fill="url(#lightning-gradient-2)"
+              className="drop-shadow-[0_0_20px_hsl(var(--secondary))]"
+            />
+            <defs>
+              <linearGradient id="lightning-gradient-2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity="1" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.5" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Lightning Bolt 3 */}
+          <svg
+            className="absolute w-20 h-40 opacity-0 animate-[lightning-strike_3.5s_ease-in-out_infinite]"
+            style={{ left: '25%', top: '20%', animationDelay: '2.5s' }}
+            viewBox="0 0 100 200"
+            fill="none"
+          >
+            <path
+              d="M50 0 L30 80 L50 80 L25 200 L60 100 L40 100 L60 0 Z"
+              fill="url(#lightning-gradient-3)"
+              className="drop-shadow-[0_0_12px_hsl(var(--accent))]"
+            />
+            <defs>
+              <linearGradient id="lightning-gradient-3" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Lightning Bolt 4 */}
+          <svg
+            className="absolute w-28 h-56 opacity-0 animate-[lightning-strike_4.5s_ease-in-out_infinite]"
+            style={{ right: '8%', top: '30%', animationDelay: '0.8s' }}
+            viewBox="0 0 100 200"
+            fill="none"
+          >
+            <path
+              d="M50 0 L30 80 L50 80 L25 200 L60 100 L40 100 L60 0 Z"
+              fill="url(#lightning-gradient-4)"
+              className="drop-shadow-[0_0_18px_hsl(var(--primary))]"
+            />
+            <defs>
+              <linearGradient id="lightning-gradient-4" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="hsl(var(--accent))" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Lightning Bolt 5 - Small accent */}
+          <svg
+            className="absolute w-16 h-32 opacity-0 animate-[lightning-strike_3s_ease-in-out_infinite]"
+            style={{ left: '60%', top: '15%', animationDelay: '3.2s' }}
+            viewBox="0 0 100 200"
+            fill="none"
+          >
+            <path
+              d="M50 0 L30 80 L50 80 L25 200 L60 100 L40 100 L60 0 Z"
+              fill="url(#lightning-gradient-5)"
+              className="drop-shadow-[0_0_10px_hsl(var(--secondary))]"
+            />
+            <defs>
+              <linearGradient id="lightning-gradient-5" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        
+        {/* Lightning Flash Overlay */}
+        <div className="absolute inset-0 bg-primary/5 opacity-0 animate-[lightning-flash_6s_ease-in-out_infinite] pointer-events-none" />
+        
         <div className="container relative z-10 px-6 py-20 text-center">
           <div className="animate-slide-up">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
