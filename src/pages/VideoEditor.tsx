@@ -701,7 +701,7 @@ const VideoEditor = () => {
                 Video Editor ⚡
               </h1>
               <p className="text-sm text-muted-foreground">
-                Create TikTok-style sports content
+                Create vertical sports content
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

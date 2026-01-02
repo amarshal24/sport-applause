@@ -214,7 +214,7 @@ const LivePreview = () => {
 
                 {/* Feature Highlights */}
                 <div className="space-y-4">
-                  <h3 className="text-2xl font-bold">TikTok-Style Video Feed</h3>
+                  <h3 className="text-2xl font-bold">Vertical Video Feed</h3>
                   <div className="space-y-3">
                     {[
                       { icon: Play, text: "Endless scrolling sports highlights" },
