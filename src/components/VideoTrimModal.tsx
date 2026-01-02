@@ -58,6 +58,64 @@ const videoEffects = [
   { id: "glitch", name: "Glitch", emoji: "📺", description: "Digital glitch effect" },
 ];
 
+// Royalty-free sports music tracks (using Pixabay free music)
+const musicTracks = [
+  { 
+    id: "pump-up", 
+    name: "Pump Up", 
+    genre: "Electronic", 
+    bpm: 128,
+    emoji: "🔥",
+    url: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_8cb749d484.mp3",
+    duration: 120
+  },
+  { 
+    id: "victory", 
+    name: "Victory March", 
+    genre: "Epic", 
+    bpm: 140,
+    emoji: "🏆",
+    url: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bab.mp3",
+    duration: 90
+  },
+  { 
+    id: "energy", 
+    name: "Pure Energy", 
+    genre: "Rock", 
+    bpm: 120,
+    emoji: "⚡",
+    url: "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946b0939c8.mp3",
+    duration: 150
+  },
+  { 
+    id: "champion", 
+    name: "Champion", 
+    genre: "Hip Hop", 
+    bpm: 95,
+    emoji: "👑",
+    url: "https://cdn.pixabay.com/download/audio/2023/07/03/audio_e9bae0c2f2.mp3",
+    duration: 180
+  },
+  { 
+    id: "intense", 
+    name: "Intense Game", 
+    genre: "Dubstep", 
+    bpm: 150,
+    emoji: "💥",
+    url: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+    duration: 100
+  },
+  { 
+    id: "motivation", 
+    name: "Motivation", 
+    genre: "Cinematic", 
+    bpm: 110,
+    emoji: "💪",
+    url: "https://cdn.pixabay.com/download/audio/2024/11/04/audio_4956b4edd1.mp3",
+    duration: 130
+  },
+];
+
 const VideoTrimModal = ({
   open,
   onOpenChange,
@@ -68,7 +126,10 @@ const VideoTrimModal = ({
 }: VideoTrimModalProps) => {
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const beatVisualizerRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -79,7 +140,7 @@ const VideoTrimModal = ({
   const [reposting, setReposting] = useState(false);
   
   // TikTok-style features
-  const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim" | "effects">("none");
+  const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim" | "effects" | "music">("none");
   const [selectedFilter, setSelectedFilter] = useState(filters[0]);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
   const [currentText, setCurrentText] = useState("");
@@ -93,6 +154,13 @@ const VideoTrimModal = ({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [flashOpacity, setFlashOpacity] = useState(0);
   const [glitchActive, setGlitchActive] = useState(false);
+  
+  // Music state
+  const [selectedMusic, setSelectedMusic] = useState<typeof musicTracks[0] | null>(null);
+  const [musicVolume, setMusicVolume] = useState(0.7);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [beatPulse, setBeatPulse] = useState(false);
+  const [musicCurrentTime, setMusicCurrentTime] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -109,8 +177,54 @@ const VideoTrimModal = ({
       setZoomLevel(1);
       setFlashOpacity(0);
       setGlitchActive(false);
+      setSelectedMusic(null);
+      setIsMusicPlaying(false);
+      setBeatPulse(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
   }, [open, videoTitle, videoDescription]);
+
+  // Sync music with video playback
+  useEffect(() => {
+    if (audioRef.current && selectedMusic) {
+      if (isPlaying) {
+        audioRef.current.play().catch(() => {});
+        setIsMusicPlaying(true);
+      } else {
+        audioRef.current.pause();
+        setIsMusicPlaying(false);
+      }
+    }
+  }, [isPlaying, selectedMusic]);
+
+  // Music time update
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setMusicCurrentTime(audio.currentTime);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+  }, []);
+
+  // Beat sync visualization
+  useEffect(() => {
+    if (!selectedMusic || !isMusicPlaying) {
+      setBeatPulse(false);
+      return;
+    }
+
+    const beatInterval = 60000 / selectedMusic.bpm; // ms per beat
+    const interval = setInterval(() => {
+      setBeatPulse(true);
+      setTimeout(() => setBeatPulse(false), 100);
+    }, beatInterval);
+
+    return () => clearInterval(interval);
+  }, [selectedMusic, isMusicPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -138,7 +252,37 @@ const VideoTrimModal = ({
     if (videoRef.current) {
       videoRef.current.playbackRate = playbackSpeed;
     }
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
   }, [playbackSpeed]);
+
+  // Update music volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = musicVolume;
+    }
+  }, [musicVolume]);
+
+  const selectMusic = (track: typeof musicTracks[0] | null) => {
+    setSelectedMusic(track);
+    if (audioRef.current) {
+      if (track) {
+        audioRef.current.src = track.url;
+        audioRef.current.volume = musicVolume;
+        if (isPlaying) {
+          audioRef.current.play().catch(() => {});
+          setIsMusicPlaying(true);
+        }
+        toast.success(`Added "${track.name}" as background music`);
+      } else {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        setIsMusicPlaying(false);
+        toast.success("Music removed");
+      }
+    }
+  };
 
   // Apply video effect
   const triggerEffect = (effectId: string) => {
@@ -514,12 +658,57 @@ const VideoTrimModal = ({
                 onClick={() => setActivePanel(activePanel === "effects" ? "none" : "effects")} 
               />
               <ToolButton 
+                icon={Music} 
+                label={selectedMusic ? "🎵" : "Music"} 
+                active={activePanel === "music"}
+                onClick={() => setActivePanel(activePanel === "music" ? "none" : "music")} 
+              />
+              <ToolButton 
                 icon={isMuted ? VolumeX : Volume2} 
                 label={isMuted ? "Muted" : "Sound"}
                 onClick={() => setIsMuted(!isMuted)} 
               />
             </div>
           </div>
+
+          {/* Beat Sync Indicator */}
+          <AnimatePresence>
+            {selectedMusic && isMusicPlaying && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute top-4 right-20 z-50"
+              >
+                <motion.div 
+                  animate={{ scale: beatPulse ? 1.2 : 1 }}
+                  transition={{ duration: 0.1 }}
+                  className="flex items-center gap-2 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-full"
+                >
+                  <Music className="w-4 h-4 text-primary" />
+                  <span className="text-white text-xs font-medium">{selectedMusic.name}</span>
+                  <div className="flex gap-0.5">
+                    {[...Array(4)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 bg-primary rounded-full"
+                        animate={{ 
+                          height: beatPulse ? [8, 16, 8] : 8,
+                        }}
+                        transition={{ 
+                          duration: 0.2, 
+                          delay: i * 0.05 
+                        }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Hidden Audio Element */}
+          <audio ref={audioRef} loop />
 
           {/* Bottom Panel - Contextual Tools */}
           <AnimatePresence>
@@ -700,6 +889,89 @@ const VideoTrimModal = ({
                         Flash
                       </Button>
                     </div>
+                  </div>
+                )}
+
+                {/* Music Panel */}
+                {activePanel === "music" && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white text-sm font-medium">Background Music</h4>
+                      {selectedMusic && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-white/70 h-7"
+                          onClick={() => selectMusic(null)}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-white/60 text-xs">Select a track with beat sync for your highlight reel</p>
+                    
+                    <ScrollArea className="w-full">
+                      <div className="flex gap-3 pb-2">
+                        {musicTracks.map((track) => (
+                          <motion.button
+                            key={track.id}
+                            onClick={() => selectMusic(track)}
+                            whileTap={{ scale: 0.95 }}
+                            className={cn(
+                              "flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-w-[90px] relative",
+                              selectedMusic?.id === track.id 
+                                ? "bg-primary text-primary-foreground ring-2 ring-primary" 
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            )}
+                          >
+                            <span className="text-2xl">{track.emoji}</span>
+                            <span className="text-xs font-medium">{track.name}</span>
+                            <span className="text-[10px] opacity-70">{track.genre}</span>
+                            <span className="text-[10px] opacity-50">{track.bpm} BPM</span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+
+                    {selectedMusic && (
+                      <div className="space-y-2 pt-2 border-t border-white/10">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white/70 text-xs">Volume</span>
+                          <span className="text-white/70 text-xs">{Math.round(musicVolume * 100)}%</span>
+                        </div>
+                        <Slider
+                          value={[musicVolume * 100]}
+                          onValueChange={([val]) => setMusicVolume(val / 100)}
+                          min={0}
+                          max={100}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="flex items-center gap-2 pt-2">
+                          <div className="flex-1 flex items-center gap-2">
+                            <Music className="w-4 h-4 text-primary" />
+                            <span className="text-white text-sm">{selectedMusic.name}</span>
+                            <span className="text-white/50 text-xs">• {selectedMusic.bpm} BPM</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[...Array(4)].map((_, i) => (
+                              <motion.div
+                                key={i}
+                                className="w-1 bg-primary rounded-full"
+                                animate={{ 
+                                  height: beatPulse && isMusicPlaying ? [6, 14, 6] : 6,
+                                }}
+                                transition={{ 
+                                  duration: 0.2, 
+                                  delay: i * 0.05 
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
