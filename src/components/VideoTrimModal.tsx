@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Play, Pause, Scissors, Repeat2, RotateCcw, X, 
   Type, Sticker, Music, Sparkles, Volume2, VolumeX,
-  ChevronLeft, ChevronRight, Timer, Wand2, Download
+  ChevronLeft, ChevronRight, Timer, Wand2, Download,
+  Zap, RefreshCw, ZoomIn
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +49,15 @@ const stickers = ["⚽", "🏀", "🏈", "⚾", "🎾", "🏆", "🥇", "🔥", 
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
+const videoEffects = [
+  { id: "none", name: "None", emoji: "✨", description: "No effect" },
+  { id: "slowmo", name: "Slow-Mo", emoji: "🐢", description: "Dramatic slow motion replay" },
+  { id: "zoom", name: "Zoom Punch", emoji: "🔍", description: "Dynamic zoom effect" },
+  { id: "flash", name: "Flash", emoji: "⚡", description: "Flash transition" },
+  { id: "replay", name: "Replay", emoji: "🔄", description: "Instant replay effect" },
+  { id: "glitch", name: "Glitch", emoji: "📺", description: "Digital glitch effect" },
+];
+
 const VideoTrimModal = ({
   open,
   onOpenChange,
@@ -69,13 +79,20 @@ const VideoTrimModal = ({
   const [reposting, setReposting] = useState(false);
   
   // TikTok-style features
-  const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim">("none");
+  const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim" | "effects">("none");
   const [selectedFilter, setSelectedFilter] = useState(filters[0]);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+  
+  // Video effects state
+  const [activeEffect, setActiveEffect] = useState<string>("none");
+  const [effectPlaying, setEffectPlaying] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [flashOpacity, setFlashOpacity] = useState(0);
+  const [glitchActive, setGlitchActive] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -87,6 +104,11 @@ const VideoTrimModal = ({
       setSelectedFilter(filters[0]);
       setTextOverlays([]);
       setPlaybackSpeed(1);
+      setActiveEffect("none");
+      setEffectPlaying(false);
+      setZoomLevel(1);
+      setFlashOpacity(0);
+      setGlitchActive(false);
     }
   }, [open, videoTitle, videoDescription]);
 
@@ -117,6 +139,118 @@ const VideoTrimModal = ({
       videoRef.current.playbackRate = playbackSpeed;
     }
   }, [playbackSpeed]);
+
+  // Apply video effect
+  const triggerEffect = (effectId: string) => {
+    if (effectPlaying) return;
+    setActiveEffect(effectId);
+    setEffectPlaying(true);
+
+    switch (effectId) {
+      case "slowmo":
+        // Slow motion effect
+        if (videoRef.current) {
+          const originalSpeed = playbackSpeed;
+          videoRef.current.playbackRate = 0.25;
+          setTimeout(() => {
+            if (videoRef.current) videoRef.current.playbackRate = originalSpeed;
+            setEffectPlaying(false);
+            setActiveEffect("none");
+          }, 2000);
+        }
+        break;
+
+      case "zoom":
+        // Zoom punch effect
+        setZoomLevel(1);
+        const zoomIn = setInterval(() => {
+          setZoomLevel(prev => {
+            if (prev >= 1.5) {
+              clearInterval(zoomIn);
+              const zoomOut = setInterval(() => {
+                setZoomLevel(prev => {
+                  if (prev <= 1) {
+                    clearInterval(zoomOut);
+                    setEffectPlaying(false);
+                    setActiveEffect("none");
+                    return 1;
+                  }
+                  return prev - 0.05;
+                });
+              }, 30);
+              return 1.5;
+            }
+            return prev + 0.1;
+          });
+        }, 30);
+        break;
+
+      case "flash":
+        // Flash transition
+        setFlashOpacity(1);
+        setTimeout(() => {
+          setFlashOpacity(0);
+          setEffectPlaying(false);
+          setActiveEffect("none");
+        }, 300);
+        break;
+
+      case "replay":
+        // Instant replay effect
+        if (videoRef.current) {
+          const originalSpeed = playbackSpeed;
+          const currentPos = videoRef.current.currentTime;
+          videoRef.current.currentTime = Math.max(0, currentPos - 3);
+          videoRef.current.playbackRate = 0.5;
+          setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.playbackRate = originalSpeed;
+            }
+            setEffectPlaying(false);
+            setActiveEffect("none");
+          }, 3000);
+        }
+        break;
+
+      case "glitch":
+        // Glitch effect
+        setGlitchActive(true);
+        let glitchCount = 0;
+        const glitchInterval = setInterval(() => {
+          setGlitchActive(prev => !prev);
+          glitchCount++;
+          if (glitchCount >= 10) {
+            clearInterval(glitchInterval);
+            setGlitchActive(false);
+            setEffectPlaying(false);
+            setActiveEffect("none");
+          }
+        }, 100);
+        break;
+
+      default:
+        setEffectPlaying(false);
+        setActiveEffect("none");
+    }
+  };
+
+  const getVideoStyles = (): React.CSSProperties => {
+    let styles: React.CSSProperties = {
+      filter: selectedFilter.filter,
+      transform: `scale(${zoomLevel})`,
+      transition: "transform 0.03s ease-out",
+    };
+
+    if (glitchActive) {
+      styles = {
+        ...styles,
+        filter: `${selectedFilter.filter} hue-rotate(${Math.random() * 360}deg) saturate(2)`,
+        transform: `scale(${zoomLevel}) translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`,
+      };
+    }
+
+    return styles;
+  };
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;
@@ -248,16 +382,46 @@ const VideoTrimModal = ({
             </button>
 
             {/* Video */}
-            <div className="relative w-full h-full max-w-md mx-auto flex items-center justify-center">
+            <div className="relative w-full h-full max-w-md mx-auto flex items-center justify-center overflow-hidden">
               <video
                 ref={videoRef}
                 src={videoUrl}
                 className="max-w-full max-h-full object-contain rounded-xl"
-                style={{ filter: selectedFilter.filter }}
+                style={getVideoStyles()}
                 playsInline
                 muted={isMuted}
                 onClick={togglePlayPause}
               />
+              
+              {/* Flash Effect Overlay */}
+              <AnimatePresence>
+                {flashOpacity > 0 && (
+                  <motion.div
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-white pointer-events-none rounded-xl"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Effect Playing Indicator */}
+              <AnimatePresence>
+                {effectPlaying && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full"
+                  >
+                    <span className="text-white text-sm font-medium flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
+                      {videoEffects.find(e => e.id === activeEffect)?.name}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Text Overlays */}
               {textOverlays.map((overlay) => (
@@ -342,6 +506,12 @@ const VideoTrimModal = ({
                 label="Trim" 
                 active={activePanel === "trim"}
                 onClick={() => setActivePanel(activePanel === "trim" ? "none" : "trim")} 
+              />
+              <ToolButton 
+                icon={Zap} 
+                label="Effects" 
+                active={activePanel === "effects"}
+                onClick={() => setActivePanel(activePanel === "effects" ? "none" : "effects")} 
               />
               <ToolButton 
                 icon={isMuted ? VolumeX : Volume2} 
@@ -467,6 +637,68 @@ const VideoTrimModal = ({
                       <span>Start: {formatTime((trimStart / 100) * duration)}</span>
                       <span className="text-primary font-medium">Duration: {formatTime(getTrimmedDuration())}</span>
                       <span>End: {formatTime((trimEnd / 100) * duration)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Effects Panel */}
+                {activePanel === "effects" && (
+                  <div className="space-y-3">
+                    <h4 className="text-white text-sm font-medium">Video Effects</h4>
+                    <p className="text-white/60 text-xs">Tap an effect to preview it on your video</p>
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {videoEffects.map((effect) => (
+                        <motion.button
+                          key={effect.id}
+                          onClick={() => effect.id !== "none" && triggerEffect(effect.id)}
+                          disabled={effectPlaying && effect.id !== "none"}
+                          whileTap={{ scale: 0.95 }}
+                          className={cn(
+                            "flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-w-[80px]",
+                            effectPlaying && activeEffect === effect.id
+                              ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                              : effect.id === "none"
+                              ? "bg-white/5 text-white/50"
+                              : "bg-white/10 text-white hover:bg-white/20",
+                            effectPlaying && effect.id !== "none" && activeEffect !== effect.id && "opacity-50"
+                          )}
+                        >
+                          <span className="text-2xl">{effect.emoji}</span>
+                          <span className="text-xs font-medium">{effect.name}</span>
+                        </motion.button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-white/30 text-white hover:bg-white/20"
+                        onClick={() => triggerEffect("slowmo")}
+                        disabled={effectPlaying}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Slow-Mo Replay
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-white/30 text-white hover:bg-white/20"
+                        onClick={() => triggerEffect("zoom")}
+                        disabled={effectPlaying}
+                      >
+                        <ZoomIn className="w-4 h-4 mr-1" />
+                        Zoom Punch
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-white/30 text-white hover:bg-white/20"
+                        onClick={() => triggerEffect("flash")}
+                        disabled={effectPlaying}
+                      >
+                        <Zap className="w-4 h-4 mr-1" />
+                        Flash
+                      </Button>
                     </div>
                   </div>
                 )}
