@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import VideoTrimModal from "@/components/VideoTrimModal";
 
 interface TopFiveVideo {
   id: string;
@@ -41,7 +42,8 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
   const [selectedVideo, setSelectedVideo] = useState<TopFiveVideo | null>(null);
   const [editingPosition, setEditingPosition] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [reposting, setReposting] = useState(false);
+  const [showTrimModal, setShowTrimModal] = useState(false);
+  const [trimVideo, setTrimVideo] = useState<TopFiveVideo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -220,28 +222,13 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
     toast.success("Opening video in editor...");
   };
 
-  const handleRepostToFeed = async (video: TopFiveVideo) => {
+  const handleRepostToFeed = (video: TopFiveVideo) => {
     if (!user) {
       toast.error("Please sign in to repost");
       return;
     }
-
-    setReposting(true);
-    try {
-      const { error } = await supabase.from("posts").insert({
-        user_id: user.id,
-        content: `🏆 Check out my highlight: ${video.title}${video.description ? `\n\n${video.description}` : ""}`,
-        video_url: video.video_url,
-      });
-
-      if (error) throw error;
-      toast.success("Reposted to your feed!");
-    } catch (error) {
-      console.error("Repost error:", error);
-      toast.error("Failed to repost video");
-    } finally {
-      setReposting(false);
-    }
+    setTrimVideo(video);
+    setShowTrimModal(true);
   };
 
   const resetForm = () => {
@@ -351,7 +338,6 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   variant="secondary"
                                   className="h-7 w-7"
                                   title="Repost to feed"
-                                  disabled={reposting}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleRepostToFeed(video);
@@ -550,7 +536,6 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                         <Button
                           variant="default"
                           size="sm"
-                          disabled={reposting}
                           onClick={() => handleRepostToFeed(selectedVideo)}
                         >
                           <Repeat2 className="w-4 h-4 mr-2" />
@@ -565,6 +550,18 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Video Trim Modal */}
+      {trimVideo && (
+        <VideoTrimModal
+          open={showTrimModal}
+          onOpenChange={setShowTrimModal}
+          videoUrl={trimVideo.video_url}
+          videoTitle={trimVideo.title}
+          videoDescription={trimVideo.description || undefined}
+          onRepostSuccess={() => setTrimVideo(null)}
+        />
+      )}
     </div>
   );
 };
