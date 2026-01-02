@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { MusicTrimmer } from "./MusicTrimmer";
 
 interface VideoTrimModalProps {
   open: boolean;
@@ -161,8 +162,17 @@ const VideoTrimModal = ({
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [beatPulse, setBeatPulse] = useState(false);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
-  const [customMusic, setCustomMusic] = useState<{ name: string; url: string; bpm: number } | null>(null);
+  const [customMusic, setCustomMusic] = useState<{ name: string; url: string; bpm: number; duration?: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Music trimming state
+  const [showMusicTrimmer, setShowMusicTrimmer] = useState(false);
+  const [musicTrimStart, setMusicTrimStart] = useState(0);
+  const [musicTrimEnd, setMusicTrimEnd] = useState(0);
+  const [musicFadeIn, setMusicFadeIn] = useState(0);
+  const [musicFadeOut, setMusicFadeOut] = useState(0);
+  const musicGainNodeRef = useRef<GainNode | null>(null);
+  const musicAudioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -182,6 +192,11 @@ const VideoTrimModal = ({
       setSelectedMusic(null);
       setIsMusicPlaying(false);
       setBeatPulse(false);
+      setShowMusicTrimmer(false);
+      setMusicTrimStart(0);
+      setMusicTrimEnd(0);
+      setMusicFadeIn(0);
+      setMusicFadeOut(0);
       if (customMusic) {
         URL.revokeObjectURL(customMusic.url);
       }
@@ -193,10 +208,30 @@ const VideoTrimModal = ({
     }
   }, [open, videoTitle, videoDescription]);
 
-  // Sync music with video playback
+  // Sync music with video playback (with trim support)
   useEffect(() => {
     if (audioRef.current && (selectedMusic || customMusic)) {
       if (isPlaying) {
+        // Set to trim start if needed
+        if (musicTrimStart > 0 && audioRef.current.currentTime < musicTrimStart) {
+          audioRef.current.currentTime = musicTrimStart;
+        }
+        
+        // Set up Web Audio API for fade effects
+        if (!musicAudioContextRef.current && (musicFadeIn > 0 || musicFadeOut > 0)) {
+          musicAudioContextRef.current = new AudioContext();
+          const source = musicAudioContextRef.current.createMediaElementSource(audioRef.current);
+          musicGainNodeRef.current = musicAudioContextRef.current.createGain();
+          source.connect(musicGainNodeRef.current);
+          musicGainNodeRef.current.connect(musicAudioContextRef.current.destination);
+        }
+        
+        // Apply fade in
+        if (musicGainNodeRef.current && musicFadeIn > 0 && musicAudioContextRef.current) {
+          musicGainNodeRef.current.gain.setValueAtTime(0, musicAudioContextRef.current.currentTime);
+          musicGainNodeRef.current.gain.linearRampToValueAtTime(musicVolume, musicAudioContextRef.current.currentTime + musicFadeIn);
+        }
+        
         audioRef.current.play().catch(() => {});
         setIsMusicPlaying(true);
       } else {
@@ -204,7 +239,39 @@ const VideoTrimModal = ({
         setIsMusicPlaying(false);
       }
     }
-  }, [isPlaying, selectedMusic, customMusic]);
+  }, [isPlaying, selectedMusic, customMusic, musicTrimStart, musicFadeIn, musicVolume]);
+
+  // Handle music trim end and fade out
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !isMusicPlaying || musicTrimEnd === 0) return;
+
+    const checkTrimEnd = () => {
+      if (!audio) return;
+      
+      // Apply fade out
+      if (musicFadeOut > 0 && musicGainNodeRef.current && musicAudioContextRef.current) {
+        const timeUntilEnd = musicTrimEnd - audio.currentTime;
+        if (timeUntilEnd <= musicFadeOut && timeUntilEnd > 0) {
+          const fadeProgress = (timeUntilEnd / musicFadeOut) * musicVolume;
+          musicGainNodeRef.current.gain.setValueAtTime(fadeProgress, musicAudioContextRef.current.currentTime);
+        }
+      }
+      
+      // Loop back to trim start when reaching trim end
+      if (audio.currentTime >= musicTrimEnd) {
+        audio.currentTime = musicTrimStart;
+        // Reapply fade in
+        if (musicGainNodeRef.current && musicFadeIn > 0 && musicAudioContextRef.current) {
+          musicGainNodeRef.current.gain.setValueAtTime(0, musicAudioContextRef.current.currentTime);
+          musicGainNodeRef.current.gain.linearRampToValueAtTime(musicVolume, musicAudioContextRef.current.currentTime + musicFadeIn);
+        }
+      }
+    };
+
+    const interval = setInterval(checkTrimEnd, 100);
+    return () => clearInterval(interval);
+  }, [isMusicPlaying, musicTrimStart, musicTrimEnd, musicFadeIn, musicFadeOut, musicVolume]);
 
   // Music time update
   useEffect(() => {
@@ -274,6 +341,12 @@ const VideoTrimModal = ({
   const selectMusic = (track: typeof musicTracks[0] | null) => {
     setSelectedMusic(track);
     setCustomMusic(null);
+    // Reset trim settings
+    setMusicTrimStart(0);
+    setMusicTrimEnd(track?.duration || 0);
+    setMusicFadeIn(0);
+    setMusicFadeOut(0);
+    setShowMusicTrimmer(false);
     if (audioRef.current) {
       if (track) {
         audioRef.current.src = track.url;
@@ -315,6 +388,12 @@ const VideoTrimModal = ({
     
     setCustomMusic(custom);
     setSelectedMusic(null);
+    // Reset trim settings
+    setMusicTrimStart(0);
+    setMusicTrimEnd(0);
+    setMusicFadeIn(0);
+    setMusicFadeOut(0);
+    setShowMusicTrimmer(false);
     
     if (audioRef.current) {
       audioRef.current.src = url;
@@ -338,12 +417,32 @@ const VideoTrimModal = ({
       URL.revokeObjectURL(customMusic.url);
     }
     setCustomMusic(null);
+    setMusicTrimStart(0);
+    setMusicTrimEnd(0);
+    setMusicFadeIn(0);
+    setMusicFadeOut(0);
+    setShowMusicTrimmer(false);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = "";
       setIsMusicPlaying(false);
     }
     toast.success("Music removed");
+  };
+
+  const handleMusicTrimComplete = (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => {
+    setMusicTrimStart(startTime);
+    setMusicTrimEnd(endTime);
+    setMusicFadeIn(fadeIn);
+    setMusicFadeOut(fadeOut);
+    setShowMusicTrimmer(false);
+    
+    // Reset audio to new start position
+    if (audioRef.current) {
+      audioRef.current.currentTime = startTime;
+    }
+    
+    toast.success(`Music trimmed to ${formatTime(endTime - startTime)}`);
   };
 
   // Apply video effect
@@ -1071,20 +1170,60 @@ const VideoTrimModal = ({
                       </div>
                     </ScrollArea>
 
-                    {(selectedMusic || customMusic) && (
-                      <div className="space-y-2 pt-2 border-t border-white/10">
-                        <div className="flex items-center justify-between">
-                          <span className="text-white/70 text-xs">Volume</span>
-                          <span className="text-white/70 text-xs">{Math.round(musicVolume * 100)}%</span>
+                    {(selectedMusic || customMusic) && !showMusicTrimmer && (
+                      <div className="space-y-3 pt-2 border-t border-white/10">
+                        {/* Volume Control */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/70 text-xs">Volume</span>
+                            <span className="text-white/70 text-xs">{Math.round(musicVolume * 100)}%</span>
+                          </div>
+                          <Slider
+                            value={[musicVolume * 100]}
+                            onValueChange={([val]) => setMusicVolume(val / 100)}
+                            min={0}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
                         </div>
-                        <Slider
-                          value={[musicVolume * 100]}
-                          onValueChange={([val]) => setMusicVolume(val / 100)}
-                          min={0}
-                          max={100}
-                          step={5}
-                          className="w-full"
-                        />
+
+                        {/* Trim Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-white/30 text-white hover:bg-white/20"
+                          onClick={() => setShowMusicTrimmer(true)}
+                        >
+                          <Scissors className="w-4 h-4 mr-2" />
+                          Trim Music
+                          {musicTrimEnd > 0 && (
+                            <span className="ml-2 text-primary text-xs">
+                              ({formatTime(musicTrimEnd - musicTrimStart)})
+                            </span>
+                          )}
+                        </Button>
+
+                        {/* Trim Info Display */}
+                        {musicTrimEnd > 0 && (
+                          <div className="flex items-center justify-between text-xs text-white/60 bg-white/5 rounded-lg p-2">
+                            <span>Start: {formatTime(musicTrimStart)}</span>
+                            <span className="text-primary font-medium">
+                              Duration: {formatTime(musicTrimEnd - musicTrimStart)}
+                            </span>
+                            <span>End: {formatTime(musicTrimEnd)}</span>
+                          </div>
+                        )}
+
+                        {/* Fade Info */}
+                        {(musicFadeIn > 0 || musicFadeOut > 0) && (
+                          <div className="flex items-center gap-4 text-xs text-white/50">
+                            {musicFadeIn > 0 && <span>Fade in: {musicFadeIn.toFixed(1)}s</span>}
+                            {musicFadeOut > 0 && <span>Fade out: {musicFadeOut.toFixed(1)}s</span>}
+                          </div>
+                        )}
+
+                        {/* Track Info */}
                         {selectedMusic && (
                           <div className="flex items-center gap-2 pt-2">
                             <div className="flex-1 flex items-center gap-2">
@@ -1109,6 +1248,17 @@ const VideoTrimModal = ({
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* Music Trimmer */}
+                    {showMusicTrimmer && (selectedMusic || customMusic) && (
+                      <div className="pt-2 border-t border-white/10">
+                        <MusicTrimmer
+                          audioUrl={customMusic?.url || selectedMusic?.url || ""}
+                          onTrimComplete={handleMusicTrimComplete}
+                          onCancel={() => setShowMusicTrimmer(false)}
+                        />
                       </div>
                     )}
                   </div>
