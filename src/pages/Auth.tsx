@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
 import { Phone, Mail, ScanFace, Eye, EyeOff } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import LightningLoader from "@/components/LightningLoader";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -189,10 +190,28 @@ const Auth = () => {
     setOtp("");
   };
 
+  if (isSubmitting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <LightningLoader size="lg" text={mode === "signup" ? "Creating your account..." : "Signing you in..."} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Lightning bolt background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+      </div>
+      
+      <Card className="w-full max-w-md relative z-10">
         <CardHeader>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">⚡️</span>
+            <span className="text-xl font-bold">U⚡️Sportz</span>
+          </div>
           <CardTitle>{getTitle()}</CardTitle>
           <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
