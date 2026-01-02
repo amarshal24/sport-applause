@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { 
   Play, Heart, MessageCircle, Share2, Bookmark, 
-  Trophy, Gamepad2, Video, Users, TrendingUp,
-  Sparkles, Star, Zap
+  Mic, Gamepad2, Video, Users, TrendingUp,
+  Sparkles, Star, Zap, Headphones, Clock, Trophy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -50,7 +50,7 @@ const LivePreview = () => {
   const navigate = useNavigate();
   const [activeVideo, setActiveVideo] = useState(0);
   const [showLike, setShowLike] = useState(false);
-  const [activeTab, setActiveTab] = useState<"feed" | "games" | "recruiting">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "games" | "podcasts">("feed");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -93,7 +93,7 @@ const LivePreview = () => {
           {[
             { id: "feed", label: "Video Feed", icon: Video },
             { id: "games", label: "Mini Games", icon: Gamepad2 },
-            { id: "recruiting", label: "Get Recruited", icon: Trophy },
+            { id: "podcasts", label: "Podcasts", icon: Mic },
           ].map((tab) => (
             <Button
               key={tab.id}
@@ -309,72 +309,86 @@ const LivePreview = () => {
               </motion.div>
             )}
 
-            {activeTab === "recruiting" && (
+            {activeTab === "podcasts" && (
               <motion.div
-                key="recruiting"
+                key="podcasts"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 className="grid md:grid-cols-2 gap-6 items-center"
               >
-                {/* Recruiting Preview */}
+                {/* Podcasts Preview */}
                 <div className="space-y-4">
-                  <Card className="p-4 border-primary/50">
-                    <div className="flex gap-4">
-                      <div className="w-24 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&q=80"
-                          alt="Athlete"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold">Marcus Johnson</h4>
-                        <p className="text-sm text-muted-foreground">Point Guard • Class of 2026</p>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">6'2"</span>
-                          <span className="text-xs bg-secondary/20 text-secondary px-2 py-0.5 rounded">180 lbs</span>
+                  {[
+                    { 
+                      title: "Game Day Breakdown", 
+                      host: "Coach Williams",
+                      duration: "45 min",
+                      plays: "12.4K",
+                      image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=200&q=80"
+                    },
+                    { 
+                      title: "Athlete Mindset", 
+                      host: "Marcus Chen",
+                      duration: "32 min",
+                      plays: "8.7K",
+                      image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=200&q=80"
+                    },
+                    { 
+                      title: "Training Talk", 
+                      host: "Sarah Athletics",
+                      duration: "28 min",
+                      plays: "6.2K",
+                      image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&q=80"
+                    },
+                  ].map((podcast, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                      <Card className="p-3 hover:border-primary/50 transition-colors cursor-pointer group">
+                        <div className="flex gap-3 items-center">
+                          <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0 relative">
+                            <img 
+                              src={podcast.image}
+                              alt={podcast.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-background/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Play className="h-6 w-6 text-primary fill-primary" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold truncate">{podcast.title}</h4>
+                            <p className="text-sm text-muted-foreground">{podcast.host}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {podcast.duration}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Headphones className="h-3 w-3" />
+                                {podcast.plays}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                          <div>
-                            <p className="text-lg font-bold text-primary">18.5</p>
-                            <p className="text-[10px] text-muted-foreground">PPG</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-primary">7.2</p>
-                            <p className="text-[10px] text-muted-foreground">APG</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-primary">42"</p>
-                            <p className="text-[10px] text-muted-foreground">Vert</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Card className="p-3 bg-muted/50">
-                      <div className="flex items-center gap-2 text-sm">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <span className="text-muted-foreground">Profile viewed by 12 recruiters this week</span>
-                      </div>
-                    </Card>
-                  </motion.div>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
 
-                {/* Recruiting Features */}
+                {/* Podcasts Features */}
                 <div className="space-y-4">
-                  <h3 className="text-2xl font-bold">Get Discovered by Scouts</h3>
+                  <h3 className="text-2xl font-bold">Sports Podcasts & Audio</h3>
                   <div className="space-y-3">
                     {[
-                      { icon: Video, text: "Upload 3-min highlight reels" },
-                      { icon: Trophy, text: "Compare stats to pro athletes" },
-                      { icon: TrendingUp, text: "Track recruiter engagement" },
-                      { icon: MessageCircle, text: "Direct messaging with coaches" },
+                      { icon: Mic, text: "Upload & share your own podcasts" },
+                      { icon: Headphones, text: "Listen to athlete interviews" },
+                      { icon: TrendingUp, text: "Discover trending sports audio" },
+                      { icon: Users, text: "Follow your favorite hosts" },
                     ].map((feature, i) => (
                       <motion.div
                         key={i}
