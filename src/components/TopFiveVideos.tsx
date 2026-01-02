@@ -325,7 +325,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   size="icon"
                                   variant="secondary"
                                   className="h-7 w-7"
-                                  title="Edit in TikTok-style editor"
+                                  title="Edit in video editor"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleEditInEditor(video);
