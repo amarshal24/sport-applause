@@ -317,6 +317,54 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_listings: {
+        Row: {
+          category: string
+          condition: string
+          created_at: string
+          description: string | null
+          id: string
+          images: string[] | null
+          location: string | null
+          price: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          views_count: number
+        }
+        Insert: {
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          price: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          views_count?: number
+        }
+        Update: {
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          price?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
