@@ -14,6 +14,7 @@ interface Listing {
   condition: string;
   location: string | null;
   images: string[];
+  status: string;
   views_count: number;
   created_at: string;
   profiles?: {
@@ -26,6 +27,7 @@ interface Listing {
 interface MarketplaceListingCardProps {
   listing: Listing;
   onClick: () => void;
+  showStatus?: boolean;
 }
 
 const conditionLabels: Record<string, string> = {
@@ -42,7 +44,19 @@ const conditionColors: Record<string, string> = {
   fair: "bg-orange-500/20 text-orange-400 border-orange-500/30",
 };
 
-export default function MarketplaceListingCard({ listing, onClick }: MarketplaceListingCardProps) {
+const statusLabels: Record<string, string> = {
+  active: "Active",
+  sold: "Sold",
+  inactive: "Inactive",
+};
+
+const statusColors: Record<string, string> = {
+  active: "bg-green-500/20 text-green-400 border-green-500/30",
+  sold: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  inactive: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+};
+
+export default function MarketplaceListingCard({ listing, onClick, showStatus }: MarketplaceListingCardProps) {
   const placeholderImage = "/placeholder.svg";
   const mainImage = listing.images?.[0] || placeholderImage;
 
@@ -65,6 +79,13 @@ export default function MarketplaceListingCard({ listing, onClick }: Marketplace
         >
           {conditionLabels[listing.condition] || listing.condition}
         </Badge>
+        {showStatus && (
+          <Badge 
+            className={`absolute top-2 left-2 ${statusColors[listing.status] || statusColors.active}`}
+          >
+            {statusLabels[listing.status] || listing.status}
+          </Badge>
+        )}
         {listing.images.length > 1 && (
           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
             +{listing.images.length - 1} photos
