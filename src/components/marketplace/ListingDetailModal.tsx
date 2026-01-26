@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MessageCircle, MapPin, Eye, ChevronLeft, ChevronRight, Trash2, Edit } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import EditListingModal from "./EditListingModal";
 
 interface Listing {
   id: string;
@@ -59,6 +60,7 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   if (!listing) return null;
@@ -76,7 +78,6 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
   };
 
   const handleContactSeller = () => {
-    // Navigate to messages with the seller
     navigate(`/messages?to=${listing.user_id}`);
     onOpenChange(false);
   };
@@ -101,6 +102,12 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false);
+    onOpenChange(false);
+    onRefresh();
   };
 
   return (
@@ -217,7 +224,11 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
             <div className="flex gap-3">
               {isOwner ? (
                 <>
-                  <Button variant="outline" className="flex-1 gap-2" disabled>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 gap-2"
+                    onClick={() => setShowEditModal(true)}
+                  >
                     <Edit className="h-4 w-4" />
                     Edit Listing
                   </Button>
@@ -240,6 +251,14 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Listing Modal */}
+      <EditListingModal
+        listing={listing}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSuccess={handleEditSuccess}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

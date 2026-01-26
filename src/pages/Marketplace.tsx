@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Filter } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Filter, Package } from "lucide-react";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import MarketplaceListingCard from "@/components/marketplace/MarketplaceListingCard";
@@ -54,12 +55,15 @@ export default function Marketplace() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMyListings, setLoadingMyListings] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [conditionFilter, setConditionFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [activeTab, setActiveTab] = useState("browse");
 
   useEffect(() => {
     if (!user) {
@@ -67,6 +71,7 @@ export default function Marketplace() {
       return;
     }
     fetchListings();
+    fetchMyListings();
   }, [user, navigate]);
 
   const fetchListings = async () => {
@@ -80,7 +85,6 @@ export default function Marketplace() {
 
       if (listingsError) throw listingsError;
 
-      // Fetch profiles separately for each listing
       const listingsWithProfiles = await Promise.all(
         (listingsData || []).map(async (listing) => {
           const { data: profileData } = await supabase
@@ -105,7 +109,55 @@ export default function Marketplace() {
     }
   };
 
+  const fetchMyListings = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingMyListings(true);
+      const { data: listingsData, error: listingsError } = await supabase
+        .from("marketplace_listings")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (listingsError) throw listingsError;
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("username, avatar_url, full_name")
+        .eq("id", user.id)
+        .single();
+
+      const listingsWithProfiles = (listingsData || []).map((listing) => ({
+        ...listing,
+        profiles: profileData || undefined,
+      }));
+
+      setMyListings(listingsWithProfiles as Listing[]);
+    } catch (error) {
+      console.error("Error fetching my listings:", error);
+      toast.error("Failed to load your listings");
+    } finally {
+      setLoadingMyListings(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchListings();
+    fetchMyListings();
+  };
+
   const filteredListings = listings.filter((listing) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
+    const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
+    return matchesSearch && matchesCategory && matchesCondition;
+  });
+
+  const filteredMyListings = myListings.filter((listing) => {
     const matchesSearch =
       searchQuery === "" ||
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,73 +188,125 @@ export default function Marketplace() {
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search listings..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-48">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={conditionFilter} onValueChange={setConditionFilter}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Condition" />
-            </SelectTrigger>
-            <SelectContent>
-              {CONDITIONS.map((cond) => (
-                <SelectItem key={cond.value} value={cond.value}>
-                  {cond.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="browse">Browse All</TabsTrigger>
+            <TabsTrigger value="my-listings" className="gap-2">
+              <Package className="h-4 w-4" />
+              My Listings
+              {myListings.length > 0 && (
+                <span className="ml-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
+                  {myListings.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Listings Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-card rounded-lg h-80 animate-pulse" />
-            ))}
-          </div>
-        ) : filteredListings.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No listings found</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => setShowCreateModal(true)}
-            >
-              Create the first listing
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredListings.map((listing) => (
-              <MarketplaceListingCard
-                key={listing.id}
-                listing={listing}
-                onClick={() => setSelectedListing(listing)}
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-4 mt-6 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search listings..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
-            ))}
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={conditionFilter} onValueChange={setConditionFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Condition" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONDITIONS.map((cond) => (
+                  <SelectItem key={cond.value} value={cond.value}>
+                    {cond.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {/* Browse All Tab */}
+          <TabsContent value="browse">
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-card rounded-lg h-80 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredListings.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg">No listings found</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Create the first listing
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredListings.map((listing) => (
+                  <MarketplaceListingCard
+                    key={listing.id}
+                    listing={listing}
+                    onClick={() => setSelectedListing(listing)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* My Listings Tab */}
+          <TabsContent value="my-listings">
+            {loadingMyListings ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-card rounded-lg h-80 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredMyListings.length === 0 ? (
+              <div className="text-center py-16">
+                <Package className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground text-lg mb-2">You haven't listed anything yet</p>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Start selling your sporting goods and equipment
+                </p>
+                <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Your First Listing
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredMyListings.map((listing) => (
+                  <MarketplaceListingCard
+                    key={listing.id}
+                    listing={listing}
+                    onClick={() => setSelectedListing(listing)}
+                    showStatus
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Create Listing Modal */}
@@ -211,7 +315,7 @@ export default function Marketplace() {
         onOpenChange={setShowCreateModal}
         onSuccess={() => {
           setShowCreateModal(false);
-          fetchListings();
+          handleRefresh();
         }}
       />
 
@@ -220,7 +324,7 @@ export default function Marketplace() {
         listing={selectedListing}
         open={!!selectedListing}
         onOpenChange={(open) => !open && setSelectedListing(null)}
-        onRefresh={fetchListings}
+        onRefresh={handleRefresh}
       />
     </div>
   );
