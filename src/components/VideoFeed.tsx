@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import FullScreenVideoModal from "@/components/FullScreenVideoModal";
+import PostReactions from "@/components/PostReactions";
 
 const SPORTS_CATEGORIES = [
   "All",
@@ -416,29 +417,22 @@ const VideoFeed = () => {
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center gap-4 pt-2 border-t border-border">
-                    <button
-                      onClick={() => handleApplause(post.id)}
-                      className={`flex items-center gap-1 transition-colors ${
-                        applausedVideos.includes(post.id)
-                          ? "text-primary"
-                          : "text-muted-foreground hover:text-primary"
-                      }`}
-                    >
-                      <span className="text-lg">👏</span>
-                      <span className="text-sm font-medium">
-                        {post.likes_count + (applausedVideos.includes(post.id) ? 1 : 0)}
-                      </span>
-                    </button>
+                  <div className="pt-2 border-t border-border space-y-2">
+                    <PostReactions
+                      postId={post.id}
+                      legacyLikesCount={post.likes_count}
+                    />
 
-                    <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                      <MessageSquare className="h-5 w-5" />
-                      <span className="text-sm">{post.comments_count}</span>
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                        <MessageSquare className="h-5 w-5" />
+                        <span className="text-sm">{post.comments_count}</span>
+                      </button>
 
-                    <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
-                      <Share2 className="h-5 w-5" />
-                    </button>
+                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                        <Share2 className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
