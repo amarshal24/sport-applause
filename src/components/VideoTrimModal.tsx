@@ -152,11 +152,18 @@ const VideoTrimModal = ({
   // TikTok-style features
   const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim" | "effects" | "music">("none");
   const [selectedFilter, setSelectedFilter] = useState(filters[0]);
+  // Filter undo/redo history (stack of filter ids)
+  const [filterHistory, setFilterHistory] = useState<string[]>([filters[0].id]);
+  const [filterHistoryIndex, setFilterHistoryIndex] = useState(0);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+
+  // Draft state
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   // Fullscreen Filters & Effects panel
   const characterPins = useCharacterPins();
