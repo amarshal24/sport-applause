@@ -332,6 +332,22 @@ const VideoFeed = () => {
                         className="w-full h-full object-contain transition-transform group-hover:scale-105"
                       />
                     ) : null}
+
+                    {/* Owner-only inline editor button */}
+                    {post.video_url && user?.id === post.user_id && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2 h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditPost(post);
+                        }}
+                      >
+                        <Wand2 className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -453,6 +469,24 @@ const VideoFeed = () => {
           </div>
         )}
       </div>
+
+      {/* Filters & Animations editor for owner's video posts */}
+      {editPost && editPost.video_url && (
+        <VideoTrimModal
+          open={!!editPost}
+          onOpenChange={(open) => {
+            if (!open) setEditPost(null);
+          }}
+          videoUrl={editPost.video_url}
+          videoTitle={editPost.content?.slice(0, 80) || "Video post"}
+          videoDescription={editPost.content || undefined}
+          onRepostSuccess={() => {
+            setEditPost(null);
+            fetchPosts();
+            toast.success("Posted edited version to your feed!");
+          }}
+        />
+      )}
     </section>
   );
 };
