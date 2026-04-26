@@ -692,9 +692,9 @@ const Recruiting = () => {
                           navigate(`/athlete/${video.user_id}`);
                         }}
                       >
-                        <AvatarImage src={video.profiles.avatar_url || undefined} />
+                        <AvatarImage src={video.profiles?.avatar_url || undefined} />
                         <AvatarFallback>
-                          {video.profiles.username[0].toUpperCase()}
+                          {(video.profiles?.username?.[0] || "?").toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -708,7 +708,7 @@ const Recruiting = () => {
                             navigate(`/athlete/${video.user_id}`);
                           }}
                         >
-                          {video.profiles.full_name || video.profiles.username}
+                          {video.profiles?.full_name || video.profiles?.username || "Unknown athlete"}
                         </p>
                       </div>
                     </div>
