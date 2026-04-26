@@ -22,6 +22,11 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import {
+  CharacterPinsOverlay,
+  CharacterPinsPanel,
+  useCharacterPins,
+} from "@/components/video-fx/CharacterPins";
 
 interface TextOverlay {
   id: string;
@@ -161,6 +166,7 @@ const VideoEditor = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<Filter>(filters[0]);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
+  const characterPins = useCharacterPins();
   const [currentText, setCurrentText] = useState("");
   const [currentTextColor, setCurrentTextColor] = useState("#ffffff");
   const [currentTextFont, setCurrentTextFont] = useState("Inter");
@@ -814,6 +820,13 @@ const VideoEditor = () => {
                         </div>
                       ))}
 
+                      {/* Character Pins Overlay (preview only, draggable) */}
+                      <CharacterPinsOverlay
+                        pins={characterPins.pins}
+                        onMove={characterPins.move}
+                        onRemove={characterPins.remove}
+                      />
+
                       {/* Play/Pause Overlay */}
                       {!dragState && (
                         <div 
@@ -1089,8 +1102,17 @@ const VideoEditor = () => {
 
                   {/* Effects Tab */}
                   <TabsContent value="effects">
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Quick effects presets</p>
+                    <div className="space-y-6">
+                      {/* Characters sub-section */}
+                      <CharacterPinsPanel
+                        pins={characterPins.pins}
+                        onAdd={characterPins.add}
+                        onUpdate={characterPins.update}
+                        onRemove={characterPins.remove}
+                      />
+
+                      <div className="border-t border-border pt-4 space-y-4">
+                        <p className="text-sm text-muted-foreground">Quick effects presets</p>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                         <Button
                           variant="outline"
@@ -1158,6 +1180,7 @@ const VideoEditor = () => {
                           <Zap className="w-5 h-5 mb-1 text-primary" />
                           <span className="text-xs">Vibrant</span>
                         </Button>
+                      </div>
                       </div>
                     </div>
                   </TabsContent>
