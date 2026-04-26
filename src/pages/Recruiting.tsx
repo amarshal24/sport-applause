@@ -316,7 +316,7 @@ const Recruiting = () => {
     const shareUrl = `${window.location.origin}/recruiting?video=${video.id}`;
     const shareData = {
       title: video.title,
-      text: `Check out ${video.profiles.full_name || video.profiles.username}'s highlight reel!`,
+      text: `Check out ${video.profiles?.full_name || video.profiles?.username || "this athlete"}'s highlight reel!`,
       url: shareUrl,
     };
 
