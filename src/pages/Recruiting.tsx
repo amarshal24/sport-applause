@@ -369,9 +369,9 @@ const Recruiting = () => {
     }
     setContactAthlete({
       id: video.user_id,
-      username: video.profiles.username,
-      full_name: video.profiles.full_name,
-      avatar_url: video.profiles.avatar_url,
+      username: video.profiles?.username || "athlete",
+      full_name: video.profiles?.full_name || null,
+      avatar_url: video.profiles?.avatar_url || null,
     });
     setSelectedVideo(video);
     setShowContactModal(true);
