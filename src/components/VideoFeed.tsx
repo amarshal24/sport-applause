@@ -762,6 +762,12 @@ const AutoPlayVideo = ({
           }
         }
       `}</style>
+
+      <FullScreenVideoModal
+        src={src}
+        open={fullscreenOpen}
+        onClose={() => setFullscreenOpen(false)}
+      />
     </div>
   );
 };
