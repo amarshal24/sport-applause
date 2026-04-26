@@ -316,7 +316,7 @@ const Recruiting = () => {
     const shareUrl = `${window.location.origin}/recruiting?video=${video.id}`;
     const shareData = {
       title: video.title,
-      text: `Check out ${video.profiles.full_name || video.profiles.username}'s highlight reel!`,
+      text: `Check out ${video.profiles?.full_name || video.profiles?.username || "this athlete"}'s highlight reel!`,
       url: shareUrl,
     };
 
@@ -369,9 +369,9 @@ const Recruiting = () => {
     }
     setContactAthlete({
       id: video.user_id,
-      username: video.profiles.username,
-      full_name: video.profiles.full_name,
-      avatar_url: video.profiles.avatar_url,
+      username: video.profiles?.username || "athlete",
+      full_name: video.profiles?.full_name || null,
+      avatar_url: video.profiles?.avatar_url || null,
     });
     setSelectedVideo(video);
     setShowContactModal(true);
@@ -692,9 +692,9 @@ const Recruiting = () => {
                           navigate(`/athlete/${video.user_id}`);
                         }}
                       >
-                        <AvatarImage src={video.profiles.avatar_url || undefined} />
+                        <AvatarImage src={video.profiles?.avatar_url || undefined} />
                         <AvatarFallback>
-                          {video.profiles.username[0].toUpperCase()}
+                          {(video.profiles?.username?.[0] || "?").toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -708,7 +708,7 @@ const Recruiting = () => {
                             navigate(`/athlete/${video.user_id}`);
                           }}
                         >
-                          {video.profiles.full_name || video.profiles.username}
+                          {video.profiles?.full_name || video.profiles?.username || "Unknown athlete"}
                         </p>
                       </div>
                     </div>
@@ -988,14 +988,14 @@ const Recruiting = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedVideo.profiles.avatar_url || undefined} />
+                    <AvatarImage src={selectedVideo.profiles?.avatar_url || undefined} />
                     <AvatarFallback>
-                      {selectedVideo.profiles.username[0].toUpperCase()}
+                      {(selectedVideo.profiles?.username?.[0] || "?").toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">
-                      {selectedVideo.profiles.full_name || selectedVideo.profiles.username}
+                      {selectedVideo.profiles?.full_name || selectedVideo.profiles?.username || "Unknown athlete"}
                     </p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Badge variant="secondary">{selectedVideo.sport}</Badge>
