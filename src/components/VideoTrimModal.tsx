@@ -1005,6 +1005,18 @@ const VideoTrimModal = ({
                 active={false}
                 onClick={() => setFxPanelOpen(true)}
               />
+              <ToolButton
+                icon={MapPin}
+                label={characterPlaceMode ? "Tap…" : "Place"}
+                active={characterPlaceMode}
+                onClick={() => {
+                  if (characterPins.pins.length >= 2) {
+                    toast.info("Max 2 characters. Remove one first.");
+                    return;
+                  }
+                  setCharacterPlaceMode((v) => !v);
+                }}
+              />
               <ToolButton 
                 icon={Zap} 
                 label="Effects" 
