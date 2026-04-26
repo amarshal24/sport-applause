@@ -120,6 +120,7 @@ export const CharacterPinsOverlay = ({
               transform: "translate(-50%, -50%)",
             }}
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Animation auras (purely visual) */}
             {pin.animation === "speed-lines" && (
