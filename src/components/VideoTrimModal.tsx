@@ -640,7 +640,107 @@ const VideoTrimModal = ({
       fontSize: 48,
       color: "#ffffff"
     }]);
-    toast.success("Sticker added!");
+  };
+
+  // --- Filter undo/redo ---
+  const applyFilter = (filterId: string) => {
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    if (filterHistory[filterHistoryIndex] === filterId) return;
+    const truncated = filterHistory.slice(0, filterHistoryIndex + 1);
+    const next = [...truncated, filterId];
+    setFilterHistory(next);
+    setFilterHistoryIndex(next.length - 1);
+  };
+
+  const undoFilter = () => {
+    if (filterHistoryIndex <= 0) return;
+    const newIndex = filterHistoryIndex - 1;
+    const filterId = filterHistory[newIndex];
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    setFilterHistoryIndex(newIndex);
+    toast.success(`Reverted to ${filter.name}`);
+  };
+
+  const redoFilter = () => {
+    if (filterHistoryIndex >= filterHistory.length - 1) return;
+    const newIndex = filterHistoryIndex + 1;
+    const filterId = filterHistory[newIndex];
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    setFilterHistoryIndex(newIndex);
+    toast.success(`Restored ${filter.name}`);
+  };
+
+  const canUndoFilter = filterHistoryIndex > 0;
+  const canRedoFilter = filterHistoryIndex < filterHistory.length - 1;
+
+  // --- Drafts ---
+  const handleSaveDraft = async () => {
+    if (!user) {
+      toast.error("Please sign in to save drafts");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const musicTrack = customMusic ?? selectedMusic;
+      const editState = {
+        filter_id: selectedFilter.id,
+        trim_start: trimStart,
+        trim_end: trimEnd,
+        playback_speed: playbackSpeed,
+        is_muted: isMuted,
+        text_overlays: textOverlays,
+        active_effect: activeEffect,
+        music: musicTrack
+          ? {
+              name: musicTrack.name,
+              url: musicTrack.url,
+              bpm: musicTrack.bpm,
+              is_custom: !!customMusic,
+              trim_start: musicTrimStart,
+              trim_end: musicTrimEnd,
+              fade_in: musicFadeIn,
+              fade_out: musicFadeOut,
+              volume: musicVolume,
+            }
+          : null,
+      };
+
+      if (currentDraftId) {
+        const { error } = await supabase
+          .from("video_drafts")
+          .update({
+            caption,
+            edit_state: editState as any,
+          })
+          .eq("id", currentDraftId);
+        if (error) throw error;
+        toast.success("Draft updated");
+      } else {
+        const { data, error } = await supabase
+          .from("video_drafts")
+          .insert({
+            user_id: user.id,
+            video_url: videoUrl,
+            video_title: videoTitle,
+            video_description: videoDescription || null,
+            caption,
+            edit_state: editState as any,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data) setCurrentDraftId(data.id);
+        toast.success("Draft saved");
+      }
+    } catch (err) {
+      console.error("Save draft error:", err);
+      toast.error("Failed to save draft");
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const handleRepost = async () => {
