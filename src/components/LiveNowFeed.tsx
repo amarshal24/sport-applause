@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Radio, Eye, Calendar } from "lucide-react";
+import { Radio, Eye, Calendar, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,9 +16,11 @@ type Stream = {
   status: "scheduled" | "live" | "ended";
   scheduled_at: string | null;
   started_at: string | null;
+  ended_at: string | null;
   viewers_count: number;
   user_id: string;
   thumbnail_url: string | null;
+  replay_url: string | null;
   profiles?: {
     username: string | null;
     avatar_url: string | null;
@@ -56,7 +59,21 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
           .limit(limit)
       : { data: [] as any[] };
 
-    const combined = [...(liveData || []), ...(scheduledData || [])];
+    // 3) Recent replays (ended streams)
+    const { data: endedData } = !compact
+      ? await supabase
+          .from("live_streams")
+          .select("*")
+          .eq("status", "ended")
+          .order("ended_at", { ascending: false })
+          .limit(limit)
+      : { data: [] as any[] };
+
+    const combined = [
+      ...(liveData || []),
+      ...(scheduledData || []),
+      ...(endedData || []),
+    ];
 
     // Hydrate profiles
     const ids = Array.from(new Set(combined.map((s) => s.user_id)));
@@ -99,6 +116,7 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
 
   const liveStreams = streams.filter((s) => s.status === "live");
   const upcoming = streams.filter((s) => s.status === "scheduled");
+  const replays = streams.filter((s) => s.status === "ended");
 
   if (loading) {
     return (
