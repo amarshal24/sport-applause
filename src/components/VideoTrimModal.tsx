@@ -645,10 +645,23 @@ const VideoTrimModal = ({
         ? ` (${formatTime((trimStart / 100) * duration)} - ${formatTime((trimEnd / 100) * duration)})`
         : "";
 
+      const musicTrack = customMusic ?? selectedMusic;
+      const musicPayload = musicTrack
+        ? {
+            music_url: musicTrack.url,
+            music_title: musicTrack.name,
+            music_start_time: musicTrimStart || 0,
+            music_end_time: musicTrimEnd || null,
+            music_fade_in: musicFadeIn || 0,
+            music_fade_out: musicFadeOut || 0,
+          }
+        : {};
+
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
         content: caption + trimInfo,
         video_url: videoUrl,
+        ...musicPayload,
       });
 
       if (error) throw error;
