@@ -311,7 +311,7 @@ export const FullscreenFiltersEffectsPanel = ({
                   <CategoryChips
                     options={TRANSFORM_CATEGORIES}
                     value={transformCategory}
-                    onChange={setTransformCategory}
+                    onChange={(v) => setTransformCategory(v as typeof transformCategory)}
                   />
                   <ScrollArea className="mt-1 flex-1 pr-2">
                     <div className="grid grid-cols-3 gap-3 pb-6 sm:grid-cols-4 md:grid-cols-6">
