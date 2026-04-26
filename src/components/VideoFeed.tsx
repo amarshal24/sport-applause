@@ -117,6 +117,59 @@ const VideoFeed = () => {
     fetchPosts();
   }, [fetchPosts, refreshKey]);
 
+  // Load this user's saved (watch later) posts
+  useEffect(() => {
+    if (!user) {
+      setSavedPosts(new Set());
+      return;
+    }
+    supabase
+      .from("watch_later")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) setSavedPosts(new Set(data.map((r: any) => r.post_id)));
+      });
+  }, [user, refreshKey]);
+
+  const handleToggleSave = async (postId: string) => {
+    if (!user) {
+      toast.error("Sign in to save videos");
+      return;
+    }
+    const isSaved = savedPosts.has(postId);
+    const next = new Set(savedPosts);
+    if (isSaved) {
+      next.delete(postId);
+      setSavedPosts(next);
+      const { error } = await supabase
+        .from("watch_later")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("post_id", postId);
+      if (error) {
+        next.add(postId);
+        setSavedPosts(new Set(next));
+        toast.error("Failed to remove");
+      } else {
+        toast.success("Removed from Watch Later");
+      }
+    } else {
+      next.add(postId);
+      setSavedPosts(next);
+      const { error } = await supabase
+        .from("watch_later")
+        .insert({ user_id: user.id, post_id: postId });
+      if (error && !error.message?.toLowerCase().includes("duplicate")) {
+        next.delete(postId);
+        setSavedPosts(new Set(next));
+        toast.error("Failed to save");
+      } else {
+        toast.success("Saved to Watch Later");
+      }
+    }
+  };
+
   const handleRefresh = useCallback(async () => {
     await fetchPosts();
     toast.success("Feed refreshed!");
