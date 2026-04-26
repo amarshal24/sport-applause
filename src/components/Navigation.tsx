@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { User, Search, Upload, LogOut, ChevronDown, Flame, Compass, Users, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
+import { User, Search, Upload, LogOut, ChevronDown, Flame, Heart, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
