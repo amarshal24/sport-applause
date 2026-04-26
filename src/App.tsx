@@ -20,8 +20,7 @@ const Podcasts = lazy(() => import("./pages/Podcasts"));
 const LiveStreams = lazy(() => import("./pages/LiveStreams"));
 const StreamReplay = lazy(() => import("./pages/StreamReplay"));
 const Trending = lazy(() => import("./pages/Trending"));
-const Discover = lazy(() => import("./pages/Discover"));
-const Following = lazy(() => import("./pages/Following"));
+const Fans = lazy(() => import("./pages/Fans"));
 const TopPlays = lazy(() => import("./pages/TopPlays"));
 const WatchLater = lazy(() => import("./pages/WatchLater"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -70,8 +69,7 @@ const App = () => (
               <Route path="/live" element={<LiveStreams />} />
               <Route path="/live/replay/:streamId" element={<StreamReplay />} />
               <Route path="/trending" element={<Trending />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/following" element={<Following />} />
+              <Route path="/fans" element={<Fans />} />
               <Route path="/top-plays" element={<TopPlays />} />
               <Route path="/watch-later" element={<WatchLater />} />
               <Route path="/terms" element={<Terms />} />

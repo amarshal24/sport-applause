@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { User, Search, Upload, LogOut, ChevronDown, Flame, Compass, Users, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
+import { User, Search, Upload, LogOut, ChevronDown, Flame, Heart, Trophy, Clock, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -35,8 +35,7 @@ const Navigation = () => {
 
   const categories = [
     { name: t("sidebar.trending"), icon: Flame, path: "/trending" },
-    { name: t("sidebar.discover"), icon: Compass, path: "/discover" },
-    { name: t("sidebar.following"), icon: Users, path: "/following" },
+    { name: t("sidebar.fans"), icon: Heart, path: "/fans" },
     { name: t("sidebar.topPlays"), icon: Trophy, path: "/top-plays" },
     { name: t("sidebar.watchLater"), icon: Clock, path: "/watch-later" },
     { name: t("sidebar.games"), icon: Gamepad2, path: "/games" },
