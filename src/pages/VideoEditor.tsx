@@ -1181,6 +1181,7 @@ const VideoEditor = () => {
                           <span className="text-xs">Vibrant</span>
                         </Button>
                       </div>
+                      </div>
                     </div>
                   </TabsContent>
 
