@@ -611,6 +611,22 @@ const Recruiting = () => {
                       </Badge>
                     )}
                     
+                    {/* Owner-only quick FX edit button */}
+                    {user?.id === video.user_id && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute bottom-2 left-2 h-8 bg-background/80 hover:bg-primary hover:text-primary-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFxEditorVideo(video);
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1" />
+                        Edit Filters
+                      </Button>
+                    )}
+
                     {/* Action buttons */}
                     <div className="absolute top-2 right-2 flex gap-1">
                       <DropdownMenu>
