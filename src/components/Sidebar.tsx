@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Home, Flame, User, TrendingUp, Heart, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
+import { Home, Flame, User, TrendingUp, Heart, Trophy, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
@@ -99,14 +99,7 @@ const Sidebar = () => {
           <span>{t("sidebar.live")}</span>
         </NavLink>
 
-        <NavLink 
-          to="/watch-later" 
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-          activeClassName="bg-primary/10 text-primary font-medium"
-        >
-          <Clock className="h-5 w-5" />
-          <span>{t("sidebar.watchLater")}</span>
-        </NavLink>
+        
         <NavLink 
           to="/messages" 
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"

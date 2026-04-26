@@ -16,7 +16,6 @@ import {
   Search,
   Flame,
   Heart,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,7 @@ const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
   { path: "/profile", icon: User, labelKey: "quickNav.profile" },
   { path: "/trending", icon: Flame, labelKey: "quickNav.trending" },
+  { path: "/trending?tab=top-plays", icon: Trophy, labelKey: "quickNav.topPlays" },
   { path: "/fans", icon: Heart, labelKey: "quickNav.fans" },
   { path: "/games", icon: Gamepad2, labelKey: "quickNav.games" },
   { path: "/editor", icon: Video, labelKey: "quickNav.videoEditor" },
@@ -33,8 +33,6 @@ const menuItems = [
   { path: "/motivation", icon: Quote, labelKey: "quickNav.motivation" },
   { path: "/podcasts", icon: Headphones, labelKey: "quickNav.podcasts" },
   { path: "/live", icon: Radio, labelKey: "quickNav.liveStreams" },
-  { path: "/top-plays", icon: Trophy, labelKey: "quickNav.topPlays" },
-  { path: "/watch-later", icon: Clock, labelKey: "quickNav.watchLater" },
 ];
 
 const QuickNavMenu = () => {

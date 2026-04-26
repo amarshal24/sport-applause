@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2 } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark } from "lucide-react";
 import { AnimeFilterSelector, AnimeFilterOverlay, getAnimeFilterStyle, type AnimeFilterType } from "@/components/AnimeFilters";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
@@ -65,6 +65,7 @@ const VideoFeed = () => {
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -115,6 +116,59 @@ const VideoFeed = () => {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts, refreshKey]);
+
+  // Load this user's saved (watch later) posts
+  useEffect(() => {
+    if (!user) {
+      setSavedPosts(new Set());
+      return;
+    }
+    supabase
+      .from("watch_later")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) setSavedPosts(new Set(data.map((r: any) => r.post_id)));
+      });
+  }, [user, refreshKey]);
+
+  const handleToggleSave = async (postId: string) => {
+    if (!user) {
+      toast.error("Sign in to save videos");
+      return;
+    }
+    const isSaved = savedPosts.has(postId);
+    const next = new Set(savedPosts);
+    if (isSaved) {
+      next.delete(postId);
+      setSavedPosts(next);
+      const { error } = await supabase
+        .from("watch_later")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("post_id", postId);
+      if (error) {
+        next.add(postId);
+        setSavedPosts(new Set(next));
+        toast.error("Failed to remove");
+      } else {
+        toast.success("Removed from Watch Later");
+      }
+    } else {
+      next.add(postId);
+      setSavedPosts(next);
+      const { error } = await supabase
+        .from("watch_later")
+        .insert({ user_id: user.id, post_id: postId });
+      if (error && !error.message?.toLowerCase().includes("duplicate")) {
+        next.delete(postId);
+        setSavedPosts(new Set(next));
+        toast.error("Failed to save");
+      } else {
+        toast.success("Saved to Watch Later");
+      }
+    }
+  };
 
   const handleRefresh = useCallback(async () => {
     await fetchPosts();
@@ -458,7 +512,22 @@ const VideoFeed = () => {
                         <span className="text-sm">{post.comments_count}</span>
                       </button>
 
-                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                      <button
+                        onClick={() => handleToggleSave(post.id)}
+                        className={`flex items-center gap-1 transition-colors ml-auto ${
+                          savedPosts.has(post.id)
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label={savedPosts.has(post.id) ? "Remove from Watch Later" : "Save to Watch Later"}
+                      >
+                        <Bookmark className={`h-5 w-5 ${savedPosts.has(post.id) ? "fill-current" : ""}`} />
+                        <span className="text-sm hidden sm:inline">
+                          {savedPosts.has(post.id) ? "Saved" : "Save"}
+                        </span>
+                      </button>
+
+                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
                         <Share2 className="h-5 w-5" />
                       </button>
                     </div>
