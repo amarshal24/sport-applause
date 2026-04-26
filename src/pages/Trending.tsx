@@ -323,93 +323,132 @@ const Trending = () => {
             </Card>
           </div>
 
-          {/* Trending Videos Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trendingVideos.map((video) => (
-              <Card
-                key={video.id}
-                className="overflow-hidden hover-lift bg-card border-border group cursor-pointer"
-                onClick={() => setSelectedVideo(video)}
-              >
-                <div className="relative aspect-video">
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  
-                  {/* Trending Badge */}
-                  <Badge className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                    <Flame className="h-3 w-3 mr-1" />
-                    #{video.trending} Trending
-                  </Badge>
-                  
-                  {/* Duration */}
-                  <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                    {video.duration}
-                  </span>
-                  
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-primary/90 rounded-full p-4">
-                      <Play className="h-8 w-8 text-primary-foreground fill-current" />
-                    </div>
-                  </div>
-                </div>
+          {/* Tabs: Trending / Top Plays */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="trending" className="gap-2">
+                <Flame className="h-4 w-4" />
+                Trending
+              </TabsTrigger>
+              <TabsTrigger value="top-plays" className="gap-2">
+                <Trophy className="h-4 w-4" />
+                Top Plays
+              </TabsTrigger>
+            </TabsList>
 
-                <CardContent className="p-4">
-                  <div className="flex gap-3">
-                    <img
-                      src={video.creatorAvatar}
-                      alt={video.creator}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground line-clamp-2 mb-1">
-                        {video.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{video.creator}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {video.views}
-                        </span>
-                        <Badge variant="secondary" className="text-xs">
-                          {video.sport}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
+            {(["trending", "top-plays"] as const).map((tabKey) => {
+              const list = tabKey === "trending" ? trendingVideos : topPlaysVideos;
+              const isTopPlays = tabKey === "top-plays";
+              return (
+                <TabsContent key={tabKey} value={tabKey} className="mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {list.map((video, idx) => (
+                      <Card
+                        key={video.id}
+                        className="overflow-hidden hover-lift bg-card border-border group cursor-pointer"
+                        onClick={() => setSelectedVideo(video)}
+                      >
+                        <div className="relative aspect-video">
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={likedVideos.includes(video.id) ? "text-pink-500" : "text-muted-foreground"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleLike(video.id);
-                      }}
-                    >
-                      <Heart
-                        className={`h-4 w-4 mr-1 ${likedVideos.includes(video.id) ? "fill-current" : ""}`}
-                      />
-                      {video.likes}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground">
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      {video.comments}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                          {isTopPlays ? (
+                            <Badge className="absolute top-2 left-2 bg-victory-gold text-foreground border-0">
+                              <Trophy className="h-3 w-3 mr-1" />
+                              #{idx + 1} Top Play
+                            </Badge>
+                          ) : (
+                            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                              <Flame className="h-3 w-3 mr-1" />
+                              #{video.trending} Trending
+                            </Badge>
+                          )}
+
+                          <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                            {video.duration}
+                          </span>
+
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="bg-primary/90 rounded-full p-4">
+                              <Play className="h-8 w-8 text-primary-foreground fill-current" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <CardContent className="p-4">
+                          <div className="flex gap-3">
+                            <img
+                              src={video.creatorAvatar}
+                              alt={video.creator}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground line-clamp-2 mb-1">
+                                {video.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">{video.creator}</p>
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="h-3 w-3" />
+                                  {video.views}
+                                </span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {video.sport}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={likedVideos.includes(video.id) ? "text-pink-500" : "text-muted-foreground"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLike(video.id);
+                              }}
+                            >
+                              <Heart
+                                className={`h-4 w-4 mr-1 ${likedVideos.includes(video.id) ? "fill-current" : ""}`}
+                              />
+                              {video.likes}
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-muted-foreground">
+                              <MessageCircle className="h-4 w-4 mr-1" />
+                              {video.comments}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={savedVideos.includes(video.id) ? "text-primary" : "text-muted-foreground"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSave(video.id);
+                              }}
+                              aria-label="Save video"
+                            >
+                              <Bookmark
+                                className={`h-4 w-4 ${savedVideos.includes(video.id) ? "fill-current" : ""}`}
+                              />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-muted-foreground">
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
         </div>
       </main>
 
