@@ -958,6 +958,42 @@ export type Database = {
           },
         ]
       }
+      video_drafts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          edit_state: Json
+          id: string
+          updated_at: string
+          user_id: string
+          video_description: string | null
+          video_title: string | null
+          video_url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          edit_state?: Json
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_description?: string | null
+          video_title?: string | null
+          video_url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          edit_state?: Json
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_description?: string | null
+          video_title?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
