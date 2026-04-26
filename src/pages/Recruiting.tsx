@@ -14,8 +14,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
-  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User
+  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User,
+  Sparkles, HelpCircle, Wand2
 } from "lucide-react";
+import VideoTrimModal from "@/components/VideoTrimModal";
+import { FilterHelpDialog } from "@/components/recruiting/FilterHelpDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +68,8 @@ const Recruiting = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<RecruitingVideo | null>(null);
   const [editingVideo, setEditingVideo] = useState<RecruitingVideo | null>(null);
+  const [fxEditorVideo, setFxEditorVideo] = useState<RecruitingVideo | null>(null);
+  const [showFilterHelp, setShowFilterHelp] = useState(false);
   const [contactAthlete, setContactAthlete] = useState<{
     id: string;
     username: string;
