@@ -343,6 +343,10 @@ const Profile = () => {
               </div>
             </TabsContent>
 
+            <TabsContent value="watch-later" className="mt-4">
+              <WatchLaterVideos />
+            </TabsContent>
+
             <TabsContent value="saved" className="mt-4">
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Bookmark className="h-12 w-12 text-muted-foreground/30 mb-3" />
