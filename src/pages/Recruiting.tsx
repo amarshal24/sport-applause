@@ -434,17 +434,27 @@ const Recruiting = () => {
                 Upload your highlight reel and get discovered.
               </p>
               {user && (
-                <Button 
-                  size="lg"
-                  onClick={() => {
-                    resetForm();
-                    setShowUploadModal(true);
-                  }}
-                  className="shadow-glow"
-                >
-                  <Plus className="mr-2 h-5 w-5" />
-                  Upload Your Highlight Reel
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button 
+                    size="lg"
+                    onClick={() => {
+                      resetForm();
+                      setShowUploadModal(true);
+                    }}
+                    className="shadow-glow"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Upload Your Highlight Reel
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setShowFilterHelp(true)}
+                  >
+                    <HelpCircle className="mr-2 h-5 w-5" />
+                    How to add filters
+                  </Button>
+                </div>
               )}
               {!user && (
                 <Button 
@@ -635,9 +645,13 @@ const Recruiting = () => {
                           </DropdownMenuItem>
                           {user?.id === video.user_id && (
                             <>
+                              <DropdownMenuItem onClick={() => setFxEditorVideo(video)}>
+                                <Wand2 className="w-4 h-4 mr-2" />
+                                Filters & Animations
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleEdit(video)}>
                                 <Edit className="w-4 h-4 mr-2" />
-                                Edit
+                                Edit Details
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(video)}
