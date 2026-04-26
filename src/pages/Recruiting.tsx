@@ -997,6 +997,26 @@ const Recruiting = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Filters & Animations Editor (full-screen) */}
+      {fxEditorVideo && (
+        <VideoTrimModal
+          open={!!fxEditorVideo}
+          onOpenChange={(open) => {
+            if (!open) setFxEditorVideo(null);
+          }}
+          videoUrl={fxEditorVideo.video_url}
+          videoTitle={fxEditorVideo.title}
+          videoDescription={fxEditorVideo.description || undefined}
+          onRepostSuccess={() => {
+            toast.success("Reel reposted to your main feed!");
+            setFxEditorVideo(null);
+          }}
+        />
+      )}
+
+      {/* How-to popup */}
+      <FilterHelpDialog open={showFilterHelp} onOpenChange={setShowFilterHelp} />
       {/* Contact Athlete Modal */}
       {contactAthlete && (
         <ContactAthleteModal
