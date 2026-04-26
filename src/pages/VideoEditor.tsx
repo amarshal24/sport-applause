@@ -166,6 +166,7 @@ const VideoEditor = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<Filter>(filters[0]);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
+  const characterPins = useCharacterPins();
   const [currentText, setCurrentText] = useState("");
   const [currentTextColor, setCurrentTextColor] = useState("#ffffff");
   const [currentTextFont, setCurrentTextFont] = useState("Inter");
