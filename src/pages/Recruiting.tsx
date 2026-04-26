@@ -14,8 +14,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
-  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User
+  Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User,
+  Sparkles, HelpCircle, Wand2
 } from "lucide-react";
+import VideoTrimModal from "@/components/VideoTrimModal";
+import { FilterHelpDialog } from "@/components/recruiting/FilterHelpDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +68,8 @@ const Recruiting = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<RecruitingVideo | null>(null);
   const [editingVideo, setEditingVideo] = useState<RecruitingVideo | null>(null);
+  const [fxEditorVideo, setFxEditorVideo] = useState<RecruitingVideo | null>(null);
+  const [showFilterHelp, setShowFilterHelp] = useState(false);
   const [contactAthlete, setContactAthlete] = useState<{
     id: string;
     username: string;
@@ -429,17 +434,27 @@ const Recruiting = () => {
                 Upload your highlight reel and get discovered.
               </p>
               {user && (
-                <Button 
-                  size="lg"
-                  onClick={() => {
-                    resetForm();
-                    setShowUploadModal(true);
-                  }}
-                  className="shadow-glow"
-                >
-                  <Plus className="mr-2 h-5 w-5" />
-                  Upload Your Highlight Reel
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button 
+                    size="lg"
+                    onClick={() => {
+                      resetForm();
+                      setShowUploadModal(true);
+                    }}
+                    className="shadow-glow"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Upload Your Highlight Reel
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setShowFilterHelp(true)}
+                  >
+                    <HelpCircle className="mr-2 h-5 w-5" />
+                    How to add filters
+                  </Button>
+                </div>
               )}
               {!user && (
                 <Button 
@@ -596,6 +611,22 @@ const Recruiting = () => {
                       </Badge>
                     )}
                     
+                    {/* Owner-only quick FX edit button */}
+                    {user?.id === video.user_id && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute bottom-2 left-2 h-8 bg-background/80 hover:bg-primary hover:text-primary-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFxEditorVideo(video);
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1" />
+                        Edit Filters
+                      </Button>
+                    )}
+
                     {/* Action buttons */}
                     <div className="absolute top-2 right-2 flex gap-1">
                       <DropdownMenu>
@@ -630,9 +661,13 @@ const Recruiting = () => {
                           </DropdownMenuItem>
                           {user?.id === video.user_id && (
                             <>
+                              <DropdownMenuItem onClick={() => setFxEditorVideo(video)}>
+                                <Wand2 className="w-4 h-4 mr-2" />
+                                Filters & Animations
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleEdit(video)}>
                                 <Edit className="w-4 h-4 mr-2" />
-                                Edit
+                                Edit Details
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(video)}
@@ -978,6 +1013,26 @@ const Recruiting = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Filters & Animations Editor (full-screen) */}
+      {fxEditorVideo && (
+        <VideoTrimModal
+          open={!!fxEditorVideo}
+          onOpenChange={(open) => {
+            if (!open) setFxEditorVideo(null);
+          }}
+          videoUrl={fxEditorVideo.video_url}
+          videoTitle={fxEditorVideo.title}
+          videoDescription={fxEditorVideo.description || undefined}
+          onRepostSuccess={() => {
+            toast.success("Reel reposted to your main feed!");
+            setFxEditorVideo(null);
+          }}
+        />
+      )}
+
+      {/* How-to popup */}
+      <FilterHelpDialog open={showFilterHelp} onOpenChange={setShowFilterHelp} />
       {/* Contact Athlete Modal */}
       {contactAthlete && (
         <ContactAthleteModal
