@@ -1708,6 +1708,17 @@ const VideoEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FullscreenFiltersEffectsPanel
+        open={fxPanelOpen}
+        onClose={() => setFxPanelOpen(false)}
+        selection={fxSelection}
+        onChange={setFxSelection}
+        pins={characterPins.pins}
+        onAddPin={characterPins.add}
+        onUpdatePin={characterPins.update}
+        onRemovePin={characterPins.remove}
+      />
     </div>
   );
 };
