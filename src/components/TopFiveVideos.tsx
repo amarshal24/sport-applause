@@ -215,11 +215,13 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
   };
 
   const handleEditInEditor = (video: TopFiveVideo) => {
-    // Store video URL in sessionStorage for the editor to pick up
-    sessionStorage.setItem("editorVideoUrl", video.video_url);
-    sessionStorage.setItem("editorVideoTitle", video.title);
-    navigate("/video-editor");
-    toast.success("Opening video in editor...");
+    // Open the full-screen Filters & Animations editor in-place
+    if (!user) {
+      toast.error("Please sign in to edit");
+      return;
+    }
+    setTrimVideo(video);
+    setShowTrimModal(true);
   };
 
   const handleRepostToFeed = (video: TopFiveVideo) => {
@@ -325,7 +327,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   size="icon"
                                   variant="secondary"
                                   className="h-7 w-7"
-                                  title="Edit in video editor"
+                                  title="Edit filters & animations"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleEditInEditor(video);

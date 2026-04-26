@@ -1,15 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2 } from "lucide-react";
 import { AnimeFilterSelector, AnimeFilterOverlay, getAnimeFilterStyle, type AnimeFilterType } from "@/components/AnimeFilters";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import FullScreenVideoModal from "@/components/FullScreenVideoModal";
 import PostReactions from "@/components/PostReactions";
+import VideoTrimModal from "@/components/VideoTrimModal";
 
 const SPORTS_CATEGORIES = [
   "All",
@@ -54,6 +56,7 @@ interface Post {
 }
 
 const VideoFeed = () => {
+  const { user } = useAuth();
   const [selectedSport, setSelectedSport] = useState("All");
   const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -61,6 +64,7 @@ const VideoFeed = () => {
   const [loading, setLoading] = useState(true);
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
+  const [editPost, setEditPost] = useState<Post | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -328,6 +332,22 @@ const VideoFeed = () => {
                         className="w-full h-full object-contain transition-transform group-hover:scale-105"
                       />
                     ) : null}
+
+                    {/* Owner-only inline editor button */}
+                    {post.video_url && user?.id === post.user_id && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2 h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditPost(post);
+                        }}
+                      >
+                        <Wand2 className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -449,6 +469,24 @@ const VideoFeed = () => {
           </div>
         )}
       </div>
+
+      {/* Filters & Animations editor for owner's video posts */}
+      {editPost && editPost.video_url && (
+        <VideoTrimModal
+          open={!!editPost}
+          onOpenChange={(open) => {
+            if (!open) setEditPost(null);
+          }}
+          videoUrl={editPost.video_url}
+          videoTitle={editPost.content?.slice(0, 80) || "Video post"}
+          videoDescription={editPost.content || undefined}
+          onRepostSuccess={() => {
+            setEditPost(null);
+            fetchPosts();
+            toast.success("Posted edited version to your feed!");
+          }}
+        />
+      )}
     </section>
   );
 };
