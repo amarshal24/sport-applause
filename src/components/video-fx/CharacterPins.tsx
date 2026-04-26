@@ -102,7 +102,7 @@ export const CharacterPinsOverlay = ({ pins, onMove, onRemove }: OverlayProps) =
             )}
             {pin.animation === "fire-aura" && (
               <div className="absolute inset-0 -z-10 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-t from-red-500 via-orange-400 to-yellow-300 opacity-70 blur-xl animate-pulse" />
+                <div className="w-20 h-20 rounded-full bg-destructive opacity-70 blur-xl animate-pulse" />
               </div>
             )}
             {pin.animation === "sparkle" && (
