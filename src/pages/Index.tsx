@@ -6,6 +6,7 @@ import VideoFeed from "@/components/VideoFeed";
 import Hero from "@/components/Hero";
 import MusicRecommendations from "@/components/MusicRecommendations";
 import UnifiedComposer from "@/components/UnifiedComposer";
+import LiveNowFeed from "@/components/LiveNowFeed";
 import { useAuth } from "@/hooks/useAuth";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { useState } from "react";
@@ -47,6 +48,9 @@ const Index = () => {
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="px-4 lg:px-6 py-6">
           <Stories onCreateStory={handleCreateStory} />
+          <div className="mt-3">
+            <LiveNowFeed compact />
+          </div>
           <UnifiedComposer onPostCreated={handlePostCreated} initialMode={composerMode} />
           <MusicRecommendations recommendations={recommendations} loading={musicLoading} />
           <VideoFeed key={refreshKey} />
