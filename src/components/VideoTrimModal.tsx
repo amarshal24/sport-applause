@@ -169,6 +169,7 @@ const VideoTrimModal = ({
   const characterPins = useCharacterPins();
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
   const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
+  const [characterPlaceMode, setCharacterPlaceMode] = useState(false);
   
   // Video effects state
   const [activeEffect, setActiveEffect] = useState<string>("none");
