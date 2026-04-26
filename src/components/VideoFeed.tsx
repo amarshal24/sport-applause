@@ -65,6 +65,7 @@ const VideoFeed = () => {
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
