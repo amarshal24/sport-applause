@@ -122,12 +122,21 @@ const VideoFeed = () => {
     threshold: 80,
   });
 
-  const handleApplause = (postId: string) => {
-    if (applausedVideos.includes(postId)) {
-      setApplausedVideos(applausedVideos.filter(id => id !== postId));
-    } else {
-      setApplausedVideos([...applausedVideos, postId]);
-    }
+  const handleApplause = async (postId: string) => {
+    if (applausedVideos.includes(postId)) return;
+    setApplausedVideos((prev) => [...prev, postId]);
+    // Persist a 👏 reaction (idempotent thanks to the unique index)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from("post_reactions")
+      .insert({ post_id: postId, user_id: user.id, emoji: "👏" })
+      .then(({ error }) => {
+        // Unique violation just means they already reacted — that's fine
+        if (error && !error.message?.toLowerCase().includes("duplicate")) {
+          console.warn("Reaction failed:", error.message);
+        }
+      });
   };
 
   const handlePlayMusic = (post: Post) => {
