@@ -362,6 +362,38 @@ const VideoTrimModal = ({
     }
   }, [musicVolume]);
 
+  // Keyboard shortcuts: Cmd/Ctrl+Z = undo filter, Shift+Cmd/Ctrl+Z or Cmd/Ctrl+Y = redo
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (filterHistoryIndex > 0) {
+          const newIndex = filterHistoryIndex - 1;
+          const f = filters.find((x) => x.id === filterHistory[newIndex]) || filters[0];
+          setSelectedFilter(f);
+          setFilterHistoryIndex(newIndex);
+          toast.success(`Reverted to ${f.name}`);
+        }
+      } else if ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        if (filterHistoryIndex < filterHistory.length - 1) {
+          const newIndex = filterHistoryIndex + 1;
+          const f = filters.find((x) => x.id === filterHistory[newIndex]) || filters[0];
+          setSelectedFilter(f);
+          setFilterHistoryIndex(newIndex);
+          toast.success(`Restored ${f.name}`);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, filterHistory, filterHistoryIndex]);
+
   const selectMusic = (track: typeof musicTracks[0] | null) => {
     setSelectedMusic(track);
     setCustomMusic(null);
