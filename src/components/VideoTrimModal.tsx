@@ -16,6 +16,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MusicTrimmer } from "./MusicTrimmer";
+import {
+  CharacterPinsOverlay,
+  useCharacterPins,
+} from "@/components/video-fx/CharacterPins";
+import {
+  FullscreenFiltersEffectsPanel,
+  defaultFxSelection,
+  type FxSelection,
+} from "@/components/video-fx/FullscreenFiltersEffectsPanel";
 
 interface VideoTrimModalProps {
   open: boolean;
@@ -148,6 +157,11 @@ const VideoTrimModal = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+
+  // Fullscreen Filters & Effects panel
+  const characterPins = useCharacterPins();
+  const [fxPanelOpen, setFxPanelOpen] = useState(false);
+  const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
   
   // Video effects state
   const [activeEffect, setActiveEffect] = useState<string>("none");
