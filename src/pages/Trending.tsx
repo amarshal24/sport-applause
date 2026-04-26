@@ -104,7 +104,11 @@ const playbackSpeeds = [0.5, 1, 1.5, 2];
 
 const Trending = () => {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
+  const [activeTab, setActiveTab] = useState<"trending" | "top-plays">(initialTab);
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
+  const [savedVideos, setSavedVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<typeof trendingVideos[0] | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -118,6 +122,38 @@ const Trending = () => {
   const [activeColorFilter, setActiveColorFilter] = useState<ColorFilterType>("none");
   const [activeAnimatedFilter, setActiveAnimatedFilter] = useState<FilterType>("none");
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
+    setActiveTab(tab);
+  }, [searchParams]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val as "trending" | "top-plays");
+    if (val === "top-plays") {
+      setSearchParams({ tab: "top-plays" });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const parseCount = (s: string) => {
+    const n = parseFloat(s);
+    if (s.includes("M")) return n * 1_000_000;
+    if (s.includes("K")) return n * 1_000;
+    return n;
+  };
+
+  const topPlaysVideos = [...trendingVideos].sort(
+    (a, b) => parseCount(b.likes) - parseCount(a.likes)
+  );
+
+  const toggleSave = (videoId: string) => {
+    setSavedVideos((prev) =>
+      prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId]
+    );
+  };
+
 
   const changePlaybackSpeed = (speed: number) => {
     if (videoRef.current) {
