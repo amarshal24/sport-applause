@@ -207,6 +207,7 @@ const VideoTrimModal = ({
       setFilterHistory([filters[0].id]);
       setFilterHistoryIndex(0);
       setCurrentDraftId(null);
+      setCharacterPlaceMode(false);
       setTextOverlays([]);
       setPlaybackSpeed(1);
       setActiveEffect("none");
