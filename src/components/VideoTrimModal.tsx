@@ -1462,6 +1462,15 @@ const VideoTrimModal = ({
                     <Button variant="ghost" onClick={() => setShowCaptionInput(false)} className="text-white">
                       Cancel
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      disabled={savingDraft}
+                      className="border-white/30 text-white hover:bg-white/20"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {savingDraft ? "Saving..." : currentDraftId ? "Update Draft" : "Save Draft"}
+                    </Button>
                     <Button onClick={handleRepost} disabled={reposting}>
                       <Repeat2 className="w-4 h-4 mr-2" />
                       {reposting ? "Posting..." : "Repost"}
@@ -1470,18 +1479,27 @@ const VideoTrimModal = ({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
                   className="flex-1 border-white/30 text-white hover:bg-white/20"
                   onClick={() => setShowCaptionInput(true)}
                 >
                   <Type className="w-4 h-4 mr-2" />
-                  Add Caption
+                  Caption
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white/30 text-white hover:bg-white/20"
+                  onClick={handleSaveDraft}
+                  disabled={savingDraft}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {savingDraft ? "Saving..." : currentDraftId ? "Update Draft" : "Save Draft"}
                 </Button>
                 <Button onClick={handleRepost} disabled={reposting} className="flex-1">
                   <Repeat2 className="w-4 h-4 mr-2" />
-                  {reposting ? "Posting..." : "Repost to Feed"}
+                  {reposting ? "Posting..." : "Repost"}
                 </Button>
               </div>
             )}
