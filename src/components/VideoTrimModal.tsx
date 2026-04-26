@@ -8,7 +8,7 @@ import {
   Play, Pause, Scissors, Repeat2, RotateCcw, X, 
   Type, Sticker, Music, Sparkles, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Timer, Wand2, Download,
-  Zap, RefreshCw, ZoomIn, Upload
+  Zap, RefreshCw, ZoomIn, Upload, Save, Undo2, Redo2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -152,11 +152,18 @@ const VideoTrimModal = ({
   // TikTok-style features
   const [activePanel, setActivePanel] = useState<"none" | "filters" | "text" | "stickers" | "speed" | "trim" | "effects" | "music">("none");
   const [selectedFilter, setSelectedFilter] = useState(filters[0]);
+  // Filter undo/redo history (stack of filter ids)
+  const [filterHistory, setFilterHistory] = useState<string[]>([filters[0].id]);
+  const [filterHistoryIndex, setFilterHistoryIndex] = useState(0);
   const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+
+  // Draft state
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   // Fullscreen Filters & Effects panel
   const characterPins = useCharacterPins();
@@ -196,6 +203,9 @@ const VideoTrimModal = ({
       setIsPlaying(false);
       setActivePanel("none");
       setSelectedFilter(filters[0]);
+      setFilterHistory([filters[0].id]);
+      setFilterHistoryIndex(0);
+      setCurrentDraftId(null);
       setTextOverlays([]);
       setPlaybackSpeed(1);
       setActiveEffect("none");
@@ -351,6 +361,38 @@ const VideoTrimModal = ({
       audioRef.current.volume = musicVolume;
     }
   }, [musicVolume]);
+
+  // Keyboard shortcuts: Cmd/Ctrl+Z = undo filter, Shift+Cmd/Ctrl+Z or Cmd/Ctrl+Y = redo
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (filterHistoryIndex > 0) {
+          const newIndex = filterHistoryIndex - 1;
+          const f = filters.find((x) => x.id === filterHistory[newIndex]) || filters[0];
+          setSelectedFilter(f);
+          setFilterHistoryIndex(newIndex);
+          toast.success(`Reverted to ${f.name}`);
+        }
+      } else if ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        if (filterHistoryIndex < filterHistory.length - 1) {
+          const newIndex = filterHistoryIndex + 1;
+          const f = filters.find((x) => x.id === filterHistory[newIndex]) || filters[0];
+          setSelectedFilter(f);
+          setFilterHistoryIndex(newIndex);
+          toast.success(`Restored ${f.name}`);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, filterHistory, filterHistoryIndex]);
 
   const selectMusic = (track: typeof musicTracks[0] | null) => {
     setSelectedMusic(track);
@@ -630,7 +672,107 @@ const VideoTrimModal = ({
       fontSize: 48,
       color: "#ffffff"
     }]);
-    toast.success("Sticker added!");
+  };
+
+  // --- Filter undo/redo ---
+  const applyFilter = (filterId: string) => {
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    if (filterHistory[filterHistoryIndex] === filterId) return;
+    const truncated = filterHistory.slice(0, filterHistoryIndex + 1);
+    const next = [...truncated, filterId];
+    setFilterHistory(next);
+    setFilterHistoryIndex(next.length - 1);
+  };
+
+  const undoFilter = () => {
+    if (filterHistoryIndex <= 0) return;
+    const newIndex = filterHistoryIndex - 1;
+    const filterId = filterHistory[newIndex];
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    setFilterHistoryIndex(newIndex);
+    toast.success(`Reverted to ${filter.name}`);
+  };
+
+  const redoFilter = () => {
+    if (filterHistoryIndex >= filterHistory.length - 1) return;
+    const newIndex = filterHistoryIndex + 1;
+    const filterId = filterHistory[newIndex];
+    const filter = filters.find((f) => f.id === filterId) || filters[0];
+    setSelectedFilter(filter);
+    setFilterHistoryIndex(newIndex);
+    toast.success(`Restored ${filter.name}`);
+  };
+
+  const canUndoFilter = filterHistoryIndex > 0;
+  const canRedoFilter = filterHistoryIndex < filterHistory.length - 1;
+
+  // --- Drafts ---
+  const handleSaveDraft = async () => {
+    if (!user) {
+      toast.error("Please sign in to save drafts");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const musicTrack = customMusic ?? selectedMusic;
+      const editState = {
+        filter_id: selectedFilter.id,
+        trim_start: trimStart,
+        trim_end: trimEnd,
+        playback_speed: playbackSpeed,
+        is_muted: isMuted,
+        text_overlays: textOverlays,
+        active_effect: activeEffect,
+        music: musicTrack
+          ? {
+              name: musicTrack.name,
+              url: musicTrack.url,
+              bpm: musicTrack.bpm,
+              is_custom: !!customMusic,
+              trim_start: musicTrimStart,
+              trim_end: musicTrimEnd,
+              fade_in: musicFadeIn,
+              fade_out: musicFadeOut,
+              volume: musicVolume,
+            }
+          : null,
+      };
+
+      if (currentDraftId) {
+        const { error } = await supabase
+          .from("video_drafts")
+          .update({
+            caption,
+            edit_state: editState as any,
+          })
+          .eq("id", currentDraftId);
+        if (error) throw error;
+        toast.success("Draft updated");
+      } else {
+        const { data, error } = await supabase
+          .from("video_drafts")
+          .insert({
+            user_id: user.id,
+            video_url: videoUrl,
+            video_title: videoTitle,
+            video_description: videoDescription || null,
+            caption,
+            edit_state: editState as any,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (data) setCurrentDraftId(data.id);
+        toast.success("Draft saved");
+      }
+    } catch (err) {
+      console.error("Save draft error:", err);
+      toast.error("Failed to save draft");
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const handleRepost = async () => {
@@ -929,13 +1071,40 @@ const VideoTrimModal = ({
                 {/* Filters Panel */}
                 {activePanel === "filters" && (
                   <div className="space-y-2">
-                    <h4 className="text-white text-sm font-medium">Filters</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white text-sm font-medium">Filters</h4>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={undoFilter}
+                          disabled={!canUndoFilter}
+                          className="text-white hover:bg-white/20 disabled:opacity-30 h-8"
+                          title="Undo filter"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={redoFilter}
+                          disabled={!canRedoFilter}
+                          className="text-white hover:bg-white/20 disabled:opacity-30 h-8"
+                          title="Redo filter"
+                        >
+                          <Redo2 className="w-4 h-4" />
+                        </Button>
+                        <span className="text-white/40 text-[10px] ml-1">
+                          {filterHistoryIndex + 1}/{filterHistory.length}
+                        </span>
+                      </div>
+                    </div>
                     <ScrollArea className="w-full">
                       <div className="flex gap-3 pb-2">
                         {filters.map((filter) => (
                           <button
                             key={filter.id}
-                            onClick={() => setSelectedFilter(filter)}
+                            onClick={() => applyFilter(filter.id)}
                             className={cn(
                               "flex flex-col items-center gap-1 p-3 rounded-xl transition-all min-w-[70px]",
                               selectedFilter.id === filter.id 
@@ -1325,6 +1494,15 @@ const VideoTrimModal = ({
                     <Button variant="ghost" onClick={() => setShowCaptionInput(false)} className="text-white">
                       Cancel
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      disabled={savingDraft}
+                      className="border-white/30 text-white hover:bg-white/20"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {savingDraft ? "Saving..." : currentDraftId ? "Update Draft" : "Save Draft"}
+                    </Button>
                     <Button onClick={handleRepost} disabled={reposting}>
                       <Repeat2 className="w-4 h-4 mr-2" />
                       {reposting ? "Posting..." : "Repost"}
@@ -1333,18 +1511,27 @@ const VideoTrimModal = ({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
                   className="flex-1 border-white/30 text-white hover:bg-white/20"
                   onClick={() => setShowCaptionInput(true)}
                 >
                   <Type className="w-4 h-4 mr-2" />
-                  Add Caption
+                  Caption
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white/30 text-white hover:bg-white/20"
+                  onClick={handleSaveDraft}
+                  disabled={savingDraft}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {savingDraft ? "Saving..." : currentDraftId ? "Update Draft" : "Save Draft"}
                 </Button>
                 <Button onClick={handleRepost} disabled={reposting} className="flex-1">
                   <Repeat2 className="w-4 h-4 mr-2" />
-                  {reposting ? "Posting..." : "Repost to Feed"}
+                  {reposting ? "Posting..." : "Repost"}
                 </Button>
               </div>
             )}
