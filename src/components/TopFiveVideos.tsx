@@ -327,7 +327,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   size="icon"
                                   variant="secondary"
                                   className="h-7 w-7"
-                                  title="Edit in video editor"
+                                  title="Edit filters & animations"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleEditInEditor(video);
