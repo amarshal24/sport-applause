@@ -15,8 +15,7 @@ import {
   X,
   Search,
   Flame,
-  Compass,
-  Users,
+  Heart,
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,8 +26,7 @@ const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
   { path: "/profile", icon: User, labelKey: "quickNav.profile" },
   { path: "/trending", icon: Flame, labelKey: "quickNav.trending" },
-  { path: "/discover", icon: Compass, labelKey: "quickNav.discover" },
-  { path: "/following", icon: Users, labelKey: "quickNav.following" },
+  { path: "/fans", icon: Heart, labelKey: "quickNav.fans" },
   { path: "/games", icon: Gamepad2, labelKey: "quickNav.games" },
   { path: "/editor", icon: Video, labelKey: "quickNav.videoEditor" },
   { path: "/recruiting", icon: Trophy, labelKey: "quickNav.recruiting" },

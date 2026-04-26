@@ -35,8 +35,7 @@ const Navigation = () => {
 
   const categories = [
     { name: t("sidebar.trending"), icon: Flame, path: "/trending" },
-    { name: t("sidebar.discover"), icon: Compass, path: "/discover" },
-    { name: t("sidebar.following"), icon: Users, path: "/following" },
+    { name: t("sidebar.fans"), icon: Heart, path: "/fans" },
     { name: t("sidebar.topPlays"), icon: Trophy, path: "/top-plays" },
     { name: t("sidebar.watchLater"), icon: Clock, path: "/watch-later" },
     { name: t("sidebar.games"), icon: Gamepad2, path: "/games" },

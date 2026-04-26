@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Home, Flame, Compass, User, TrendingUp, Users, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
+import { Home, Flame, User, TrendingUp, Heart, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
@@ -31,21 +31,12 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink 
-          to="/discover" 
+          to="/fans" 
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
           activeClassName="bg-primary/10 text-primary font-medium"
         >
-          <Compass className="h-5 w-5" />
-          <span>{t("sidebar.discover")}</span>
-        </NavLink>
-
-        <NavLink 
-          to="/following" 
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-          activeClassName="bg-primary/10 text-primary font-medium"
-        >
-          <Users className="h-5 w-5" />
-          <span>{t("sidebar.following")}</span>
+          <Heart className="h-5 w-5" />
+          <span>{t("sidebar.fans")}</span>
         </NavLink>
       </div>
 
