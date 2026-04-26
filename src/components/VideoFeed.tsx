@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
+import FullScreenVideoModal from "@/components/FullScreenVideoModal";
 
 const SPORTS_CATEGORIES = [
   "All",
@@ -471,6 +472,7 @@ const AutoPlayVideo = ({
   const [animeFilter, setAnimeFilter] = useState<AnimeFilterType>("none");
   const [filterIntensity, setFilterIntensity] = useState(100);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
@@ -681,21 +683,11 @@ const AutoPlayVideo = ({
           className="h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
           onClick={(e) => {
             e.stopPropagation();
-            const container = videoRef.current?.parentElement;
-            if (!container) return;
-            
-            if (document.fullscreenElement) {
-              document.exitFullscreen();
-            } else {
-              container.requestFullscreen().catch(() => {});
-            }
+            setFullscreenOpen(true);
           }}
+          aria-label="Open fullscreen"
         >
-          {document.fullscreenElement ? (
-            <Minimize className="h-4 w-4" />
-          ) : (
-            <Maximize className="h-4 w-4" />
-          )}
+          <Maximize className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
