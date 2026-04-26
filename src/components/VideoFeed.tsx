@@ -512,7 +512,22 @@ const VideoFeed = () => {
                         <span className="text-sm">{post.comments_count}</span>
                       </button>
 
-                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                      <button
+                        onClick={() => handleToggleSave(post.id)}
+                        className={`flex items-center gap-1 transition-colors ml-auto ${
+                          savedPosts.has(post.id)
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label={savedPosts.has(post.id) ? "Remove from Watch Later" : "Save to Watch Later"}
+                      >
+                        <Bookmark className={`h-5 w-5 ${savedPosts.has(post.id) ? "fill-current" : ""}`} />
+                        <span className="text-sm hidden sm:inline">
+                          {savedPosts.has(post.id) ? "Saved" : "Save"}
+                        </span>
+                      </button>
+
+                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
                         <Share2 className="h-5 w-5" />
                       </button>
                     </div>
