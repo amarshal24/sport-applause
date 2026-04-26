@@ -297,6 +297,22 @@ export const useCharacterPins = () => {
     });
   };
 
+  const addAt = (x: number, y: number) => {
+    setPins((prev) => {
+      if (prev.length >= MAX_PINS) return prev;
+      return [
+        ...prev,
+        {
+          id: `pin-${Date.now()}`,
+          x,
+          y,
+          skin: "athlete",
+          animation: "none",
+        },
+      ];
+    });
+  };
+
   const update = (id: string, patch: Partial<CharacterPin>) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
 
@@ -305,5 +321,5 @@ export const useCharacterPins = () => {
   const move = (id: string, x: number, y: number) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
 
-  return { pins, add, update, remove, move };
+  return { pins, add, addAt, update, remove, move };
 };
