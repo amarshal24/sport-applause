@@ -763,6 +763,13 @@ const VideoTrimModal = ({
                 </motion.div>
               ))}
 
+              {/* Character Pins Overlay (preview only, draggable) */}
+              <CharacterPinsOverlay
+                pins={characterPins.pins}
+                onMove={characterPins.move}
+                onRemove={characterPins.remove}
+              />
+
               {/* Play/Pause Indicator */}
               <AnimatePresence>
                 {!isPlaying && (
@@ -825,6 +832,12 @@ const VideoTrimModal = ({
                 label="Trim" 
                 active={activePanel === "trim"}
                 onClick={() => setActivePanel(activePanel === "trim" ? "none" : "trim")} 
+              />
+              <ToolButton
+                icon={Wand2}
+                label="FX+"
+                active={false}
+                onClick={() => setFxPanelOpen(true)}
               />
               <ToolButton 
                 icon={Zap} 
@@ -1325,6 +1338,17 @@ const VideoTrimModal = ({
           </div>
         </div>
       </DialogContent>
+
+      <FullscreenFiltersEffectsPanel
+        open={fxPanelOpen}
+        onClose={() => setFxPanelOpen(false)}
+        selection={fxSelection}
+        onChange={setFxSelection}
+        pins={characterPins.pins}
+        onAddPin={characterPins.add}
+        onUpdatePin={characterPins.update}
+        onRemovePin={characterPins.remove}
+      />
     </Dialog>
   );
 };
