@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock } from "lucide-react";
 import UnifiedComposer from "@/components/UnifiedComposer";
+import WatchLaterVideos from "@/components/WatchLaterVideos";
 import { toast } from "sonner";
 
 // Lazy load heavy tab components
@@ -250,7 +251,7 @@ const Profile = () => {
 
           {/* Content Tabs */}
           <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full grid grid-cols-5 h-12 bg-muted/30 rounded-lg p-1">
+            <TabsList className="w-full grid grid-cols-6 h-12 bg-muted/30 rounded-lg p-1">
               <TabsTrigger value="posts" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Grid3x3 className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Posts</span>
@@ -266,6 +267,10 @@ const Profile = () => {
               <TabsTrigger value="liked" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Heart className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Liked</span>
+              </TabsTrigger>
+              <TabsTrigger value="watch-later" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Watch Later</span>
               </TabsTrigger>
               <TabsTrigger value="saved" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Bookmark className="h-4 w-4" />
@@ -336,6 +341,10 @@ const Profile = () => {
                 <h3 className="text-base font-semibold text-foreground mb-1">No liked posts</h3>
                 <p className="text-sm text-muted-foreground">Posts you like will appear here</p>
               </div>
+            </TabsContent>
+
+            <TabsContent value="watch-later" className="mt-4">
+              <WatchLaterVideos />
             </TabsContent>
 
             <TabsContent value="saved" className="mt-4">
