@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock } from "lucide-react";
 import UnifiedComposer from "@/components/UnifiedComposer";
+import WatchLaterVideos from "@/components/WatchLaterVideos";
 import { toast } from "sonner";
 
 // Lazy load heavy tab components
