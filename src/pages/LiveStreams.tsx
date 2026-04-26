@@ -3,10 +3,12 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import LiveStreamManager from "@/components/LiveStreamManager";
+import LiveNowFeed from "@/components/LiveNowFeed";
 import { Radio } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const LiveStreams = () => {
   const { t } = useTranslation();
@@ -31,19 +33,38 @@ const LiveStreams = () => {
             </p>
           </div>
         </div>
-        
-        {user ? (
-          <LiveStreamManager />
-        ) : (
-          <div className="text-center py-16">
-            <Radio className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h2 className="text-xl font-semibold mb-2">{t("liveStreams.signInRequired")}</h2>
-            <p className="text-muted-foreground mb-6">{t("liveStreams.signInMessage")}</p>
-            <Button onClick={() => navigate("/auth")}>
-              {t("nav.signIn")}
-            </Button>
-          </div>
-        )}
+
+        <Tabs defaultValue="discover" className="w-full max-w-5xl">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="discover">Discover</TabsTrigger>
+            <TabsTrigger value="manage" disabled={!user}>
+              My Streams
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="discover">
+            <LiveNowFeed />
+          </TabsContent>
+
+          <TabsContent value="manage">
+            {user ? (
+              <LiveStreamManager />
+            ) : (
+              <div className="text-center py-16">
+                <Radio className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h2 className="text-xl font-semibold mb-2">
+                  {t("liveStreams.signInRequired")}
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  {t("liveStreams.signInMessage")}
+                </p>
+                <Button onClick={() => navigate("/auth")}>
+                  {t("nav.signIn")}
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
       <MobileNav />
     </div>
