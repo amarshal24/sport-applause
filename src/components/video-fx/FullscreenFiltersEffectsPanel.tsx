@@ -253,7 +253,7 @@ export const FullscreenFiltersEffectsPanel = ({
                   <CategoryChips
                     options={SPORT_CATEGORIES}
                     value={sportCategory}
-                    onChange={setSportCategory}
+                    onChange={(v) => setSportCategory(v as typeof sportCategory)}
                   />
                   <ScrollArea className="mt-1 flex-1 pr-2">
                     <div className="grid grid-cols-3 gap-3 pb-6 sm:grid-cols-4 md:grid-cols-6">
