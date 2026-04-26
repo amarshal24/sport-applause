@@ -251,7 +251,7 @@ const Profile = () => {
 
           {/* Content Tabs */}
           <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full grid grid-cols-5 h-12 bg-muted/30 rounded-lg p-1">
+            <TabsList className="w-full grid grid-cols-6 h-12 bg-muted/30 rounded-lg p-1">
               <TabsTrigger value="posts" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Grid3x3 className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Posts</span>
@@ -267,6 +267,10 @@ const Profile = () => {
               <TabsTrigger value="liked" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Heart className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Liked</span>
+              </TabsTrigger>
+              <TabsTrigger value="watch-later" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Watch Later</span>
               </TabsTrigger>
               <TabsTrigger value="saved" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Bookmark className="h-4 w-4" />
