@@ -8,7 +8,7 @@ import {
   Play, Pause, Scissors, Repeat2, RotateCcw, X, 
   Type, Sticker, Music, Sparkles, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Timer, Wand2, Download,
-  Zap, RefreshCw, ZoomIn, Upload, Save, Undo2, Redo2
+  Zap, RefreshCw, ZoomIn, Upload, Save, Undo2, Redo2, MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -169,6 +169,7 @@ const VideoTrimModal = ({
   const characterPins = useCharacterPins();
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
   const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
+  const [characterPlaceMode, setCharacterPlaceMode] = useState(false);
   
   // Video effects state
   const [activeEffect, setActiveEffect] = useState<string>("none");
@@ -206,6 +207,7 @@ const VideoTrimModal = ({
       setFilterHistory([filters[0].id]);
       setFilterHistoryIndex(0);
       setCurrentDraftId(null);
+      setCharacterPlaceMode(false);
       setTextOverlays([]);
       setPlaybackSpeed(1);
       setActiveEffect("none");
@@ -918,11 +920,21 @@ const VideoTrimModal = ({
                 </motion.div>
               ))}
 
-              {/* Character Pins Overlay (preview only, draggable) */}
+              {/* Character Pins Overlay (preview only, draggable + tap-to-place) */}
               <CharacterPinsOverlay
                 pins={characterPins.pins}
                 onMove={characterPins.move}
                 onRemove={characterPins.remove}
+                placeMode={characterPlaceMode}
+                onPlace={(x, y) => {
+                  characterPins.addAt(x, y);
+                  if (characterPins.pins.length + 1 >= 2) {
+                    setCharacterPlaceMode(false);
+                    toast.success("Character placed! Open FX+ to customize.");
+                  } else {
+                    toast.success("Character placed! Tap again or open FX+ to customize.");
+                  }
+                }}
               />
 
               {/* Play/Pause Indicator */}
@@ -993,6 +1005,18 @@ const VideoTrimModal = ({
                 label="FX+"
                 active={false}
                 onClick={() => setFxPanelOpen(true)}
+              />
+              <ToolButton
+                icon={MapPin}
+                label={characterPlaceMode ? "Tap…" : "Place"}
+                active={characterPlaceMode}
+                onClick={() => {
+                  if (characterPins.pins.length >= 2) {
+                    toast.info("Max 2 characters. Remove one first.");
+                    return;
+                  }
+                  setCharacterPlaceMode((v) => !v);
+                }}
               />
               <ToolButton 
                 icon={Zap} 

@@ -44,9 +44,18 @@ interface OverlayProps {
   pins: CharacterPin[];
   onMove: (id: string, x: number, y: number) => void;
   onRemove: (id: string) => void;
+  /** When true, tapping empty space drops a new pin at that location */
+  placeMode?: boolean;
+  onPlace?: (x: number, y: number) => void;
 }
 
-export const CharacterPinsOverlay = ({ pins, onMove, onRemove }: OverlayProps) => {
+export const CharacterPinsOverlay = ({
+  pins,
+  onMove,
+  onRemove,
+  placeMode = false,
+  onPlace,
+}: OverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
 
@@ -71,13 +80,31 @@ export const CharacterPinsOverlay = ({ pins, onMove, onRemove }: OverlayProps) =
     }
   };
 
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (!placeMode || !onPlace || !containerRef.current) return;
+    if (pins.length >= MAX_PINS) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    onPlace(Math.max(0, Math.min(100, x)), Math.max(0, Math.min(100, y)));
+  };
+
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 pointer-events-none"
+      className={cn(
+        "absolute inset-0",
+        placeMode ? "pointer-events-auto cursor-crosshair" : "pointer-events-none"
+      )}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onClick={handleContainerClick}
     >
+      {placeMode && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg pointer-events-none animate-pulse">
+          Tap on the video to place a character ({pins.length}/{MAX_PINS})
+        </div>
+      )}
       {pins.map((pin) => {
         const skin = CHARACTER_SKINS.find((s) => s.id === pin.skin)!;
         return (
@@ -93,6 +120,7 @@ export const CharacterPinsOverlay = ({ pins, onMove, onRemove }: OverlayProps) =
               transform: "translate(-50%, -50%)",
             }}
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Animation auras (purely visual) */}
             {pin.animation === "speed-lines" && (
@@ -269,6 +297,22 @@ export const useCharacterPins = () => {
     });
   };
 
+  const addAt = (x: number, y: number) => {
+    setPins((prev) => {
+      if (prev.length >= MAX_PINS) return prev;
+      return [
+        ...prev,
+        {
+          id: `pin-${Date.now()}`,
+          x,
+          y,
+          skin: "athlete",
+          animation: "none",
+        },
+      ];
+    });
+  };
+
   const update = (id: string, patch: Partial<CharacterPin>) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
 
@@ -277,5 +321,5 @@ export const useCharacterPins = () => {
   const move = (id: string, x: number, y: number) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
 
-  return { pins, add, update, remove, move };
+  return { pins, add, addAt, update, remove, move };
 };
