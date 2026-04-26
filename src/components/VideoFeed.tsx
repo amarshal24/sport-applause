@@ -472,7 +472,7 @@ const AutoPlayVideo = ({
   const [filterIntensity, setFilterIntensity] = useState(100);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const lastTapRef = useRef<number>(0);
-  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 
