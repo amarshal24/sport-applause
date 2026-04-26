@@ -302,7 +302,7 @@ const VideoFeed = () => {
               >
                 {/* Video or Image */}
                 {(post.video_url || post.image_url) && (
-                  <div className="relative aspect-video overflow-hidden bg-muted">
+                  <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
                     {post.video_url ? (
                       <AutoPlayVideo 
                         src={post.video_url} 
@@ -314,7 +314,7 @@ const VideoFeed = () => {
                         src={post.image_url}
                         alt="Post media"
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        className="w-full h-full object-contain transition-transform group-hover:scale-105"
                       />
                     ) : null}
                   </div>
@@ -634,7 +634,7 @@ const AutoPlayVideo = ({
       <video
         ref={videoRef}
         src={src}
-        className="w-full h-full object-cover cursor-pointer"
+        className="w-full h-full object-contain cursor-pointer bg-black"
         style={getAnimeFilterStyle(animeFilter, filterIntensity)}
         loop
         muted={isMuted}

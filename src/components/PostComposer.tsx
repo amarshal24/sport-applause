@@ -170,11 +170,14 @@ const PostComposer = ({ onPostCreated }: PostComposerProps) => {
           />
 
           {imagePreview && (
-            <div className="relative mb-3">
+            <div
+              className="relative mb-3 mx-auto rounded-lg overflow-hidden bg-black w-full max-w-xs"
+              style={{ aspectRatio: "9 / 16" }}
+            >
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="rounded-lg max-h-64 w-full object-cover"
+                className="w-full h-full object-contain"
               />
               <Button
                 size="sm"
