@@ -271,10 +271,12 @@ export type Database = {
       }
       live_streams: {
         Row: {
+          caption_vtt_url: string | null
           created_at: string
           description: string | null
           ended_at: string | null
           id: string
+          replay_url: string | null
           scheduled_at: string | null
           started_at: string | null
           status: string
@@ -286,10 +288,12 @@ export type Database = {
           viewers_count: number
         }
         Insert: {
+          caption_vtt_url?: string | null
           created_at?: string
           description?: string | null
           ended_at?: string | null
           id?: string
+          replay_url?: string | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -301,10 +305,12 @@ export type Database = {
           viewers_count?: number
         }
         Update: {
+          caption_vtt_url?: string | null
           created_at?: string
           description?: string | null
           ended_at?: string | null
           id?: string
+          replay_url?: string | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
@@ -807,6 +813,41 @@ export type Database = {
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stream_highlights: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          stream_id: string
+          timestamp_seconds: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          stream_id: string
+          timestamp_seconds: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          stream_id?: string
+          timestamp_seconds?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_highlights_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
             referencedColumns: ["id"]
           },
         ]

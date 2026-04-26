@@ -18,6 +18,7 @@ const VideoEditor = lazy(() => import("./pages/VideoEditor"));
 const Recruiting = lazy(() => import("./pages/Recruiting"));
 const Podcasts = lazy(() => import("./pages/Podcasts"));
 const LiveStreams = lazy(() => import("./pages/LiveStreams"));
+const StreamReplay = lazy(() => import("./pages/StreamReplay"));
 const Trending = lazy(() => import("./pages/Trending"));
 const Discover = lazy(() => import("./pages/Discover"));
 const Following = lazy(() => import("./pages/Following"));
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/recruiting" element={<Recruiting />} />
               <Route path="/podcasts" element={<Podcasts />} />
               <Route path="/live" element={<LiveStreams />} />
+              <Route path="/live/replay/:streamId" element={<StreamReplay />} />
               <Route path="/trending" element={<Trending />} />
               <Route path="/discover" element={<Discover />} />
               <Route path="/following" element={<Following />} />

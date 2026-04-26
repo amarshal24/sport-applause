@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Radio, Eye, Calendar } from "lucide-react";
+import { Radio, Eye, Calendar, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,9 +16,11 @@ type Stream = {
   status: "scheduled" | "live" | "ended";
   scheduled_at: string | null;
   started_at: string | null;
+  ended_at: string | null;
   viewers_count: number;
   user_id: string;
   thumbnail_url: string | null;
+  replay_url: string | null;
   profiles?: {
     username: string | null;
     avatar_url: string | null;
@@ -56,7 +59,21 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
           .limit(limit)
       : { data: [] as any[] };
 
-    const combined = [...(liveData || []), ...(scheduledData || [])];
+    // 3) Recent replays (ended streams)
+    const { data: endedData } = !compact
+      ? await supabase
+          .from("live_streams")
+          .select("*")
+          .eq("status", "ended")
+          .order("ended_at", { ascending: false })
+          .limit(limit)
+      : { data: [] as any[] };
+
+    const combined = [
+      ...(liveData || []),
+      ...(scheduledData || []),
+      ...(endedData || []),
+    ];
 
     // Hydrate profiles
     const ids = Array.from(new Set(combined.map((s) => s.user_id)));
@@ -99,6 +116,7 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
 
   const liveStreams = streams.filter((s) => s.status === "live");
   const upcoming = streams.filter((s) => s.status === "scheduled");
+  const replays = streams.filter((s) => s.status === "ended");
 
   if (loading) {
     return (
@@ -236,10 +254,61 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
         </section>
       )}
 
-      {liveStreams.length === 0 && upcoming.length === 0 && (
+      {replays.length > 0 && (
+        <section>
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <PlayCircle className="h-4 w-4" />
+            Recent replays
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {replays.map((s) => (
+              <Link key={s.id} to={`/live/replay/${s.id}`} className="group">
+                <Card className="overflow-hidden transition-shadow group-hover:shadow-glow">
+                  <div className="aspect-video w-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative">
+                    {s.thumbnail_url ? (
+                      <img
+                        src={s.thumbnail_url}
+                        alt={s.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <PlayCircle className="h-12 w-12 text-muted-foreground/50" />
+                    )}
+                    <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <PlayCircle className="h-14 w-14 text-primary" />
+                    </div>
+                    <Badge variant="secondary" className="absolute top-2 left-2">
+                      REPLAY
+                    </Badge>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    <h4 className="line-clamp-1 font-semibold text-sm">{s.title}</h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={s.profiles?.avatar_url ?? undefined} />
+                        <AvatarFallback>
+                          {(s.profiles?.username ?? "S")[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>@{s.profiles?.username ?? "athlete"}</span>
+                      {s.ended_at && (
+                        <span className="ml-auto">
+                          {format(new Date(s.ended_at), "MMM d")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {liveStreams.length === 0 && upcoming.length === 0 && replays.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <Radio className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p>No live or upcoming streams right now.</p>
+          <p>No live, upcoming, or recent streams right now.</p>
         </div>
       )}
     </div>
