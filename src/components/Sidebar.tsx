@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Home, Flame, User, TrendingUp, Heart, Trophy, Clock, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
+import { Home, Flame, User, TrendingUp, Heart, Trophy, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
 
