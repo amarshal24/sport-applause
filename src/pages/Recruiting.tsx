@@ -988,14 +988,14 @@ const Recruiting = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedVideo.profiles.avatar_url || undefined} />
+                    <AvatarImage src={selectedVideo.profiles?.avatar_url || undefined} />
                     <AvatarFallback>
-                      {selectedVideo.profiles.username[0].toUpperCase()}
+                      {(selectedVideo.profiles?.username?.[0] || "?").toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">
-                      {selectedVideo.profiles.full_name || selectedVideo.profiles.username}
+                      {selectedVideo.profiles?.full_name || selectedVideo.profiles?.username || "Unknown athlete"}
                     </p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Badge variant="secondary">{selectedVideo.sport}</Badge>
