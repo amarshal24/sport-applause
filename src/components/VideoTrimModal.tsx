@@ -8,7 +8,7 @@ import {
   Play, Pause, Scissors, Repeat2, RotateCcw, X, 
   Type, Sticker, Music, Sparkles, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Timer, Wand2, Download,
-  Zap, RefreshCw, ZoomIn, Upload
+  Zap, RefreshCw, ZoomIn, Upload, Save, Undo2, Redo2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
