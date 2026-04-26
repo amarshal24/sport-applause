@@ -1039,13 +1039,40 @@ const VideoTrimModal = ({
                 {/* Filters Panel */}
                 {activePanel === "filters" && (
                   <div className="space-y-2">
-                    <h4 className="text-white text-sm font-medium">Filters</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white text-sm font-medium">Filters</h4>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={undoFilter}
+                          disabled={!canUndoFilter}
+                          className="text-white hover:bg-white/20 disabled:opacity-30 h-8"
+                          title="Undo filter"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={redoFilter}
+                          disabled={!canRedoFilter}
+                          className="text-white hover:bg-white/20 disabled:opacity-30 h-8"
+                          title="Redo filter"
+                        >
+                          <Redo2 className="w-4 h-4" />
+                        </Button>
+                        <span className="text-white/40 text-[10px] ml-1">
+                          {filterHistoryIndex + 1}/{filterHistory.length}
+                        </span>
+                      </div>
+                    </div>
                     <ScrollArea className="w-full">
                       <div className="flex gap-3 pb-2">
                         {filters.map((filter) => (
                           <button
                             key={filter.id}
-                            onClick={() => setSelectedFilter(filter)}
+                            onClick={() => applyFilter(filter.id)}
                             className={cn(
                               "flex flex-col items-center gap-1 p-3 rounded-xl transition-all min-w-[70px]",
                               selectedFilter.id === filter.id 
