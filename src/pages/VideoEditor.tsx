@@ -27,6 +27,11 @@ import {
   CharacterPinsPanel,
   useCharacterPins,
 } from "@/components/video-fx/CharacterPins";
+import {
+  FullscreenFiltersEffectsPanel,
+  defaultFxSelection,
+  type FxSelection,
+} from "@/components/video-fx/FullscreenFiltersEffectsPanel";
 
 interface TextOverlay {
   id: string;
@@ -179,6 +184,10 @@ const VideoEditor = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [postCaption, setPostCaption] = useState("");
   const [exporting, setExporting] = useState(false);
+
+  // Fullscreen Filters & Effects panel
+  const [fxPanelOpen, setFxPanelOpen] = useState(false);
+  const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
   
   // Adjustments
   const [brightness, setBrightness] = useState(100);
@@ -730,6 +739,16 @@ const VideoEditor = () => {
                   </Button>
                 </>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFxPanelOpen(true)}
+                disabled={!videoFile}
+                className="border-primary/40 text-primary hover:bg-primary/10"
+              >
+                <Wand2 className="mr-1 h-4 w-4" />
+                Filters & FX
+              </Button>
               <Button size="sm" onClick={exportVideo} disabled={!videoFile}>
                 <Send className="mr-1 h-4 w-4" />
                 Post
@@ -1689,6 +1708,17 @@ const VideoEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FullscreenFiltersEffectsPanel
+        open={fxPanelOpen}
+        onClose={() => setFxPanelOpen(false)}
+        selection={fxSelection}
+        onChange={setFxSelection}
+        pins={characterPins.pins}
+        onAddPin={characterPins.add}
+        onUpdatePin={characterPins.update}
+        onRemovePin={characterPins.remove}
+      />
     </div>
   );
 };

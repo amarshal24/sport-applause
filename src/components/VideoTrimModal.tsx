@@ -16,6 +16,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { MusicTrimmer } from "./MusicTrimmer";
+import {
+  CharacterPinsOverlay,
+  useCharacterPins,
+} from "@/components/video-fx/CharacterPins";
+import {
+  FullscreenFiltersEffectsPanel,
+  defaultFxSelection,
+  type FxSelection,
+} from "@/components/video-fx/FullscreenFiltersEffectsPanel";
 
 interface VideoTrimModalProps {
   open: boolean;
@@ -148,6 +157,11 @@ const VideoTrimModal = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptionInput, setShowCaptionInput] = useState(false);
+
+  // Fullscreen Filters & Effects panel
+  const characterPins = useCharacterPins();
+  const [fxPanelOpen, setFxPanelOpen] = useState(false);
+  const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
   
   // Video effects state
   const [activeEffect, setActiveEffect] = useState<string>("none");
@@ -749,6 +763,13 @@ const VideoTrimModal = ({
                 </motion.div>
               ))}
 
+              {/* Character Pins Overlay (preview only, draggable) */}
+              <CharacterPinsOverlay
+                pins={characterPins.pins}
+                onMove={characterPins.move}
+                onRemove={characterPins.remove}
+              />
+
               {/* Play/Pause Indicator */}
               <AnimatePresence>
                 {!isPlaying && (
@@ -811,6 +832,12 @@ const VideoTrimModal = ({
                 label="Trim" 
                 active={activePanel === "trim"}
                 onClick={() => setActivePanel(activePanel === "trim" ? "none" : "trim")} 
+              />
+              <ToolButton
+                icon={Wand2}
+                label="FX+"
+                active={false}
+                onClick={() => setFxPanelOpen(true)}
               />
               <ToolButton 
                 icon={Zap} 
@@ -1311,6 +1338,17 @@ const VideoTrimModal = ({
           </div>
         </div>
       </DialogContent>
+
+      <FullscreenFiltersEffectsPanel
+        open={fxPanelOpen}
+        onClose={() => setFxPanelOpen(false)}
+        selection={fxSelection}
+        onChange={setFxSelection}
+        pins={characterPins.pins}
+        onAddPin={characterPins.add}
+        onUpdatePin={characterPins.update}
+        onRemovePin={characterPins.remove}
+      />
     </Dialog>
   );
 };
