@@ -223,6 +223,7 @@ const VideoFeed = () => {
     toast.success("Post deleted");
   };
 
+  const handleRefresh = useCallback(async () => {
     await fetchPosts();
     toast.success("Feed refreshed!");
   }, [fetchPosts]);
