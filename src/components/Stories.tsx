@@ -60,43 +60,41 @@ const Stories = ({ onCreateStory }: StoriesProps) => {
   return (
     <>
       <div className="glass-effect rounded-xl shadow-card p-4 mb-6 animate-fade-in">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-sm font-semibold text-foreground">Story Feed</h2>
+          {stories.length > 0 && (
+            <span className="text-xs text-muted-foreground">{stories.length} active</span>
+          )}
+        </div>
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {/* Create Story */}
-          <div 
-            className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
-            onClick={onCreateStory}
-          >
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-border group-hover:border-primary group-hover:shadow-glow transition-all duration-300">
-                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
+          {stories.length === 0 ? (
+            <div className="flex-1 text-center text-xs text-muted-foreground py-6">
+              No active stories yet. Check back soon!
             </div>
-            <span className="text-xs text-center text-muted-foreground font-medium">Create</span>
-          </div>
-
-          {/* User Stories */}
-          {stories.map((story, index) => (
-            <div
-              key={story.id}
-              className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
-              onClick={() => handleStoryClick(index)}
-            >
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-gradient-power p-[3px] group-hover:shadow-glow transition-all duration-300 animate-pulse-glow">
-                  <Avatar className="w-full h-full border-2 border-background">
-                    <AvatarImage src={story.profiles.avatar_url || undefined} alt={story.profiles.username} />
-                    <AvatarFallback>{story.profiles.username[0]}</AvatarFallback>
-                  </Avatar>
+          ) : (
+            stories.map((story, index) => (
+              <div
+                key={story.id}
+                className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+                onClick={() => handleStoryClick(index)}
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-power p-[3px] group-hover:shadow-glow transition-all duration-300 animate-pulse-glow">
+                    <Avatar className="w-full h-full border-2 border-background">
+                      <AvatarImage src={story.profiles.avatar_url || undefined} alt={story.profiles.username} />
+                      <AvatarFallback>{story.profiles.username[0]}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  {story.profiles.sports && story.profiles.sports.length > 0 && (
+                    <SportIcon sportId={story.profiles.sports[0]} />
+                  )}
                 </div>
-                {story.profiles.sports && story.profiles.sports.length > 0 && (
-                  <SportIcon sportId={story.profiles.sports[0]} />
-                )}
+                <span className="text-xs text-center line-clamp-1 max-w-[80px] font-medium">
+                  {story.profiles.username}
+                </span>
               </div>
-              <span className="text-xs text-center line-clamp-1 max-w-[80px] font-medium">
-                {story.profiles.username}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
