@@ -114,9 +114,6 @@ const VideoFeed = () => {
 
       if (error) throw error;
       setPosts(data || []);
-
-      if (error) throw error;
-      setPosts(data || []);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
