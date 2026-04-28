@@ -1,7 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark, Trash2, FileText } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AnimeFilterSelector, AnimeFilterOverlay, getAnimeFilterStyle, type AnimeFilterType } from "@/components/AnimeFilters";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
@@ -66,6 +76,7 @@ const VideoFeed = () => {
   const [musicMuted, setMusicMuted] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -168,6 +179,48 @@ const VideoFeed = () => {
         toast.success("Saved to Watch Later");
       }
     }
+  };
+
+  const handleSaveAsDraft = async (post: Post) => {
+    if (!user || user.id !== post.user_id) return;
+    if (!post.video_url) {
+      toast.error("Only videos can be saved as drafts");
+      return;
+    }
+    const { error } = await supabase.from("video_drafts").insert({
+      user_id: user.id,
+      video_url: post.video_url,
+      caption: post.content || null,
+      video_title: post.content?.slice(0, 80) || null,
+      edit_state: {
+        music_url: post.music_url,
+        music_title: post.music_title,
+        music_start_time: post.music_start_time,
+        music_end_time: post.music_end_time,
+        music_fade_in: post.music_fade_in,
+        music_fade_out: post.music_fade_out,
+        from_post_id: post.id,
+      },
+    });
+    if (error) {
+      toast.error("Failed to save draft");
+      console.error(error);
+    } else {
+      toast.success("Saved to your drafts");
+    }
+  };
+
+  const handleDeletePost = async (post: Post) => {
+    if (!user || user.id !== post.user_id) return;
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) {
+      toast.error("Failed to delete");
+      console.error(error);
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    setDeleteConfirmPost(null);
+    toast.success("Post deleted");
   };
 
   const handleRefresh = useCallback(async () => {
@@ -387,20 +440,52 @@ const VideoFeed = () => {
                       />
                     ) : null}
 
-                    {/* Owner-only inline editor button */}
-                    {post.video_url && user?.id === post.user_id && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute top-2 right-2 h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditPost(post);
-                        }}
-                      >
-                        <Wand2 className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
+                    {/* Owner-only inline action buttons */}
+                    {user?.id === post.user_id && (
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {post.video_url && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditPost(post);
+                            }}
+                          >
+                            <Wand2 className="h-3.5 w-3.5" />
+                            Edit
+                          </Button>
+                        )}
+                        {post.video_url && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveAsDraft(post);
+                            }}
+                            aria-label="Save as draft"
+                            title="Save as draft"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 bg-background/80 hover:bg-destructive hover:text-destructive-foreground backdrop-blur"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmPost(post);
+                          }}
+                          aria-label="Delete post"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -556,6 +641,29 @@ const VideoFeed = () => {
           }}
         />
       )}
+
+      <AlertDialog
+        open={!!deleteConfirmPost}
+        onOpenChange={(open) => !open && setDeleteConfirmPost(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove your post from the feed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteConfirmPost && handleDeletePost(deleteConfirmPost)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 };
