@@ -440,20 +440,52 @@ const VideoFeed = () => {
                       />
                     ) : null}
 
-                    {/* Owner-only inline editor button */}
-                    {post.video_url && user?.id === post.user_id && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute top-2 right-2 h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditPost(post);
-                        }}
-                      >
-                        <Wand2 className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
+                    {/* Owner-only inline action buttons */}
+                    {user?.id === post.user_id && (
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {post.video_url && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditPost(post);
+                            }}
+                          >
+                            <Wand2 className="h-3.5 w-3.5" />
+                            Edit
+                          </Button>
+                        )}
+                        {post.video_url && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveAsDraft(post);
+                            }}
+                            aria-label="Save as draft"
+                            title="Save as draft"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 bg-background/80 hover:bg-destructive hover:text-destructive-foreground backdrop-blur"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmPost(post);
+                          }}
+                          aria-label="Delete post"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
