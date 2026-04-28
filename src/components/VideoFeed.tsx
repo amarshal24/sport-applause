@@ -1,7 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark, Trash2, FileText } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AnimeFilterSelector, AnimeFilterOverlay, getAnimeFilterStyle, type AnimeFilterType } from "@/components/AnimeFilters";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
