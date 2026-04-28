@@ -181,7 +181,48 @@ const VideoFeed = () => {
     }
   };
 
-  const handleRefresh = useCallback(async () => {
+  const handleSaveAsDraft = async (post: Post) => {
+    if (!user || user.id !== post.user_id) return;
+    if (!post.video_url) {
+      toast.error("Only videos can be saved as drafts");
+      return;
+    }
+    const { error } = await supabase.from("video_drafts").insert({
+      user_id: user.id,
+      video_url: post.video_url,
+      caption: post.content || null,
+      video_title: post.content?.slice(0, 80) || null,
+      edit_state: {
+        music_url: post.music_url,
+        music_title: post.music_title,
+        music_start_time: post.music_start_time,
+        music_end_time: post.music_end_time,
+        music_fade_in: post.music_fade_in,
+        music_fade_out: post.music_fade_out,
+        from_post_id: post.id,
+      },
+    });
+    if (error) {
+      toast.error("Failed to save draft");
+      console.error(error);
+    } else {
+      toast.success("Saved to your drafts");
+    }
+  };
+
+  const handleDeletePost = async (post: Post) => {
+    if (!user || user.id !== post.user_id) return;
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) {
+      toast.error("Failed to delete");
+      console.error(error);
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    setDeleteConfirmPost(null);
+    toast.success("Post deleted");
+  };
+
     await fetchPosts();
     toast.success("Feed refreshed!");
   }, [fetchPosts]);
