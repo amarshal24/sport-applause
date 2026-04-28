@@ -25,7 +25,7 @@ const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
   { path: "/profile", icon: User, labelKey: "quickNav.profile" },
   { path: "/trending", icon: Flame, labelKey: "quickNav.trending" },
-  { path: "/trending?tab=top-plays", icon: Trophy, labelKey: "quickNav.topPlays" },
+  
   { path: "/fans", icon: Heart, labelKey: "quickNav.fans" },
   { path: "/games", icon: Gamepad2, labelKey: "quickNav.games" },
   { path: "/editor", icon: Video, labelKey: "quickNav.videoEditor" },
