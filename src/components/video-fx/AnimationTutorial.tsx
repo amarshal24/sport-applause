@@ -17,6 +17,29 @@ import {
 import { cn } from "@/lib/utils";
 
 const TUTORIAL_KEY = "animation-center-tutorial-seen-v1";
+const TUTORIAL_STEP_KEY = "animation-center-tutorial-step-v1";
+
+function readSavedStep(max: number): number {
+  try {
+    const raw = localStorage.getItem(TUTORIAL_STEP_KEY);
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 0 && n < max) return n;
+  } catch {}
+  return 0;
+}
+
+function saveStep(step: number) {
+  try {
+    localStorage.setItem(TUTORIAL_STEP_KEY, String(step));
+  } catch {}
+}
+
+function clearSavedStep() {
+  try {
+    localStorage.removeItem(TUTORIAL_STEP_KEY);
+  } catch {}
+}
 
 interface Step {
   icon: React.ComponentType<{ className?: string }>;
