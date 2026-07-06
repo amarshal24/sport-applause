@@ -64,6 +64,9 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
   const [audioObjectUrl, setAudioObjectUrl] = useState<string | null>(null);
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [isTrimming, setIsTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"idle" | "audio" | "thumbnail" | "saving" | "done">("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
