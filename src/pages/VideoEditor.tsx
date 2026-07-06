@@ -751,6 +751,16 @@ const VideoEditor = () => {
                 <Wand2 className="mr-1 h-4 w-4" />
                 Filters & FX
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPreviewOpen(true)}
+                disabled={!videoFile}
+                className="border-primary/40 text-primary hover:bg-primary/10"
+              >
+                <Play className="mr-1 h-4 w-4" />
+                Preview
+              </Button>
               <Button size="sm" onClick={exportVideo} disabled={!videoFile}>
                 <Send className="mr-1 h-4 w-4" />
                 Post
