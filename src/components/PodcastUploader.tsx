@@ -5,11 +5,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Upload, Music, X, Scissors } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Music, X, Scissors, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { MusicTrimmer } from "@/components/MusicTrimmer";
 import { trimAudioToWav } from "@/lib/audioTrim";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+// Upload via XHR to Supabase Storage REST so we can report progress %.
+const uploadWithProgress = (
+  bucket: string,
+  path: string,
+  data: Blob,
+  contentType: string,
+  token: string,
+  onProgress: (pct: number) => void
+): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.setRequestHeader("apikey", SUPABASE_KEY);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.setRequestHeader("x-upsert", "true");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(100);
+        resolve(supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl);
+      } else {
+        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(data);
+  });
 
 const podcastSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
