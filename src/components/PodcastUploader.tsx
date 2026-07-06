@@ -140,18 +140,42 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
     if (!user || !audioFile) return toast.error("Please fill in all required fields");
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage("audio");
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+
       const source: Blob = trimmedBlob ?? audioFile;
       const ext = trimmedBlob ? "wav" : (audioFile.name.split(".").pop() || "mp3");
       const audioPath = `${user.id}/${Date.now()}-podcast.${ext}`;
-      const audioUrl = await uploadFile(source, "podcasts", audioPath, trimmedBlob ? "audio/wav" : audioFile.type);
+      const audioType = trimmedBlob ? "audio/wav" : audioFile.type;
+      const audioUrl = await uploadWithProgress(
+        "podcasts",
+        audioPath,
+        source,
+        audioType,
+        token,
+        setUploadProgress
+      );
 
       let thumbnailUrl: string | null = null;
       if (thumbnailFile) {
+        setUploadStage("thumbnail");
+        setUploadProgress(0);
         const tPath = `${user.id}/thumbnails/${Date.now()}-${thumbnailFile.name}`;
-        thumbnailUrl = await uploadFile(thumbnailFile, "podcasts", tPath);
+        thumbnailUrl = await uploadWithProgress(
+          "podcasts",
+          tPath,
+          thumbnailFile,
+          thumbnailFile.type,
+          token,
+          setUploadProgress
+        );
       }
 
+      setUploadStage("saving");
       const audio = new Audio(URL.createObjectURL(source));
       await new Promise((resolve) => { audio.onloadedmetadata = resolve; });
       const duration = Math.floor(audio.duration);
@@ -161,6 +185,7 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       });
       if (insertError) throw insertError;
 
+      setUploadStage("done");
       toast.success("Podcast uploaded successfully!");
       setAudioFile(null); setTrimmedBlob(null); setThumbnailFile(null);
       setTitle(""); setDescription("");
@@ -171,8 +196,15 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       toast.error(err.message || "Failed to upload podcast");
     } finally {
       setIsUploading(false);
+      window.setTimeout(() => { setUploadStage("idle"); setUploadProgress(0); }, 1200);
     }
   };
+
+  const stageLabel =
+    uploadStage === "audio" ? `Uploading audio… ${uploadProgress}%` :
+    uploadStage === "thumbnail" ? `Uploading thumbnail… ${uploadProgress}%` :
+    uploadStage === "saving" ? "Saving podcast…" :
+    uploadStage === "done" ? "Done!" : "";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-card rounded-lg border">
