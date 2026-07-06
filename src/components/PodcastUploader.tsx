@@ -246,13 +246,37 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
         {showTrimmer && audioObjectUrl && (
           <div className="p-4 border rounded-md bg-muted/30 mt-2">
             {isTrimming ? (
-              <p className="text-sm text-muted-foreground">Rendering trimmed audio…</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Rendering trimmed audio… {trimProgress}%
+                </div>
+                <Progress value={trimProgress} className="h-2" />
+              </div>
             ) : (
               <MusicTrimmer audioUrl={audioObjectUrl} onTrimComplete={applyTrim} onCancel={() => setShowTrimmer(false)} />
             )}
           </div>
         )}
       </div>
+
+      {isUploading && (
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {stageLabel}
+            </span>
+            {(uploadStage === "audio" || uploadStage === "thumbnail") && (
+              <span className="font-medium tabular-nums">{uploadProgress}%</span>
+            )}
+          </div>
+          <Progress
+            value={uploadStage === "saving" || uploadStage === "done" ? 100 : uploadProgress}
+            className="h-2"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Thumbnail (Optional)</Label>
