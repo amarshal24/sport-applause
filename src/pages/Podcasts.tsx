@@ -3,10 +3,15 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import PodcastUploader from "@/components/PodcastUploader";
+import MyPodcasts from "@/components/MyPodcasts";
+import { useState } from "react";
 import { Headphones } from "lucide-react";
 
 const Podcasts = () => {
   const { t } = useTranslation();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,7 +32,8 @@ const Podcasts = () => {
           </div>
         </div>
         
-        <PodcastUploader />
+        <PodcastUploader onUploadComplete={() => setRefreshKey((k) => k + 1)} />
+        <MyPodcasts key={refreshKey} />
       </main>
       <MobileNav />
     </div>
