@@ -102,8 +102,15 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
   const applyTrim = async (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => {
     if (!audioFile) return;
     setIsTrimming(true);
+    setTrimProgress(5);
+    // Trimming is synchronous inside OfflineAudioContext, so animate a smooth
+    // indeterminate-style progress so the user sees activity.
+    const ticker = window.setInterval(() => {
+      setTrimProgress((p) => (p < 90 ? p + Math.max(1, Math.round((90 - p) / 12)) : p));
+    }, 120);
     try {
       const wav = await trimAudioToWav(audioFile, startTime, endTime, fadeIn, fadeOut);
+      setTrimProgress(100);
       setTrimmedBlob(wav);
       setShowTrimmer(false);
       toast.success(`Trimmed to ${Math.round(endTime - startTime)}s`);
@@ -111,7 +118,9 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       console.error(err);
       toast.error("Failed to trim audio");
     } finally {
+      window.clearInterval(ticker);
       setIsTrimming(false);
+      window.setTimeout(() => setTrimProgress(0), 600);
     }
   };
 
