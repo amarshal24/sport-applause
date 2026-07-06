@@ -72,7 +72,7 @@ const MyPodcasts = () => {
 
     setSaving(true);
     try {
-      const update: Record<string, unknown> = { title, description: form.description || null };
+      const update: { title: string; description: string | null; thumbnail_url?: string; audio_url?: string; duration?: number } = { title, description: form.description || null };
 
       if (newThumb) {
         const path = `${user.id}/thumbnails/${Date.now()}-${newThumb.name}`;
