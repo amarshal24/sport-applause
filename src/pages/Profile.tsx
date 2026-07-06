@@ -131,6 +131,26 @@ const Profile = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <Sidebar />
+        <MobileNav />
+        <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+          <div className="px-4 lg:px-6 py-12 flex flex-col items-center justify-center text-center gap-4 max-w-md mx-auto">
+            <h1 className="text-2xl font-bold">Sign in to view your profile</h1>
+            <p className="text-muted-foreground">
+              Create an account or sign in to see your posts, highlights, podcasts and more.
+            </p>
+            <Button onClick={() => (window.location.href = "/auth")}>Sign In</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
