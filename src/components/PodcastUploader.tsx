@@ -90,14 +90,6 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
     setThumbnailFile(file);
   };
 
-  const uploadFile = async (data: Blob | File, bucket: string, path: string, contentType?: string) => {
-    const { data: up, error } = await supabase.storage.from(bucket).upload(path, data, {
-      upsert: true,
-      contentType: contentType ?? (data as File).type,
-    });
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(up.path).data.publicUrl;
-  };
 
   const applyTrim = async (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => {
     if (!audioFile) return;
