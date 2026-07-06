@@ -131,7 +131,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-md p-0 overflow-hidden">
+      <DialogContent className="max-w-md p-0 overflow-hidden animate-scale-in">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Zap className="w-5 h-5 text-primary" />
@@ -142,7 +142,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative mt-3 bg-black">
+        <div className="relative mt-3 bg-black overflow-hidden">
           <video
             ref={videoRef}
             src={tutorialVideo.url}
@@ -159,9 +159,12 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
             }}
           />
 
-          {/* Chapter label overlay */}
+          {/* Chapter label overlay — smooth crossfade per chapter */}
           <div className="absolute top-2 left-2 right-2 flex justify-center pointer-events-none">
-            <div className="bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
+            <div
+              key={activeChapter}
+              className="bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10 animate-fade-in shadow-lg"
+            >
               {activeChapter + 1}. {chapters[activeChapter].label}
             </div>
           </div>
@@ -173,11 +176,15 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
             aria-label={playing ? "Pause" : "Play"}
             className="absolute inset-0 flex items-center justify-center group"
           >
-            {!playing && (
-              <div className="w-16 h-16 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Play className="w-7 h-7 ml-1" fill="currentColor" />
-              </div>
-            )}
+            <div
+              className={`w-16 h-16 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center shadow-lg transition-all duration-300 ease-out ${
+                playing
+                  ? "opacity-0 scale-75 pointer-events-none"
+                  : "opacity-100 scale-100 group-hover:scale-110 animate-scale-in"
+              }`}
+            >
+              <Play className="w-7 h-7 ml-1" fill="currentColor" />
+            </div>
           </button>
         </div>
 
@@ -185,7 +192,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
         <div className="px-5 pt-3">
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full bg-primary transition-[width] duration-100"
+              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-200 ease-linear"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -198,10 +205,10 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
               <button
                 key={c.t}
                 onClick={() => seekTo(c.t)}
-                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                className={`text-[11px] px-2 py-1 rounded-full border transition-all duration-300 ease-out ${
                   i === activeChapter
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                    ? "bg-primary text-primary-foreground border-primary scale-105 shadow-sm"
+                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted hover:scale-105"
                 }`}
               >
                 {i + 1}. {c.label}
@@ -212,7 +219,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
 
         {/* Actions */}
         <div className="flex items-center justify-between gap-2 px-5 py-4">
-          <Button variant="ghost" size="sm" onClick={restart}>
+          <Button variant="ghost" size="sm" onClick={restart} className="transition-transform hover:scale-105">
             <RotateCcw className="w-4 h-4 mr-1" />
             Restart
           </Button>
@@ -221,7 +228,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
             <Button variant="ghost" size="sm" onClick={() => finish(true)}>
               Skip
             </Button>
-            <Button size="sm" onClick={togglePlay}>
+            <Button size="sm" onClick={togglePlay} className="transition-transform hover:scale-105">
               {playing ? (
                 <>
                   <Pause className="w-4 h-4 mr-1" />
@@ -234,7 +241,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
                 </>
               )}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => finish(true)}>
+            <Button size="sm" variant="secondary" onClick={() => finish(true)} className="transition-transform hover:scale-105">
               Let's create
               <Sparkles className="w-4 h-4 ml-1" />
             </Button>
