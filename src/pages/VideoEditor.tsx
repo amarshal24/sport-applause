@@ -1731,6 +1731,84 @@ const VideoEditor = () => {
         onUpdatePin={characterPins.update}
         onRemovePin={characterPins.remove}
       />
+
+      {/* Animation Center Preview — see all applied effects before saving */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-primary/30">
+          <DialogHeader className="px-4 pt-4 pb-2 bg-background/95">
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Animation Preview
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Live preview with all filters, effects, and character animations applied. Overlays are locked here.
+            </p>
+          </DialogHeader>
+          <div className="relative w-full aspect-video bg-black" style={getTransitionStyles()}>
+            {videoUrl && (
+              <video
+                ref={previewVideoRef}
+                src={videoUrl}
+                className="w-full h-full object-contain"
+                style={getVideoStyles()}
+                autoPlay
+                loop
+                muted={isMuted}
+                playsInline
+              />
+            )}
+            {/* Text overlays (non-interactive in preview) */}
+            {textOverlays.map((overlay) => (
+              <div
+                key={overlay.id}
+                className={cn(
+                  "absolute pointer-events-none",
+                  overlay.animation === "bounce" && "animate-bounce",
+                  overlay.animation === "pulse" && "animate-pulse"
+                )}
+                style={{
+                  left: `${overlay.x}%`,
+                  top: `${overlay.y}%`,
+                  fontSize: `${overlay.fontSize}px`,
+                  color: overlay.color,
+                  fontFamily: overlay.fontFamily,
+                  transform: "translate(-50%, -50%)",
+                  textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+                }}
+              >
+                {overlay.text}
+              </div>
+            ))}
+            {/* Character pins — locked (no drag) */}
+            <CharacterPinsOverlay
+              pins={characterPins.pins}
+              onMove={() => {}}
+              onRemove={() => {}}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2 p-3 bg-background/95 border-t border-border">
+            <div className="text-xs text-muted-foreground">
+              {characterPins.pins.length} character FX · {textOverlays.length} text · filter:{" "}
+              <span className="text-foreground font-medium">{selectedFilter.name}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(false)}>
+                Continue Editing
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPreviewOpen(false);
+                  exportVideo();
+                }}
+              >
+                <Send className="mr-1 h-4 w-4" />
+                Looks Good — Post
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
