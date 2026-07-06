@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "usportz-mcp",
+      "version": "0.1.0",
+      "title": "U⚡️Sportz MCP"
+    },
+    "tools": [
+      {
+        "name": "list_trending_posts",
+        "title": "List trending posts",
+        "description": "List recent public posts from the U⚡️Sportz feed, ordered by most recent.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max posts to return (default 10)."
+            },
+            "sport": {
+              "type": "string",
+              "description": "Optional sport filter (e.g. 'basketball')."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_athletes",
+        "title": "Search athletes",
+        "description": "Search U⚡️Sportz athlete profiles by name, sport, or position.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Text to match against username, full name, sport, or position."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max results (default 10)."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_motivation_quote",
+        "title": "Get a motivational quote",
+        "description": "Generate an AI-powered motivational quote for an athlete based on their current mood.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "mood": {
+              "type": "string",
+              "enum": [
+                "motivated",
+                "relaxed",
+                "intense",
+                "focused",
+                "energetic",
+                "calm",
+                "pumped",
+                "determined"
+              ],
+              "description": "Athlete's current mood."
+            }
+          },
+          "required": [
+            "mood"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
