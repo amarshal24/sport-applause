@@ -190,6 +190,7 @@ const VideoEditor = () => {
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
   const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useAnimationTutorialAutoOpen();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   
   // Adjustments
