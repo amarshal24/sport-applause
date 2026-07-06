@@ -1738,6 +1738,9 @@ const VideoEditor = () => {
         onRemovePin={characterPins.remove}
       />
 
+      <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+
+
       {/* Animation Center Preview — see all applied effects before saving */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black border-primary/30">
