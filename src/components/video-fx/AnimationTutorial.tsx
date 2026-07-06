@@ -17,6 +17,29 @@ import {
 import { cn } from "@/lib/utils";
 
 const TUTORIAL_KEY = "animation-center-tutorial-seen-v1";
+const TUTORIAL_STEP_KEY = "animation-center-tutorial-step-v1";
+
+function readSavedStep(max: number): number {
+  try {
+    const raw = localStorage.getItem(TUTORIAL_STEP_KEY);
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 0 && n < max) return n;
+  } catch {}
+  return 0;
+}
+
+function saveStep(step: number) {
+  try {
+    localStorage.setItem(TUTORIAL_STEP_KEY, String(step));
+  } catch {}
+}
+
+function clearSavedStep() {
+  try {
+    localStorage.removeItem(TUTORIAL_STEP_KEY);
+  } catch {}
+}
 
 interface Step {
   icon: React.ComponentType<{ className?: string }>;
@@ -73,10 +96,18 @@ interface AnimationTutorialProps {
 }
 
 export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps) {
-  const [step, setStep] = useState(0);
+  const [step, setStepState] = useState(0);
+
+  const setStep = (updater: number | ((s: number) => number)) => {
+    setStepState((prev) => {
+      const next = typeof updater === "function" ? (updater as (s: number) => number)(prev) : updater;
+      saveStep(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
-    if (open) setStep(0);
+    if (open) setStepState(readSavedStep(steps.length));
   }, [open]);
 
   const current = steps[step];
@@ -139,6 +170,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
               try {
                 localStorage.setItem(TUTORIAL_KEY, "1");
               } catch {}
+              clearSavedStep();
               onOpenChange(false);
             }}
           >
@@ -152,6 +184,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
                 try {
                   localStorage.setItem(TUTORIAL_KEY, "1");
                 } catch {}
+                clearSavedStep();
                 onOpenChange(false);
               }}
             >
