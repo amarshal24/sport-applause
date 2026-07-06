@@ -189,7 +189,7 @@ const Hero = () => {
             <Card className="border-2 hover:border-primary transition-colors">
               <CardHeader>
                 <Film className="h-12 w-12 text-primary mb-4" />
-                <CardTitle>Professional Video Editor</CardTitle>
+                <CardTitle>Animation Center</CardTitle>
                 <CardDescription>
                   Built-in video editing tools to create highlight reels with filters, text overlays, 
                   and effects. Export to your feed, stories, or download instantly.
