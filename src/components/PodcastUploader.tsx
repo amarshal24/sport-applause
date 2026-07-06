@@ -5,11 +5,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Upload, Music, X, Scissors } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Music, X, Scissors, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { MusicTrimmer } from "@/components/MusicTrimmer";
 import { trimAudioToWav } from "@/lib/audioTrim";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+// Upload via XHR to Supabase Storage REST so we can report progress %.
+const uploadWithProgress = (
+  bucket: string,
+  path: string,
+  data: Blob,
+  contentType: string,
+  token: string,
+  onProgress: (pct: number) => void
+): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.setRequestHeader("apikey", SUPABASE_KEY);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.setRequestHeader("x-upsert", "true");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress(100);
+        resolve(supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl);
+      } else {
+        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(data);
+  });
 
 const podcastSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
@@ -28,6 +64,9 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
   const [audioObjectUrl, setAudioObjectUrl] = useState<string | null>(null);
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [isTrimming, setIsTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"idle" | "audio" | "thumbnail" | "saving" | "done">("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -51,20 +90,19 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
     setThumbnailFile(file);
   };
 
-  const uploadFile = async (data: Blob | File, bucket: string, path: string, contentType?: string) => {
-    const { data: up, error } = await supabase.storage.from(bucket).upload(path, data, {
-      upsert: true,
-      contentType: contentType ?? (data as File).type,
-    });
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(up.path).data.publicUrl;
-  };
 
   const applyTrim = async (startTime: number, endTime: number, fadeIn: number, fadeOut: number) => {
     if (!audioFile) return;
     setIsTrimming(true);
+    setTrimProgress(5);
+    // Trimming is synchronous inside OfflineAudioContext, so animate a smooth
+    // indeterminate-style progress so the user sees activity.
+    const ticker = window.setInterval(() => {
+      setTrimProgress((p) => (p < 90 ? p + Math.max(1, Math.round((90 - p) / 12)) : p));
+    }, 120);
     try {
       const wav = await trimAudioToWav(audioFile, startTime, endTime, fadeIn, fadeOut);
+      setTrimProgress(100);
       setTrimmedBlob(wav);
       setShowTrimmer(false);
       toast.success(`Trimmed to ${Math.round(endTime - startTime)}s`);
@@ -72,7 +110,9 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       console.error(err);
       toast.error("Failed to trim audio");
     } finally {
+      window.clearInterval(ticker);
       setIsTrimming(false);
+      window.setTimeout(() => setTrimProgress(0), 600);
     }
   };
 
@@ -92,18 +132,42 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
     if (!user || !audioFile) return toast.error("Please fill in all required fields");
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage("audio");
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+
       const source: Blob = trimmedBlob ?? audioFile;
       const ext = trimmedBlob ? "wav" : (audioFile.name.split(".").pop() || "mp3");
       const audioPath = `${user.id}/${Date.now()}-podcast.${ext}`;
-      const audioUrl = await uploadFile(source, "podcasts", audioPath, trimmedBlob ? "audio/wav" : audioFile.type);
+      const audioType = trimmedBlob ? "audio/wav" : audioFile.type;
+      const audioUrl = await uploadWithProgress(
+        "podcasts",
+        audioPath,
+        source,
+        audioType,
+        token,
+        setUploadProgress
+      );
 
       let thumbnailUrl: string | null = null;
       if (thumbnailFile) {
+        setUploadStage("thumbnail");
+        setUploadProgress(0);
         const tPath = `${user.id}/thumbnails/${Date.now()}-${thumbnailFile.name}`;
-        thumbnailUrl = await uploadFile(thumbnailFile, "podcasts", tPath);
+        thumbnailUrl = await uploadWithProgress(
+          "podcasts",
+          tPath,
+          thumbnailFile,
+          thumbnailFile.type,
+          token,
+          setUploadProgress
+        );
       }
 
+      setUploadStage("saving");
       const audio = new Audio(URL.createObjectURL(source));
       await new Promise((resolve) => { audio.onloadedmetadata = resolve; });
       const duration = Math.floor(audio.duration);
@@ -113,6 +177,7 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       });
       if (insertError) throw insertError;
 
+      setUploadStage("done");
       toast.success("Podcast uploaded successfully!");
       setAudioFile(null); setTrimmedBlob(null); setThumbnailFile(null);
       setTitle(""); setDescription("");
@@ -123,8 +188,15 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
       toast.error(err.message || "Failed to upload podcast");
     } finally {
       setIsUploading(false);
+      window.setTimeout(() => { setUploadStage("idle"); setUploadProgress(0); }, 1200);
     }
   };
+
+  const stageLabel =
+    uploadStage === "audio" ? `Uploading audio… ${uploadProgress}%` :
+    uploadStage === "thumbnail" ? `Uploading thumbnail… ${uploadProgress}%` :
+    uploadStage === "saving" ? "Saving podcast…" :
+    uploadStage === "done" ? "Done!" : "";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-card rounded-lg border">
@@ -166,13 +238,37 @@ const PodcastUploader: React.FC<PodcastUploaderProps> = ({ onUploadComplete }) =
         {showTrimmer && audioObjectUrl && (
           <div className="p-4 border rounded-md bg-muted/30 mt-2">
             {isTrimming ? (
-              <p className="text-sm text-muted-foreground">Rendering trimmed audio…</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Rendering trimmed audio… {trimProgress}%
+                </div>
+                <Progress value={trimProgress} className="h-2" />
+              </div>
             ) : (
               <MusicTrimmer audioUrl={audioObjectUrl} onTrimComplete={applyTrim} onCancel={() => setShowTrimmer(false)} />
             )}
           </div>
         )}
       </div>
+
+      {isUploading && (
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {stageLabel}
+            </span>
+            {(uploadStage === "audio" || uploadStage === "thumbnail") && (
+              <span className="font-medium tabular-nums">{uploadProgress}%</span>
+            )}
+          </div>
+          <Progress
+            value={uploadStage === "saving" || uploadStage === "done" ? 100 : uploadProgress}
+            className="h-2"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Thumbnail (Optional)</Label>
