@@ -188,6 +188,8 @@ const VideoEditor = () => {
   // Fullscreen Filters & Effects panel
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
   const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
   
   // Adjustments
   const [brightness, setBrightness] = useState(100);
