@@ -15,8 +15,9 @@ import {
   Share2, Trash2, Send, Image as ImageIcon, Wand2,
   Sun, Contrast, Palette, Volume2, VolumeX, Timer,
   FlipHorizontal, FlipVertical, RotateCw, Layers,
-  Blend, Droplets, Focus, Maximize, Move, Star
+  Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle
 } from "lucide-react";
+import { AnimationTutorial, useAnimationTutorialAutoOpen } from "@/components/video-fx/AnimationTutorial";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,6 +190,7 @@ const VideoEditor = () => {
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
   const [fxSelection, setFxSelection] = useState<FxSelection>(defaultFxSelection);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useAnimationTutorialAutoOpen();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   
   // Adjustments
@@ -722,6 +724,10 @@ const VideoEditor = () => {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setTutorialOpen(true)}>
+                <HelpCircle className="mr-1 h-4 w-4" />
+                Tutorial
+              </Button>
               <Button variant="outline" size="sm" onClick={resetEditor}>
                 <RotateCcw className="mr-1 h-4 w-4" />
                 Reset
@@ -1731,6 +1737,9 @@ const VideoEditor = () => {
         onUpdatePin={characterPins.update}
         onRemovePin={characterPins.remove}
       />
+
+      <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+
 
       {/* Animation Center Preview — see all applied effects before saving */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
