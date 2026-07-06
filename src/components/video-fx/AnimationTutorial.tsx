@@ -170,6 +170,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
               try {
                 localStorage.setItem(TUTORIAL_KEY, "1");
               } catch {}
+              clearSavedStep();
               onOpenChange(false);
             }}
           >
@@ -183,6 +184,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
                 try {
                   localStorage.setItem(TUTORIAL_KEY, "1");
                 } catch {}
+                clearSavedStep();
                 onOpenChange(false);
               }}
             >
