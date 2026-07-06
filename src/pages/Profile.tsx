@@ -27,7 +27,7 @@ const PodcastUploader = lazy(() => import("@/components/PodcastUploader"));
 const LiveStreamManager = lazy(() => import("@/components/LiveStreamManager"));
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +40,14 @@ const Profile = () => {
   });
 
   useEffect(() => {
+    if (authLoading) return;
     if (user) {
       fetchData();
+    } else {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
+
 
   const fetchData = async () => {
     if (!user) return;
