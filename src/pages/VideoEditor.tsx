@@ -15,8 +15,9 @@ import {
   Share2, Trash2, Send, Image as ImageIcon, Wand2,
   Sun, Contrast, Palette, Volume2, VolumeX, Timer,
   FlipHorizontal, FlipVertical, RotateCw, Layers,
-  Blend, Droplets, Focus, Maximize, Move, Star
+  Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle
 } from "lucide-react";
+import { AnimationTutorial, useAnimationTutorialAutoOpen } from "@/components/video-fx/AnimationTutorial";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
