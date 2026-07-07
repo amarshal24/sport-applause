@@ -281,8 +281,14 @@ const Recruiting = () => {
     }
   };
 
-  const handleDelete = async (video: RecruitingVideo) => {
-    if (!confirm(`Delete "${video.title}"? This cannot be undone.`)) return;
+  const handleDelete = (video: RecruitingVideo) => {
+    setDeleteConfirmVideo(video);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmVideo) return;
+    const video = deleteConfirmVideo;
+    setDeleteConfirmVideo(null);
 
     try {
       const { error } = await supabase
@@ -292,21 +298,32 @@ const Recruiting = () => {
 
       if (error) throw error;
 
-      // Best-effort cleanup of the storage object (path is user_id/filename)
+      let storageCleanupNeeded = false;
+      let storageCleanupFailed = false;
       try {
         const marker = "/recruiting-videos/";
         const idx = video.video_url.indexOf(marker);
         if (idx !== -1) {
           const path = decodeURIComponent(video.video_url.substring(idx + marker.length).split("?")[0]);
           if (path) {
-            await supabase.storage.from("recruiting-videos").remove([path]);
+            storageCleanupNeeded = true;
+            const { error: storageError } = await supabase.storage.from("recruiting-videos").remove([path]);
+            if (storageError) {
+              storageCleanupFailed = true;
+              console.error("Storage cleanup failed:", storageError);
+            }
           }
         }
       } catch (storageErr) {
-        console.warn("Storage cleanup failed:", storageErr);
+        storageCleanupFailed = true;
+        console.error("Storage cleanup failed:", storageErr);
       }
 
-      toast.success("Video deleted successfully");
+      if (storageCleanupNeeded && storageCleanupFailed) {
+        toast.error("Video deleted, but storage cleanup failed. Please contact support.");
+      } else {
+        toast.success("Video deleted successfully");
+      }
       setVideos((prev) => prev.filter((v) => v.id !== video.id));
     } catch (error) {
       console.error("Delete error:", error);
