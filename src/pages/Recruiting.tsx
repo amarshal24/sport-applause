@@ -339,6 +339,16 @@ const Recruiting = () => {
     }
   }, []);
 
+  // On unmount, commit any pending deletes immediately
+  useEffect(() => {
+    return () => {
+      pendingDeletesRef.current.forEach((pending, videoId) => {
+        clearTimeout(pending.timeout);
+        performDelete(videoId);
+      });
+    };
+  }, [performDelete]);
+
   const confirmDelete = () => {
     if (!deleteConfirmVideo) return;
     const video = deleteConfirmVideo;
