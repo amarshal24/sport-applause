@@ -695,6 +695,7 @@ const Recruiting = () => {
                           </DropdownMenuItem>
                           {user?.id === video.user_id && (
                             <>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setFxEditorVideo(video)}>
                                 <Wand2 className="w-4 h-4 mr-2" />
                                 Filters & Animations
@@ -703,9 +704,10 @@ const Recruiting = () => {
                                 <Edit className="w-4 h-4 mr-2" />
                                 Edit Details
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(video)}
-                                className="text-destructive"
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
