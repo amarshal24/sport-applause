@@ -1742,7 +1742,12 @@ const VideoEditor = () => {
         onRemovePin={characterPins.remove}
       />
 
-      <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+      {tutorialOpen && (
+        <Suspense fallback={null}>
+          <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+        </Suspense>
+      )}
+
 
 
       {/* Animation Center Preview — see all applied effects before saving */}
