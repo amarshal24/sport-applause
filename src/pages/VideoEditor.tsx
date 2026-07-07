@@ -17,7 +17,11 @@ import {
   FlipHorizontal, FlipVertical, RotateCw, Layers,
   Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle
 } from "lucide-react";
-import { AnimationTutorial, useAnimationTutorialAutoOpen } from "@/components/video-fx/AnimationTutorial";
+import { useAnimationTutorialAutoOpen } from "@/components/video-fx/useAnimationTutorial";
+const AnimationTutorial = lazy(() =>
+  import("@/components/video-fx/AnimationTutorial").then((m) => ({ default: m.AnimationTutorial }))
+);
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
