@@ -1076,6 +1076,32 @@ const Recruiting = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmVideo} onOpenChange={(open) => !open && setDeleteConfirmVideo(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              Delete Highlight Reel?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently remove "{deleteConfirmVideo?.title}" and all its data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteConfirmVideo(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Filters & Animations Editor (full-screen) */}
       {fxEditorVideo && (
         <VideoTrimModal
