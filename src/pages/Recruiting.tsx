@@ -76,6 +76,7 @@ const Recruiting = () => {
     full_name: string | null;
     avatar_url: string | null;
   } | null>(null);
+  const [deleteConfirmVideo, setDeleteConfirmVideo] = useState<RecruitingVideo | null>(null);
   
   // Filters & Sorting
   const [selectedSport, setSelectedSport] = useState<string>("all");
