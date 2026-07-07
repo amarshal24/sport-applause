@@ -131,7 +131,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-md p-0 overflow-hidden animate-scale-in">
+      <DialogContent className="max-w-md p-0 animate-scale-in max-h-[90dvh] overflow-y-auto">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Zap className="w-5 h-5 text-primary" />
@@ -146,7 +146,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
           <video
             ref={videoRef}
             src={tutorialVideo.url}
-            className="w-full aspect-[9/16] max-h-[60vh] object-contain bg-black"
+            className="w-full aspect-[9/16] max-h-[40vh] object-contain bg-black"
             playsInline
             preload="metadata"
             onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
