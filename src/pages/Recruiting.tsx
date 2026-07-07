@@ -109,15 +109,6 @@ const Recruiting = () => {
     fetchVideos();
   }, [selectedSport, selectedYear, selectedPosition, selectedLocation, sortBy]);
 
-  // On unmount, commit any pending deletes immediately
-  useEffect(() => {
-    return () => {
-      pendingDeletesRef.current.forEach((pending, videoId) => {
-        clearTimeout(pending.timeout);
-        performDelete(videoId);
-      });
-    };
-  }, [performDelete]);
 
   const fetchVideos = async () => {
     setLoading(true);
