@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
@@ -101,9 +101,14 @@ const Recruiting = () => {
   const [school, setSchool] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
+  const UNDO_TIMEOUT_MS = 5000;
+  const pendingDeletesRef = useRef<Map<string, { video: RecruitingVideo; timeout: ReturnType<typeof setTimeout> }>>(new Map());
+
   useEffect(() => {
     fetchVideos();
   }, [selectedSport, selectedYear, selectedPosition, selectedLocation, sortBy]);
+
 
   const fetchVideos = async () => {
     setLoading(true);
@@ -286,11 +291,12 @@ const Recruiting = () => {
     setDeleteConfirmVideo(video);
   };
 
-  const confirmDelete = async () => {
-    if (!deleteConfirmVideo) return;
-    const video = deleteConfirmVideo;
-    setDeleteConfirmVideo(null);
+  const performDelete = useCallback(async (videoId: string) => {
+    const pending = pendingDeletesRef.current.get(videoId);
+    if (!pending) return;
+    pendingDeletesRef.current.delete(videoId);
 
+    const video = pending.video;
     try {
       const { error } = await supabase
         .from("recruiting_videos")
@@ -325,11 +331,57 @@ const Recruiting = () => {
       } else {
         toast.success("Video deleted successfully");
       }
-      setVideos((prev) => prev.filter((v) => v.id !== video.id));
     } catch (error) {
       console.error("Delete error:", error);
+      // Restore the video to the UI since deletion failed
+      setVideos((prev) => [...prev, video]);
       toast.error("Failed to delete video");
     }
+  }, []);
+
+  // On unmount, commit any pending deletes immediately
+  useEffect(() => {
+    return () => {
+      pendingDeletesRef.current.forEach((pending, videoId) => {
+        clearTimeout(pending.timeout);
+        performDelete(videoId);
+      });
+    };
+  }, [performDelete]);
+
+  const confirmDelete = () => {
+    if (!deleteConfirmVideo) return;
+    const video = deleteConfirmVideo;
+    setDeleteConfirmVideo(null);
+
+    if (pendingDeletesRef.current.has(video.id)) return;
+
+    // Optimistically remove from the UI and start the undo window
+    setVideos((prev) => prev.filter((v) => v.id !== video.id));
+
+    const timeout = setTimeout(() => {
+      performDelete(video.id);
+    }, UNDO_TIMEOUT_MS);
+
+    pendingDeletesRef.current.set(video.id, { video, timeout });
+
+    const toastId = toast(`"${video.title}" deleted`, {
+      description: "Undo within 5 seconds to recover it.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const pending = pendingDeletesRef.current.get(video.id);
+          if (pending) {
+            clearTimeout(pending.timeout);
+            pendingDeletesRef.current.delete(video.id);
+            setVideos((prev) => [...prev, pending.video]);
+            toast.dismiss(toastId);
+            toast.success("Deletion undone");
+          }
+        },
+      },
+      duration: UNDO_TIMEOUT_MS,
+    });
   };
 
   const handleEdit = (video: RecruitingVideo) => {
