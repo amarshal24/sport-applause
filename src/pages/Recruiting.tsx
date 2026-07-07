@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -76,6 +76,7 @@ const Recruiting = () => {
     full_name: string | null;
     avatar_url: string | null;
   } | null>(null);
+  const [deleteConfirmVideo, setDeleteConfirmVideo] = useState<RecruitingVideo | null>(null);
   
   // Filters & Sorting
   const [selectedSport, setSelectedSport] = useState<string>("all");
@@ -280,8 +281,14 @@ const Recruiting = () => {
     }
   };
 
-  const handleDelete = async (video: RecruitingVideo) => {
-    if (!confirm(`Delete "${video.title}"? This cannot be undone.`)) return;
+  const handleDelete = (video: RecruitingVideo) => {
+    setDeleteConfirmVideo(video);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmVideo) return;
+    const video = deleteConfirmVideo;
+    setDeleteConfirmVideo(null);
 
     try {
       const { error } = await supabase
@@ -291,21 +298,32 @@ const Recruiting = () => {
 
       if (error) throw error;
 
-      // Best-effort cleanup of the storage object (path is user_id/filename)
+      let storageCleanupNeeded = false;
+      let storageCleanupFailed = false;
       try {
         const marker = "/recruiting-videos/";
         const idx = video.video_url.indexOf(marker);
         if (idx !== -1) {
           const path = decodeURIComponent(video.video_url.substring(idx + marker.length).split("?")[0]);
           if (path) {
-            await supabase.storage.from("recruiting-videos").remove([path]);
+            storageCleanupNeeded = true;
+            const { error: storageError } = await supabase.storage.from("recruiting-videos").remove([path]);
+            if (storageError) {
+              storageCleanupFailed = true;
+              console.error("Storage cleanup failed:", storageError);
+            }
           }
         }
       } catch (storageErr) {
-        console.warn("Storage cleanup failed:", storageErr);
+        storageCleanupFailed = true;
+        console.error("Storage cleanup failed:", storageErr);
       }
 
-      toast.success("Video deleted successfully");
+      if (storageCleanupNeeded && storageCleanupFailed) {
+        toast.error("Video deleted, but storage cleanup failed. Please contact support.");
+      } else {
+        toast.success("Video deleted successfully");
+      }
       setVideos((prev) => prev.filter((v) => v.id !== video.id));
     } catch (error) {
       console.error("Delete error:", error);
@@ -1055,6 +1073,32 @@ const Recruiting = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmVideo} onOpenChange={(open) => !open && setDeleteConfirmVideo(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              Delete Highlight Reel?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently remove "{deleteConfirmVideo?.title}" and all its data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteConfirmVideo(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
