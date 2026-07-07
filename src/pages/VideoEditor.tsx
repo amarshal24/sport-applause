@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
