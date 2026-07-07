@@ -252,14 +252,5 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
   );
 }
 
-export function useAnimationTutorialAutoOpen() {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(TUTORIAL_KEY)) {
-        setOpen(true);
-      }
-    } catch {}
-  }, []);
-  return [open, setOpen] as const;
-}
+export { useAnimationTutorialAutoOpen } from "./useAnimationTutorial";
+

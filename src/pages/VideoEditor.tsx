@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,11 @@ import {
   FlipHorizontal, FlipVertical, RotateCw, Layers,
   Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle
 } from "lucide-react";
-import { AnimationTutorial, useAnimationTutorialAutoOpen } from "@/components/video-fx/AnimationTutorial";
+import { useAnimationTutorialAutoOpen } from "@/components/video-fx/useAnimationTutorial";
+const AnimationTutorial = lazy(() =>
+  import("@/components/video-fx/AnimationTutorial").then((m) => ({ default: m.AnimationTutorial }))
+);
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -1738,7 +1742,12 @@ const VideoEditor = () => {
         onRemovePin={characterPins.remove}
       />
 
-      <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+      {tutorialOpen && (
+        <Suspense fallback={null}>
+          <AnimationTutorial open={tutorialOpen} onOpenChange={setTutorialOpen} />
+        </Suspense>
+      )}
+
 
 
       {/* Animation Center Preview — see all applied effects before saving */}
