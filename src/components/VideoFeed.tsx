@@ -509,6 +509,21 @@ const VideoFeed = () => {
                         {post.profiles.sports[0]}
                       </Badge>
                     )}
+                    {user?.id === post.user_id && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmPost(post);
+                        }}
+                        aria-label="Delete post"
+                        title="Delete post"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Content */}
