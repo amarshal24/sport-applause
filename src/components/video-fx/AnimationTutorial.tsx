@@ -146,7 +146,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
           <video
             ref={videoRef}
             src={tutorialVideo.url}
-            className="w-full aspect-[9/16] max-h-[60vh] object-contain bg-black"
+            className="w-full aspect-[9/16] max-h-[40vh] object-contain bg-black"
             playsInline
             preload="metadata"
             onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
