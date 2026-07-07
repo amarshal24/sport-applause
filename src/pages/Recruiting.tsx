@@ -101,6 +101,10 @@ const Recruiting = () => {
   const [school, setSchool] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
+  const UNDO_TIMEOUT_MS = 5000;
+  const pendingDeletesRef = useRef<Map<string, { video: RecruitingVideo; timeout: NodeJS.Timeout }>>(new Map());
+
   useEffect(() => {
     fetchVideos();
   }, [selectedSport, selectedYear, selectedPosition, selectedLocation, sortBy]);
