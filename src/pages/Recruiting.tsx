@@ -103,7 +103,7 @@ const Recruiting = () => {
 
   // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
   const UNDO_TIMEOUT_MS = 5000;
-  const pendingDeletesRef = useRef<Map<string, { video: RecruitingVideo; timeout: NodeJS.Timeout }>>(new Map());
+  const pendingDeletesRef = useRef<Map<string, { video: RecruitingVideo; timeout: ReturnType<typeof setTimeout> }>>(new Map());
 
   useEffect(() => {
     fetchVideos();
