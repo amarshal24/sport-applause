@@ -281,7 +281,7 @@ const Recruiting = () => {
   };
 
   const handleDelete = async (video: RecruitingVideo) => {
-    if (!confirm("Are you sure you want to delete this video?")) return;
+    if (!confirm(`Delete "${video.title}"? This cannot be undone.`)) return;
 
     try {
       const { error } = await supabase
@@ -290,8 +290,23 @@ const Recruiting = () => {
         .eq("id", video.id);
 
       if (error) throw error;
+
+      // Best-effort cleanup of the storage object (path is user_id/filename)
+      try {
+        const marker = "/recruiting-videos/";
+        const idx = video.video_url.indexOf(marker);
+        if (idx !== -1) {
+          const path = decodeURIComponent(video.video_url.substring(idx + marker.length).split("?")[0]);
+          if (path) {
+            await supabase.storage.from("recruiting-videos").remove([path]);
+          }
+        }
+      } catch (storageErr) {
+        console.warn("Storage cleanup failed:", storageErr);
+      }
+
       toast.success("Video deleted successfully");
-      fetchVideos();
+      setVideos((prev) => prev.filter((v) => v.id !== video.id));
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete video");
@@ -763,6 +778,35 @@ const Recruiting = () => {
                         </div>
                       )}
                     </div>
+
+                    {user?.id === video.user_id && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(video);
+                          }}
+                        >
+                          <Edit className="w-3.5 h-3.5 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(video);
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
