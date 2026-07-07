@@ -778,6 +778,35 @@ const Recruiting = () => {
                         </div>
                       )}
                     </div>
+
+                    {user?.id === video.user_id && (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(video);
+                          }}
+                        >
+                          <Edit className="w-3.5 h-3.5 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(video);
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
