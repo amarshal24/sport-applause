@@ -471,7 +471,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
       stage = "post";
 
       if (postType === "story") {
-        if (!imageUrl && !videoFile) {
+        if (!imageUrl && !videoUrl) {
           toast({
             title: "Media required",
             description: "Stories must include an image or video",
@@ -486,9 +486,10 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
         const { error } = await supabase.from("stories").insert({
           user_id: user.id,
-          image_url: imageUrl || videoPreview,
+          image_url: imageUrl || videoUrl!,
           expires_at: expiresAt.toISOString(),
         });
+
 
         if (error) throw error;
 
