@@ -47,7 +47,7 @@ const Index = () => {
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
         <div className="px-4 lg:px-6 py-6">
-          <Stories onCreateStory={handleCreateStory} />
+          <Stories onCreateStory={handleCreateStory} refreshKey={refreshKey} />
           <div className="mt-3">
             <LiveNowFeed compact />
           </div>
