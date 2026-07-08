@@ -21,9 +21,10 @@ interface Story {
 
 interface StoriesProps {
   onCreateStory?: () => void;
+  refreshKey?: number;
 }
 
-const Stories = ({ onCreateStory }: StoriesProps) => {
+const Stories = ({ onCreateStory, refreshKey = 0 }: StoriesProps) => {
   const { user } = useAuth();
   const [stories, setStories] = useState<Story[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -50,7 +51,8 @@ const Stories = ({ onCreateStory }: StoriesProps) => {
     };
 
     fetchStories();
-  }, []);
+  }, [refreshKey]);
+
 
   const handleStoryClick = (index: number) => {
     setSelectedStoryIndex(index);
