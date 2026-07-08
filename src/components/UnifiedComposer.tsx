@@ -8,6 +8,7 @@ import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } f
 import MusicTrimmer from "@/components/MusicTrimmer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { getSportIcon } from "@/constants/sports";
 import { cn } from "@/lib/utils";
@@ -442,6 +443,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
     }
 
     setIsSubmitting(true);
+    let stage: "image" | "video" | "music" | "post" = "post";
 
     try {
       let imageUrl: string | null = null;
@@ -449,19 +451,24 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
       let musicUrl: string | null = null;
 
       if (imageFile) {
+        stage = "image";
         imageUrl = await uploadImage(imageFile, postType === "story" ? "stories" : "posts");
       }
 
       if (videoFile) {
+        stage = "video";
         videoUrl = await uploadVideo(videoFile);
       }
 
       // Upload custom music if selected
       if (selectedMusic?.isCustom && customMusicFile) {
+        stage = "music";
         musicUrl = await uploadMusic(customMusicFile);
       } else if (selectedMusic) {
         musicUrl = selectedMusic.url;
       }
+
+      stage = "post";
 
       if (postType === "story") {
         if (!imageUrl && !videoFile) {
@@ -531,15 +538,47 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
       setMusicUploadProgress(0);
       onPostCreated?.();
     } catch (error: any) {
-      toast({
-        title: "Failed to post",
-        description: error.message,
-        variant: "destructive",
+      const rawMessage: string = error?.message || "Something went wrong.";
+      const lower = rawMessage.toLowerCase();
+
+      let title = "Upload failed";
+      let reason = rawMessage;
+
+      if (stage === "image") title = "Photo upload failed";
+      else if (stage === "video") title = "Video upload failed";
+      else if (stage === "music") title = "Music upload failed";
+      else title = postType === "story" ? "Story failed to post" : "Post failed";
+
+      if (lower.includes("payload") || lower.includes("too large") || lower.includes("exceeded")) {
+        reason = "File is too large for the server. Try a smaller or compressed file.";
+      } else if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to fetch")) {
+        reason = "Network problem. Check your connection and try again.";
+      } else if (lower.includes("timeout")) {
+        reason = "The upload timed out. Try again on a stronger connection.";
+      } else if (lower.includes("duplicate") || lower.includes("already exists")) {
+        reason = "That file was already uploaded. Try a different one.";
+      } else if (lower.includes("mime") || lower.includes("type")) {
+        reason = "That file type isn't supported. Try MP4/MOV for video or JPG/PNG for photos.";
+      } else if (lower.includes("permission") || lower.includes("unauthor") || lower.includes("rls")) {
+        reason = "You don't have permission to upload right now. Sign out and back in, then retry.";
+      }
+
+      setUploadProgress(0);
+      setMusicUploadProgress(0);
+
+      sonnerToast.error(title, {
+        description: reason,
+        duration: 10000,
+        action: {
+          label: "Retry",
+          onClick: () => handleSubmit(),
+        },
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const handleGetMusic = () => {
     if (selectedMood) {
