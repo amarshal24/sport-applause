@@ -8,6 +8,7 @@ import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } f
 import MusicTrimmer from "@/components/MusicTrimmer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { getSportIcon } from "@/constants/sports";
 import { cn } from "@/lib/utils";
