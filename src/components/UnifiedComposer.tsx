@@ -615,54 +615,92 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
               maxLength={5000}
             />
 
-            {imagePreview && (
-              <div className="relative mb-3">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="rounded-lg max-h-64 w-full object-cover"
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="absolute top-2 right-2"
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
-                  }}
-                >
-                  Remove
-                </Button>
+            {(imagePreview || videoPreview) && (
+              <div className="mb-3 animate-fade-in">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {postType === "story" ? "Story preview" : "Post preview"}
+                  </span>
+                  {(imageFile || videoFile) && (
+                    <span className="text-xs text-muted-foreground">
+                      {((imageFile ?? videoFile)!.size / (1024 * 1024)).toFixed(1)} MB
+                    </span>
+                  )}
+                </div>
+
+                {imagePreview && (
+                  <div
+                    className={cn(
+                      "relative rounded-lg overflow-hidden bg-black mx-auto border border-border shadow-card",
+                      postType === "story" ? "w-full max-w-xs" : "w-full max-w-md"
+                    )}
+                    style={{ aspectRatio: postType === "story" ? "9 / 16" : "4 / 5" }}
+                  >
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                      aria-label="Remove photo"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    {imageFile && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
+                        <p className="text-xs text-white truncate">{imageFile.name}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {videoPreview && (
+                  <div
+                    className={cn(
+                      "relative rounded-lg overflow-hidden bg-black mx-auto border border-border shadow-card",
+                      postType === "story" ? "w-full max-w-xs" : "w-full max-w-md"
+                    )}
+                    style={{ aspectRatio: postType === "story" ? "9 / 16" : "4 / 5" }}
+                  >
+                    <video
+                      src={videoPreview}
+                      className="w-full h-full object-contain"
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full z-10"
+                      onClick={() => {
+                        if (videoPreview) {
+                          URL.revokeObjectURL(videoPreview);
+                        }
+                        setVideoFile(null);
+                        setVideoPreview(null);
+                      }}
+                      aria-label="Remove video"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    {videoFile && (
+                      <div className="absolute bottom-12 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2 pointer-events-none">
+                        <p className="text-xs text-white truncate">{videoFile.name}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {videoPreview && (
-              <div
-                className="relative mb-3 mx-auto rounded-lg overflow-hidden bg-black w-full max-w-xs"
-                style={{ aspectRatio: "9 / 16" }}
-              >
-                <video
-                  src={videoPreview}
-                  className="w-full h-full object-contain"
-                  controls
-                  preload="metadata"
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="absolute top-2 right-2"
-                  onClick={() => {
-                    if (videoPreview) {
-                      URL.revokeObjectURL(videoPreview);
-                    }
-                    setVideoFile(null);
-                    setVideoPreview(null);
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            )}
 
             {/* Music Trimmer Dialog */}
             {showTrimmer && pendingTrimTrack && (
