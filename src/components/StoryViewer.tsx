@@ -225,14 +225,26 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
           </Button>
         </div>
 
-        {/* Story Image */}
+        {/* Story Media */}
         <div className="w-full h-full flex items-center justify-center bg-black">
-          <img
-            src={currentStory.image_url}
-            alt="Story"
-            className="max-w-full max-h-full object-contain"
-          />
+          {/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(currentStory.image_url) ? (
+            <video
+              src={currentStory.image_url}
+              className="max-w-full max-h-full object-contain"
+              autoPlay
+              muted
+              playsInline
+              controls={false}
+            />
+          ) : (
+            <img
+              src={currentStory.image_url}
+              alt="Story"
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
         </div>
+
 
         {/* Floating Emoji Animation */}
         <AnimatePresence>
