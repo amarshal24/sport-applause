@@ -421,6 +421,16 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
       return;
     }
 
+    const hasMedia = !!(imageFile || videoFile);
+    if (!content.trim() && !hasMedia) {
+      toast({
+        title: "Nothing to post",
+        description: "Add some text, a photo, or a video before sharing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validation = postSchema.safeParse({ content });
     if (!validation.success) {
       toast({
