@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 
 const postSchema = z.object({
-  content: z.string().trim().min(1, { message: "Post cannot be empty" }).max(5000, { message: "Post is too long" }),
+  content: z.string().trim().max(5000, { message: "Post is too long" }),
 });
 
 interface Mood {
