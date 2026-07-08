@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 
 const postSchema = z.object({
-  content: z.string().trim().min(1, { message: "Post cannot be empty" }).max(5000, { message: "Post is too long" }),
+  content: z.string().trim().max(5000, { message: "Post is too long" }),
 });
 
 interface Mood {
@@ -416,6 +416,16 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
       toast({
         title: "Not authenticated",
         description: "Please sign in to post",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const hasMedia = !!(imageFile || videoFile);
+    if (!content.trim() && !hasMedia) {
+      toast({
+        title: "Nothing to post",
+        description: "Add some text, a photo, or a video before sharing.",
         variant: "destructive",
       });
       return;
