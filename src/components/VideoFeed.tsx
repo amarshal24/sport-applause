@@ -429,7 +429,7 @@ const VideoFeed = () => {
                         onDoubleTap={() => handleApplause(post.id)}
                       />
                     ) : post.image_url ? (
-                      <img
+                      <SecureImage
                         src={post.image_url}
                         alt="Post media"
                         loading="lazy"
