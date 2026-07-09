@@ -9,6 +9,7 @@ import TopFiveVideos from "@/components/TopFiveVideos";
 import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { SportIcon } from "@/components/SportIcon";
+import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -311,13 +312,13 @@ const Profile = () => {
                       className="aspect-square bg-muted/30 relative overflow-hidden group cursor-pointer"
                     >
                       {post.image_url ? (
-                        <img 
-                          src={post.image_url} 
-                          alt="Post" 
+                        <SecureImage
+                          src={post.image_url}
+                          alt="Post"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : post.video_url ? (
-                        <video 
+                        <SecureVideo
                           src={post.video_url}
                           className="w-full h-full object-cover"
                           muted

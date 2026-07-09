@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import FullScreenVideoModal from "@/components/FullScreenVideoModal";
+import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
 
@@ -429,7 +430,7 @@ const VideoFeed = () => {
                         onDoubleTap={() => handleApplause(post.id)}
                       />
                     ) : post.image_url ? (
-                      <img
+                      <SecureImage
                         src={post.image_url}
                         alt="Post media"
                         loading="lazy"
@@ -703,8 +704,17 @@ const AutoPlayVideo = ({
   const [filterIntensity, setFilterIntensity] = useState(100);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(undefined);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    import("@/lib/signedMedia").then(({ toSignedUrl }) => {
+      toSignedUrl(src).then((u) => { if (alive) setResolvedSrc(u || undefined); });
+    });
+    return () => { alive = false; };
+  }, [src]);
   
   const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 
@@ -865,7 +875,7 @@ const AutoPlayVideo = ({
     <div className="relative w-full h-full" onClick={handleTap}>
       <video
         ref={videoRef}
-        src={src}
+        src={resolvedSrc}
         className="w-full h-full object-contain cursor-pointer bg-black"
         style={getAnimeFilterStyle(animeFilter, filterIntensity)}
         loop
@@ -994,7 +1004,7 @@ const AutoPlayVideo = ({
       `}</style>
 
       <FullScreenVideoModal
-        src={src}
+        src={resolvedSrc || src}
         open={fullscreenOpen}
         onClose={() => setFullscreenOpen(false)}
       />
