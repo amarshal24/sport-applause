@@ -1003,7 +1003,7 @@ const AutoPlayVideo = ({
       `}</style>
 
       <FullScreenVideoModal
-        src={src}
+        src={resolvedSrc || src}
         open={fullscreenOpen}
         onClose={() => setFullscreenOpen(false)}
       />
