@@ -874,7 +874,7 @@ const AutoPlayVideo = ({
     <div className="relative w-full h-full" onClick={handleTap}>
       <video
         ref={videoRef}
-        src={src}
+        src={resolvedSrc}
         className="w-full h-full object-contain cursor-pointer bg-black"
         style={getAnimeFilterStyle(animeFilter, filterIntensity)}
         loop
