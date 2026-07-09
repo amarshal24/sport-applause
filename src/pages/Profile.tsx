@@ -312,13 +312,13 @@ const Profile = () => {
                       className="aspect-square bg-muted/30 relative overflow-hidden group cursor-pointer"
                     >
                       {post.image_url ? (
-                        <img 
-                          src={post.image_url} 
-                          alt="Post" 
+                        <SecureImage
+                          src={post.image_url}
+                          alt="Post"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : post.video_url ? (
-                        <video 
+                        <SecureVideo
                           src={post.video_url}
                           className="w-full h-full object-cover"
                           muted
