@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import FullScreenVideoModal from "@/components/FullScreenVideoModal";
+import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
 
