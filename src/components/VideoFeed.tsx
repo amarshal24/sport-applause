@@ -703,8 +703,17 @@ const AutoPlayVideo = ({
   const [filterIntensity, setFilterIntensity] = useState(100);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(undefined);
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    import("@/lib/signedMedia").then(({ toSignedUrl }) => {
+      toSignedUrl(src).then((u) => { if (alive) setResolvedSrc(u || undefined); });
+    });
+    return () => { alive = false; };
+  }, [src]);
   
   const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 
