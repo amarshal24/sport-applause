@@ -171,25 +171,31 @@ export default function Marketplace() {
     fetchMyListings();
   };
 
-  const filteredListings = listings.filter((listing) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
-    const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+  const matchesMemorabilia = (listing: Listing) => {
+    if (!isMemorabilia) return true;
+    const hay = `${listing.title} ${listing.description ?? ""}`.toLowerCase();
+    const sportOk = sportFilter === "all" || hay.includes(sportFilter.toLowerCase());
+    const teamOk = teamFilter.trim() === "" || hay.includes(teamFilter.trim().toLowerCase());
+    const typeOk =
+      typeFilter === "all" ||
+      hay.includes(typeFilter.toLowerCase()) ||
+      (typeFilter === "game-worn" && (hay.includes("game worn") || hay.includes("game-used")));
+    return sportOk && teamOk && typeOk;
+  };
 
-  const filteredMyListings = myListings.filter((listing) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
-    const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+  const applyFilters = (list: Listing[]) =>
+    list.filter((listing) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
+      const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
+      return matchesSearch && matchesCategory && matchesCondition && matchesMemorabilia(listing);
+    });
+
+  const filteredListings = applyFilters(listings);
+  const filteredMyListings = applyFilters(myListings);
 
   if (!user) return null;
 
