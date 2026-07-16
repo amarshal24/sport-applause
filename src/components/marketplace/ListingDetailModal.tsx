@@ -191,6 +191,32 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
               </span>
             </div>
 
+            {/* In-person pickup notice */}
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5 mb-6">
+              <Handshake className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold text-foreground">In-person pickup only</p>
+                <p className="text-muted-foreground">All marketplace sales are completed in person. Coordinate a safe meetup with the seller through in-app messaging — no shipping or online payments.</p>
+              </div>
+            </div>
+
+            {/* Walkthrough video */}
+            {listing.video_url && (
+              <div className="mb-6">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <PlayCircle className="h-4 w-4 text-primary" />
+                  Walkthrough Video
+                </h3>
+                <video
+                  src={listing.video_url}
+                  controls
+                  playsInline
+                  className="w-full rounded-lg bg-black max-h-[400px]"
+                />
+              </div>
+            )}
+
+
             {/* Description */}
             {listing.description && (
               <div className="mb-6">
