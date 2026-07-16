@@ -52,6 +52,24 @@ const CONDITIONS = [
   { value: "fair", label: "Fair" },
 ];
 
+const MEMORABILIA_SPORTS = [
+  "all", "basketball", "football", "baseball", "soccer", "hockey", "tennis", "golf", "boxing", "mma", "racing", "olympics", "other",
+];
+
+const MEMORABILIA_TYPES = [
+  { value: "all", label: "All Types" },
+  { value: "jersey", label: "Signed Jersey" },
+  { value: "card", label: "Trading Card" },
+  { value: "autograph", label: "Autograph" },
+  { value: "photo", label: "Signed Photo" },
+  { value: "ball", label: "Signed Ball" },
+  { value: "game-worn", label: "Game-Worn Gear" },
+  { value: "helmet", label: "Helmet" },
+  { value: "poster", label: "Poster / Print" },
+  { value: "ticket", label: "Ticket Stub" },
+  { value: "other", label: "Other" },
+];
+
 export default function Marketplace() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -64,6 +82,9 @@ export default function Marketplace() {
   const isMemorabilia = location.pathname === "/memorabilia";
   const [categoryFilter, setCategoryFilter] = useState(isMemorabilia ? "memorabilia" : "all");
   const [conditionFilter, setConditionFilter] = useState("all");
+  const [sportFilter, setSportFilter] = useState("all");
+  const [teamFilter, setTeamFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [activeTab, setActiveTab] = useState("browse");
@@ -150,25 +171,31 @@ export default function Marketplace() {
     fetchMyListings();
   };
 
-  const filteredListings = listings.filter((listing) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
-    const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+  const matchesMemorabilia = (listing: Listing) => {
+    if (!isMemorabilia) return true;
+    const hay = `${listing.title} ${listing.description ?? ""}`.toLowerCase();
+    const sportOk = sportFilter === "all" || hay.includes(sportFilter.toLowerCase());
+    const teamOk = teamFilter.trim() === "" || hay.includes(teamFilter.trim().toLowerCase());
+    const typeOk =
+      typeFilter === "all" ||
+      hay.includes(typeFilter.toLowerCase()) ||
+      (typeFilter === "game-worn" && (hay.includes("game worn") || hay.includes("game-used")));
+    return sportOk && teamOk && typeOk;
+  };
 
-  const filteredMyListings = myListings.filter((listing) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
-    const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+  const applyFilters = (list: Listing[]) =>
+    list.filter((listing) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || listing.category === categoryFilter;
+      const matchesCondition = conditionFilter === "all" || listing.condition === conditionFilter;
+      return matchesSearch && matchesCategory && matchesCondition && matchesMemorabilia(listing);
+    });
+
+  const filteredListings = applyFilters(listings);
+  const filteredMyListings = applyFilters(myListings);
 
   if (!user) return null;
 
@@ -243,6 +270,41 @@ export default function Marketplace() {
               </SelectContent>
             </Select>
           </div>
+
+          {isMemorabilia && (
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <Select value={sportFilter} onValueChange={setSportFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMORABILIA_SPORTS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s === "all" ? "All Sports" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Filter by team (e.g. Lakers)"
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                className="w-full md:w-64"
+              />
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-full md:w-52">
+                  <SelectValue placeholder="Memorabilia Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMORABILIA_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Browse All Tab */}
           <TabsContent value="browse">
