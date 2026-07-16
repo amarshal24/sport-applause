@@ -48,6 +48,8 @@ const CONDITIONS = [
   { value: "fair", label: "Fair" },
 ];
 
+const MAX_VIDEO_MB = 100;
+
 export default function EditListingModal({ listing, open, onOpenChange, onSuccess }: EditListingModalProps) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
@@ -57,7 +59,9 @@ export default function EditListingModal({ listing, open, onOpenChange, onSucces
   const [condition, setCondition] = useState("used");
   const [location, setLocation] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -69,6 +73,7 @@ export default function EditListingModal({ listing, open, onOpenChange, onSucces
       setCondition(listing.condition);
       setLocation(listing.location || "");
       setImages(listing.images || []);
+      setVideoUrl(listing.video_url || null);
     }
   }, [listing, open]);
 
