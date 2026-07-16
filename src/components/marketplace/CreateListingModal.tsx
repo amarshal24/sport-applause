@@ -17,6 +17,7 @@ interface CreateListingModalProps {
 }
 
 const CATEGORIES = [
+  { value: "memorabilia", label: "Sports Memorabilia" },
   { value: "shoes", label: "Shoes" },
   { value: "apparel", label: "Apparel" },
   { value: "equipment", label: "Equipment" },
