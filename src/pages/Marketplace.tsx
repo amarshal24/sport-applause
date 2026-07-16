@@ -35,6 +35,7 @@ interface Listing {
 
 const CATEGORIES = [
   { value: "all", label: "All Categories" },
+  { value: "memorabilia", label: "Sports Memorabilia" },
   { value: "shoes", label: "Shoes" },
   { value: "apparel", label: "Apparel" },
   { value: "equipment", label: "Equipment" },
