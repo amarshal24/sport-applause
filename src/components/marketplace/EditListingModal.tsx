@@ -168,6 +168,12 @@ export default function EditListingModal({ listing, open, onOpenChange, onSucces
       return;
     }
 
+    if (!videoUrl) {
+      toast.error("A walkthrough video is required");
+      return;
+    }
+
+
     setSaving(true);
     try {
       const { error } = await supabase
