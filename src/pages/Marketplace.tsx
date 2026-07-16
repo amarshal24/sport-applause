@@ -60,7 +60,9 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [loadingMyListings, setLoadingMyListings] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const location = useLocation();
+  const isMemorabilia = location.pathname === "/memorabilia";
+  const [categoryFilter, setCategoryFilter] = useState(isMemorabilia ? "memorabilia" : "all");
   const [conditionFilter, setConditionFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
