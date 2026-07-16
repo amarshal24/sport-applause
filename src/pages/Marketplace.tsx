@@ -52,6 +52,24 @@ const CONDITIONS = [
   { value: "fair", label: "Fair" },
 ];
 
+const MEMORABILIA_SPORTS = [
+  "all", "basketball", "football", "baseball", "soccer", "hockey", "tennis", "golf", "boxing", "mma", "racing", "olympics", "other",
+];
+
+const MEMORABILIA_TYPES = [
+  { value: "all", label: "All Types" },
+  { value: "jersey", label: "Signed Jersey" },
+  { value: "card", label: "Trading Card" },
+  { value: "autograph", label: "Autograph" },
+  { value: "photo", label: "Signed Photo" },
+  { value: "ball", label: "Signed Ball" },
+  { value: "game-worn", label: "Game-Worn Gear" },
+  { value: "helmet", label: "Helmet" },
+  { value: "poster", label: "Poster / Print" },
+  { value: "ticket", label: "Ticket Stub" },
+  { value: "other", label: "Other" },
+];
+
 export default function Marketplace() {
   const { user } = useAuth();
   const navigate = useNavigate();
