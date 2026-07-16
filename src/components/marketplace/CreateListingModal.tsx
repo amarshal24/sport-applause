@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImagePlus, X, Loader2 } from "lucide-react";
+import { ImagePlus, X, Loader2, Video, Handshake } from "lucide-react";
 import { toast } from "sonner";
 
 interface CreateListingModalProps {
@@ -33,11 +33,15 @@ const CONDITIONS = [
   { value: "fair", label: "Fair" },
 ];
 
+const MAX_VIDEO_MB = 100;
+
 export default function CreateListingModal({ open, onOpenChange, onSuccess }: CreateListingModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,14 +54,13 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 5) {
-      toast.error("Maximum 5 images allowed");
+      toast.error("Maximum 5 photos allowed");
       return;
     }
 
     const newImages = [...images, ...files];
     setImages(newImages);
 
-    // Generate previews
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -72,27 +75,56 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please select a video file");
+      return;
+    }
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      toast.error(`Video must be under ${MAX_VIDEO_MB}MB`);
+      return;
+    }
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const removeVideo = () => {
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(null);
+    setVideoPreview(null);
+  };
+
   const uploadImages = async (): Promise<string[]> => {
     const uploadedUrls: string[] = [];
-    
     for (const image of images) {
       const fileExt = image.name.split(".").pop();
       const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      
       const { error: uploadError } = await supabase.storage
         .from("marketplace")
         .upload(fileName, image);
-
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage
         .from("marketplace")
         .getPublicUrl(fileName);
-
       uploadedUrls.push(urlData.publicUrl);
     }
-
     return uploadedUrls;
+  };
+
+  const uploadVideo = async (): Promise<string> => {
+    const file = videoFile!;
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user!.id}/videos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("marketplace")
+      .upload(fileName, file);
+    if (uploadError) throw uploadError;
+    const { data: urlData } = supabase.storage
+      .from("marketplace")
+      .getPublicUrl(fileName);
+    return urlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,12 +142,15 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
       return;
     }
 
+    if (!videoFile) {
+      toast.error("A walkthrough video is required for every listing");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Upload images first
-      const imageUrls = await uploadImages();
+      const [imageUrls, videoUrl] = await Promise.all([uploadImages(), uploadVideo()]);
 
-      // Create listing
       const { error } = await supabase.from("marketplace_listings").insert({
         user_id: user.id,
         title: formData.title.trim(),
@@ -125,6 +160,7 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
         condition: formData.condition,
         location: formData.location.trim() || null,
         images: imageUrls,
+        video_url: videoUrl,
       });
 
       if (error) throw error;
@@ -151,6 +187,7 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
     });
     setImages([]);
     setImagePreviews([]);
+    removeVideo();
   };
 
   return (
@@ -195,6 +232,41 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
               )}
             </div>
           </div>
+
+          {/* Walkthrough Video (required) */}
+          <div>
+            <Label className="flex items-center gap-2">
+              <Video className="h-4 w-4" /> Walkthrough Video <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mt-1">Required — up to {MAX_VIDEO_MB}MB. Show the item from multiple angles.</p>
+            {videoPreview ? (
+              <div className="relative mt-2">
+                <video src={videoPreview} controls playsInline className="w-full rounded-lg bg-black max-h-64" />
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="mt-2 flex items-center justify-center gap-2 w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+                <Video className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Upload video (required)</span>
+                <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+              </label>
+            )}
+          </div>
+
+          {/* In-person pickup notice */}
+          <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <Handshake className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              All sales are <span className="font-semibold text-foreground">in-person pickup only</span>. Buyers will contact you through in-app messaging to arrange a meetup.
+            </p>
+          </div>
+
 
           {/* Title */}
           <div>

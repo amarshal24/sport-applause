@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,6 +44,7 @@ interface Message {
 
 const Messages = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("inbox");
@@ -51,11 +53,74 @@ const Messages = () => {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Compose state (used when navigated with ?to=<userId>)
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [composeTo, setComposeTo] = useState<string | null>(null);
+  const [composeRecipientName, setComposeRecipientName] = useState<string>("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeContent, setComposeContent] = useState("");
+
   useEffect(() => {
     if (user) {
       fetchMessages();
     }
   }, [user, activeTab]);
+
+  useEffect(() => {
+    const to = searchParams.get("to");
+    if (!to || !user || to === user.id) return;
+    const listingTitle = searchParams.get("listing");
+    setComposeTo(to);
+    setComposeSubject(listingTitle ? `About your listing: ${listingTitle}` : "");
+    setComposeContent(
+      listingTitle
+        ? `Hi! I'm interested in your listing "${listingTitle}". Since all marketplace sales are in-person pickup only, when and where can we meet?`
+        : ""
+    );
+    supabase
+      .from("profiles")
+      .select("username, full_name")
+      .eq("id", to)
+      .single()
+      .then(({ data }) => {
+        if (data) setComposeRecipientName(data.full_name || data.username || "");
+      });
+    setShowComposeModal(true);
+  }, [searchParams, user]);
+
+  const handleSendCompose = async () => {
+    if (!user || !composeTo) return;
+    if (!composeSubject.trim() || !composeContent.trim()) {
+      toast.error("Please add a subject and message");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.from("messages").insert({
+        sender_id: user.id,
+        recipient_id: composeTo,
+        subject: composeSubject.trim().slice(0, 200),
+        content: composeContent.trim().slice(0, 2000),
+      });
+      if (error) throw error;
+      toast.success("Message sent!");
+      setShowComposeModal(false);
+      setComposeTo(null);
+      setComposeSubject("");
+      setComposeContent("");
+      setActiveTab("sent");
+      searchParams.delete("to");
+      searchParams.delete("listing");
+      setSearchParams(searchParams, { replace: true });
+      fetchMessages();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
 
   const fetchMessages = async () => {
     if (!user) return;
@@ -457,6 +522,59 @@ const Messages = () => {
                 disabled={sending || !replyContent.trim()}
               >
                 {sending ? "Sending..." : "Send Reply"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Compose (Contact Seller) Modal */}
+      <Dialog open={showComposeModal} onOpenChange={(open) => {
+        setShowComposeModal(open);
+        if (!open) {
+          searchParams.delete("to");
+          searchParams.delete("listing");
+          setSearchParams(searchParams, { replace: true });
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5" />
+              New Message{composeRecipientName ? ` to ${composeRecipientName}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Subject</label>
+              <input
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                maxLength={200}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Subject"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Message</label>
+              <Textarea
+                value={composeContent}
+                onChange={(e) => setComposeContent(e.target.value)}
+                placeholder="Type your message..."
+                rows={6}
+                maxLength={2000}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {composeContent.length}/2000
+              </span>
+              <Button
+                onClick={handleSendCompose}
+                disabled={sending || !composeSubject.trim() || !composeContent.trim()}
+              >
+                {sending ? "Sending..." : "Send Message"}
               </Button>
             </div>
           </div>
