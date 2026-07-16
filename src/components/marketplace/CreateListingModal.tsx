@@ -33,11 +33,15 @@ const CONDITIONS = [
   { value: "fair", label: "Fair" },
 ];
 
+const MAX_VIDEO_MB = 100;
+
 export default function CreateListingModal({ open, onOpenChange, onSuccess }: CreateListingModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,14 +54,13 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (images.length + files.length > 5) {
-      toast.error("Maximum 5 images allowed");
+      toast.error("Maximum 5 photos allowed");
       return;
     }
 
     const newImages = [...images, ...files];
     setImages(newImages);
 
-    // Generate previews
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -72,27 +75,56 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please select a video file");
+      return;
+    }
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      toast.error(`Video must be under ${MAX_VIDEO_MB}MB`);
+      return;
+    }
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const removeVideo = () => {
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(null);
+    setVideoPreview(null);
+  };
+
   const uploadImages = async (): Promise<string[]> => {
     const uploadedUrls: string[] = [];
-    
     for (const image of images) {
       const fileExt = image.name.split(".").pop();
       const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      
       const { error: uploadError } = await supabase.storage
         .from("marketplace")
         .upload(fileName, image);
-
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage
         .from("marketplace")
         .getPublicUrl(fileName);
-
       uploadedUrls.push(urlData.publicUrl);
     }
-
     return uploadedUrls;
+  };
+
+  const uploadVideo = async (): Promise<string> => {
+    const file = videoFile!;
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user!.id}/videos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("marketplace")
+      .upload(fileName, file);
+    if (uploadError) throw uploadError;
+    const { data: urlData } = supabase.storage
+      .from("marketplace")
+      .getPublicUrl(fileName);
+    return urlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
