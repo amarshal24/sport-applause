@@ -22,6 +22,7 @@ interface Listing {
   condition: string;
   location: string | null;
   images: string[];
+  video_url?: string | null;
   status: string;
   views_count: number;
   created_at: string;
