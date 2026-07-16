@@ -142,12 +142,15 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
       return;
     }
 
+    if (!videoFile) {
+      toast.error("A walkthrough video is required for every listing");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Upload images first
-      const imageUrls = await uploadImages();
+      const [imageUrls, videoUrl] = await Promise.all([uploadImages(), uploadVideo()]);
 
-      // Create listing
       const { error } = await supabase.from("marketplace_listings").insert({
         user_id: user.id,
         title: formData.title.trim(),
@@ -157,6 +160,7 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
         condition: formData.condition,
         location: formData.location.trim() || null,
         images: imageUrls,
+        video_url: videoUrl,
       });
 
       if (error) throw error;
@@ -183,6 +187,7 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
     });
     setImages([]);
     setImagePreviews([]);
+    removeVideo();
   };
 
   return (
