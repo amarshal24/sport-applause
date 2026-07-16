@@ -82,6 +82,9 @@ export default function Marketplace() {
   const isMemorabilia = location.pathname === "/memorabilia";
   const [categoryFilter, setCategoryFilter] = useState(isMemorabilia ? "memorabilia" : "all");
   const [conditionFilter, setConditionFilter] = useState("all");
+  const [sportFilter, setSportFilter] = useState("all");
+  const [teamFilter, setTeamFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [activeTab, setActiveTab] = useState("browse");
