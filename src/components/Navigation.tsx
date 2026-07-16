@@ -41,8 +41,6 @@ const Navigation = () => {
     { name: t("sidebar.quotes"), icon: Quote, path: "/motivation" },
     { name: t("sidebar.recruiting"), icon: GraduationCap, path: "/recruiting" },
     { name: "Recruiter Dashboard", icon: ClipboardList, path: "/recruiter-dashboard" },
-    { name: "Marketplace", icon: ShoppingBag, path: "/marketplace" },
-    { name: "Memorabilia", icon: ShoppingBag, path: "/memorabilia" },
   ];
 
   return (
