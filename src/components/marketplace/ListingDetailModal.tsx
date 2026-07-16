@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MessageCircle, MapPin, Eye, ChevronLeft, ChevronRight, Trash2, Edit } from "lucide-react";
+import { MessageCircle, MapPin, Eye, ChevronLeft, ChevronRight, Trash2, Edit, Handshake, PlayCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import EditListingModal from "./EditListingModal";
