@@ -527,6 +527,59 @@ const Messages = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Compose (Contact Seller) Modal */}
+      <Dialog open={showComposeModal} onOpenChange={(open) => {
+        setShowComposeModal(open);
+        if (!open) {
+          searchParams.delete("to");
+          searchParams.delete("listing");
+          setSearchParams(searchParams, { replace: true });
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5" />
+              New Message{composeRecipientName ? ` to ${composeRecipientName}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Subject</label>
+              <input
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                maxLength={200}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Subject"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Message</label>
+              <Textarea
+                value={composeContent}
+                onChange={(e) => setComposeContent(e.target.value)}
+                placeholder="Type your message..."
+                rows={6}
+                maxLength={2000}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {composeContent.length}/2000
+              </span>
+              <Button
+                onClick={handleSendCompose}
+                disabled={sending || !composeSubject.trim() || !composeContent.trim()}
+              >
+                {sending ? "Sending..." : "Send Message"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
