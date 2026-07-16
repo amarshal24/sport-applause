@@ -180,9 +180,9 @@ export default function Marketplace() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Marketplace</h1>
+            <h1 className="text-3xl font-bold text-foreground">{isMemorabilia ? "Sports Memorabilia" : "Marketplace"}</h1>
             <p className="text-muted-foreground mt-1">
-              Buy and sell sporting goods and equipment
+              {isMemorabilia ? "Buy and sell signed jerseys, cards, autographs, game-worn gear & collectibles" : "Buy and sell sporting goods and equipment"}
             </p>
           </div>
           <Button onClick={() => setShowCreateModal(true)} className="gap-2">
