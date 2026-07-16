@@ -79,7 +79,7 @@ export default function ListingDetailModal({ listing, open, onOpenChange, onRefr
   };
 
   const handleContactSeller = () => {
-    navigate(`/messages?to=${listing.user_id}`);
+    navigate(`/messages?to=${listing.user_id}&listing=${encodeURIComponent(listing.title)}`);
     onOpenChange(false);
   };
 
