@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ interface Listing {
 
 const CATEGORIES = [
   { value: "all", label: "All Categories" },
+  { value: "memorabilia", label: "Sports Memorabilia" },
   { value: "shoes", label: "Shoes" },
   { value: "apparel", label: "Apparel" },
   { value: "equipment", label: "Equipment" },
@@ -59,7 +60,9 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [loadingMyListings, setLoadingMyListings] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const location = useLocation();
+  const isMemorabilia = location.pathname === "/memorabilia";
+  const [categoryFilter, setCategoryFilter] = useState(isMemorabilia ? "memorabilia" : "all");
   const [conditionFilter, setConditionFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -177,9 +180,9 @@ export default function Marketplace() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Marketplace</h1>
+            <h1 className="text-3xl font-bold text-foreground">{isMemorabilia ? "Sports Memorabilia" : "Marketplace"}</h1>
             <p className="text-muted-foreground mt-1">
-              Buy and sell sporting goods and equipment
+              {isMemorabilia ? "Buy and sell signed jerseys, cards, autographs, game-worn gear & collectibles" : "Buy and sell sporting goods and equipment"}
             </p>
           </div>
           <Button onClick={() => setShowCreateModal(true)} className="gap-2">
