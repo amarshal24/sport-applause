@@ -186,6 +186,7 @@ export default function EditListingModal({ listing, open, onOpenChange, onSucces
           condition,
           location: location.trim() || null,
           images,
+          video_url: videoUrl,
         })
         .eq("id", listing.id)
         .eq("user_id", user.id);
