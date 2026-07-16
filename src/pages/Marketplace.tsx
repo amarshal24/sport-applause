@@ -271,6 +271,41 @@ export default function Marketplace() {
             </Select>
           </div>
 
+          {isMemorabilia && (
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <Select value={sportFilter} onValueChange={setSportFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMORABILIA_SPORTS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s === "all" ? "All Sports" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Filter by team (e.g. Lakers)"
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                className="w-full md:w-64"
+              />
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-full md:w-52">
+                  <SelectValue placeholder="Memorabilia Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMORABILIA_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Browse All Tab */}
           <TabsContent value="browse">
             {loading ? (
