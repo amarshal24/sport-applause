@@ -233,6 +233,41 @@ export default function CreateListingModal({ open, onOpenChange, onSuccess }: Cr
             </div>
           </div>
 
+          {/* Walkthrough Video (required) */}
+          <div>
+            <Label className="flex items-center gap-2">
+              <Video className="h-4 w-4" /> Walkthrough Video <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mt-1">Required — up to {MAX_VIDEO_MB}MB. Show the item from multiple angles.</p>
+            {videoPreview ? (
+              <div className="relative mt-2">
+                <video src={videoPreview} controls playsInline className="w-full rounded-lg bg-black max-h-64" />
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="mt-2 flex items-center justify-center gap-2 w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+                <Video className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Upload video (required)</span>
+                <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+              </label>
+            )}
+          </div>
+
+          {/* In-person pickup notice */}
+          <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <Handshake className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              All sales are <span className="font-semibold text-foreground">in-person pickup only</span>. Buyers will contact you through in-app messaging to arrange a meetup.
+            </p>
+          </div>
+
+
           {/* Title */}
           <div>
             <Label htmlFor="title">Title *</Label>
