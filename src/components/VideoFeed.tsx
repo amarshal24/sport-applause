@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark, Trash2, FileText } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Heart, Maximize, Wand2, Bookmark, Trash2, FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,7 @@ import FullScreenVideoModal from "@/components/FullScreenVideoModal";
 import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import PostComments from "@/components/PostComments";
 
 const SPORTS_CATEGORIES = [
   "All",
@@ -78,9 +79,8 @@ const VideoFeed = () => {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
+  const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
   const fadeIntervalRef = useRef<number | null>(null);
 
   const fetchPosts = useCallback(async () => {
@@ -140,6 +140,30 @@ const VideoFeed = () => {
         if (data) setSavedPosts(new Set(data.map((r: any) => r.post_id)));
       });
   }, [user, refreshKey]);
+
+  const handleShare = async (post: Post) => {
+    const url = `${window.location.origin}/?post=${post.id}`;
+    const title = post.profiles?.username
+      ? `Post by @${post.profiles.username} on USportz`
+      : "Check out this post on USportz";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: post.content?.slice(0, 120) || title, url });
+        toast.success("Shared");
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      } catch {
+        toast.error("Could not share");
+      }
+    }
+  };
 
   const handleToggleSave = async (postId: string) => {
     if (!user) {
@@ -268,35 +292,27 @@ const VideoFeed = () => {
       const audio = new Audio(post.music_url);
       audioRef.current = audio;
       
-      // Set up Web Audio API for fade effects
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      audioContextRef.current = new AudioContext();
-      const source = audioContextRef.current.createMediaElementSource(audio);
-      gainNodeRef.current = audioContextRef.current.createGain();
-      source.connect(gainNodeRef.current);
-      gainNodeRef.current.connect(audioContextRef.current.destination);
-      
       const startTime = post.music_start_time || 0;
       const endTime = post.music_end_time;
       const fadeIn = post.music_fade_in || 0;
       const fadeOut = post.music_fade_out || 0;
+      const targetVol = musicMuted ? 0 : 0.5;
       
       audio.currentTime = startTime;
-      
-      // Apply fade in
-      if (fadeIn > 0 && gainNodeRef.current) {
-        gainNodeRef.current.gain.setValueAtTime(0, audioContextRef.current.currentTime);
-        gainNodeRef.current.gain.linearRampToValueAtTime(
-          musicMuted ? 0 : 0.5, 
-          audioContextRef.current.currentTime + fadeIn
-        );
-      } else if (gainNodeRef.current) {
-        gainNodeRef.current.gain.setValueAtTime(musicMuted ? 0 : 0.5, audioContextRef.current.currentTime);
+      // Native volume only — MediaElementSource mutes cross-origin tracks without CORS.
+      audio.volume = fadeIn > 0 ? 0 : targetVol;
+      if (fadeIn > 0 && !musicMuted) {
+        const started = performance.now();
+        const ramp = () => {
+          if (audioRef.current !== audio || audio.paused) return;
+          const t = (performance.now() - started) / (fadeIn * 1000);
+          audio.volume = Math.min(targetVol, t * targetVol);
+          if (t < 1) requestAnimationFrame(ramp);
+        };
+        requestAnimationFrame(ramp);
       }
       
-      audio.play();
+      void audio.play();
       setPlayingMusic(post.id);
       
       // Handle end time and fade out
@@ -309,11 +325,10 @@ const VideoFeed = () => {
               clearInterval(fadeIntervalRef.current);
               fadeIntervalRef.current = null;
             }
-          } else if (fadeOut > 0 && gainNodeRef.current && audioContextRef.current) {
+          } else if (fadeOut > 0 && !musicMuted) {
             const timeUntilEnd = endTime - audio.currentTime;
             if (timeUntilEnd <= fadeOut) {
-              const fadeProgress = (timeUntilEnd / fadeOut) * (musicMuted ? 0 : 0.5);
-              gainNodeRef.current.gain.setValueAtTime(fadeProgress, audioContextRef.current.currentTime);
+              audio.volume = Math.max(0, targetVol * (timeUntilEnd / fadeOut));
             }
           }
         }, 50);
@@ -332,8 +347,8 @@ const VideoFeed = () => {
   const toggleMute = () => {
     const newMuted = !musicMuted;
     setMusicMuted(newMuted);
-    if (gainNodeRef.current && audioContextRef.current) {
-      gainNodeRef.current.gain.setValueAtTime(newMuted ? 0 : 0.5, audioContextRef.current.currentTime);
+    if (audioRef.current) {
+      audioRef.current.volume = newMuted ? 0 : 0.5;
     }
   };
 
@@ -347,9 +362,6 @@ const VideoFeed = () => {
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current);
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
     };
   }, []);
 
@@ -359,283 +371,283 @@ const VideoFeed = () => {
         s.toLowerCase().includes(selectedSport.toLowerCase())
       ));
 
+  // Explicit slide height (not h-full): % height inside overflow scroll often collapses to 0.
+  const slideHeightClass =
+    "h-[calc(100dvh-5rem-5rem)] lg:h-[calc(100dvh-5rem)]";
+
   return (
-    <section ref={containerRef} className="relative">
+    <section
+      className={`relative ${slideHeightClass} w-full max-w-lg mx-auto bg-black overflow-hidden`}
+    >
+      {/* Sport filters overlay */}
+      <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide pointer-events-auto">
+          {SPORTS_CATEGORIES.map((sport) => (
+            <Button
+              key={sport}
+              onClick={() => setSelectedSport(sport)}
+              size="sm"
+              variant={selectedSport === sport ? "default" : "secondary"}
+              className={
+                selectedSport === sport
+                  ? "bg-primary text-primary-foreground shrink-0 shadow-md"
+                  : "bg-background/50 text-foreground backdrop-blur-md border-0 shrink-0 hover:bg-background/70"
+              }
+            >
+              {sport}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Pull to refresh indicator */}
-      <div 
-        className="absolute left-0 right-0 flex justify-center items-center transition-all duration-200 overflow-hidden z-10"
-        style={{ 
+      <div
+        className="absolute left-0 right-0 flex justify-center items-center transition-all duration-200 overflow-hidden z-40 pointer-events-none"
+        style={{
           height: pullDistance,
-          top: -pullDistance,
+          top: 8,
           opacity: pullProgress,
         }}
       >
-        <div 
-          className={`flex items-center gap-2 text-primary ${isRefreshing ? 'animate-spin' : ''}`}
-          style={{ 
+        <div
+          className={`flex items-center gap-2 text-primary ${isRefreshing ? "animate-spin" : ""}`}
+          style={{
             transform: `rotate(${pullProgress * 360}deg)`,
-            transition: isRefreshing ? 'none' : 'transform 0.1s',
+            transition: isRefreshing ? "none" : "transform 0.1s",
           }}
         >
           <RefreshCw className="h-6 w-6" />
         </div>
       </div>
 
-      {/* Content wrapper with pull animation */}
-      <div 
-        className="transition-transform duration-200"
-        style={{ 
-          transform: `translateY(${pullDistance}px)`,
-        }}
-      >
-        
-        <div className="mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-            {SPORTS_CATEGORIES.map((sport) => (
-              <Button
-                key={sport}
-                onClick={() => setSelectedSport(sport)}
-                size="sm"
-                variant={selectedSport === sport ? "default" : "outline"}
-                className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
-              >
-                {sport}
-              </Button>
-            ))}
-          </div>
+      {loading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No posts yet. Be the first to share!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
-            {filteredPosts.map((post) => (
-              <div
-                key={post.id}
-                className="group bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:shadow-glow"
-              >
-                {/* Video or Image */}
-                {(post.video_url || post.image_url) && (
-                  <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
-                    {post.video_url ? (
-                      <AutoPlayVideo 
-                        src={post.video_url} 
-                        postId={post.id}
-                        onDoubleTap={() => handleApplause(post.id)}
-                      />
-                    ) : post.image_url ? (
-                      <SecureImage
-                        src={post.image_url}
-                        alt="Post media"
-                        loading="lazy"
-                        className="w-full h-full object-contain transition-transform group-hover:scale-105"
-                      />
-                    ) : null}
-
-                    {/* Owner-only inline action buttons */}
-                    {user?.id === post.user_id && (
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        {post.video_url && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="h-8 gap-1 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditPost(post);
-                            }}
-                          >
-                            <Wand2 className="h-3.5 w-3.5" />
-                            Edit
-                          </Button>
-                        )}
-                        {post.video_url && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="h-8 w-8 p-0 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSaveAsDraft(post);
-                            }}
-                            aria-label="Save as draft"
-                            title="Save as draft"
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="h-8 w-8 p-0 bg-background/80 hover:bg-destructive hover:text-destructive-foreground backdrop-blur"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmPost(post);
-                          }}
-                          aria-label="Delete post"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
+      ) : filteredPosts.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-muted-foreground px-6 text-center">
+          <p>No posts yet. Be the first to share!</p>
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className="h-full overflow-y-auto overscroll-y-contain snap-y snap-mandatory scrollbar-hide"
+          style={{ transform: pullDistance ? `translateY(${pullDistance}px)` : undefined }}
+        >
+          {filteredPosts.map((post) => (
+            <article
+              key={post.id}
+              className={`relative ${slideHeightClass} w-full snap-start snap-always shrink-0 bg-black overflow-hidden`}
+            >
+              {/* Full-bleed media */}
+              <div className="absolute inset-0">
+                {post.video_url ? (
+                  <AutoPlayVideo
+                    src={post.video_url}
+                    postId={post.id}
+                    fill
+                    onDoubleTap={() => handleApplause(post.id)}
+                  />
+                ) : post.image_url ? (
+                  <SecureImage
+                    src={post.image_url}
+                    alt="Post media"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-contain bg-black"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-card px-6">
+                    <p className="text-sm text-muted-foreground text-center line-clamp-6">
+                      {post.content || "Text post"}
+                    </p>
                   </div>
                 )}
+              </div>
 
-                <div className="p-4">
-                  {/* Author info */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={post.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {post.profiles?.username?.[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {post.profiles?.full_name || post.profiles?.username || "Anonymous"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                    {post.profiles?.sports?.[0] && (
-                      <Badge variant="outline" className="text-xs">
-                        {post.profiles.sports[0]}
-                      </Badge>
-                    )}
-                    {user?.id === post.user_id && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmPost(post);
-                        }}
-                        aria-label="Delete post"
-                        title="Delete post"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+              {/* Bottom gradient for readability */}
+              <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
 
-                  {/* Content */}
-                  {post.content && (
-                    <p className="text-sm mb-3 line-clamp-3">{post.content}</p>
-                  )}
-
-                  {/* Music Player */}
-                  {post.music_url && (
-                    <div 
-                      className={`mb-3 p-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
-                        playingMusic === post.id 
-                          ? "bg-primary/20 border border-primary/30" 
-                          : "bg-muted/50 hover:bg-muted"
-                      }`}
-                      onClick={() => handlePlayMusic(post)}
+              {/* Owner actions */}
+              {user?.id === post.user_id && (
+                <div className="absolute top-14 right-3 z-20 flex flex-col gap-2">
+                  {post.video_url && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-9 w-9 p-0 rounded-full bg-background/60 backdrop-blur"
+                      onClick={() => setEditPost(post)}
+                      aria-label="Edit video"
                     >
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 rounded-full p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlayMusic(post);
-                        }}
-                      >
-                        {playingMusic === post.id ? (
-                          <Pause className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <Music className="h-3 w-3 text-primary flex-shrink-0" />
-                          <p className="text-xs font-medium truncate">{post.music_title}</p>
-                        </div>
-                        {playingMusic === post.id && (
-                          <div className="flex gap-0.5 mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <div 
-                                key={i}
-                                className="w-1 bg-primary rounded-full animate-pulse"
-                                style={{ 
-                                  height: `${Math.random() * 12 + 4}px`,
-                                  animationDelay: `${i * 0.1}s`
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {playingMusic === post.id && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMute();
-                          }}
-                        >
-                          {musicMuted ? (
-                            <VolumeX className="h-4 w-4" />
-                          ) : (
-                            <Volume2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                      <Wand2 className="h-4 w-4" />
+                    </Button>
                   )}
+                  {post.video_url && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-9 w-9 p-0 rounded-full bg-background/60 backdrop-blur"
+                      onClick={() => handleSaveAsDraft(post)}
+                      aria-label="Save as draft"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-9 w-9 p-0 rounded-full bg-background/60 backdrop-blur hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => setDeleteConfirmPost(post)}
+                    aria-label="Delete post"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
-                  {/* Actions */}
-                  <div className="pt-2 border-t border-border space-y-2">
-                    <PostReactions
-                      postId={post.id}
-                      legacyLikesCount={post.likes_count}
-                    />
+              {/* Right engagement rail */}
+              <div className="absolute right-3 bottom-36 z-20 flex flex-col items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setOpenCommentsPostId((id) => (id === post.id ? null : post.id))}
+                  className="flex flex-col items-center gap-1 text-white drop-shadow-md"
+                  aria-label="Comments"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur">
+                    <MessageSquare className="h-5 w-5" />
+                  </span>
+                  <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
+                </button>
 
-                    <div className="flex items-center gap-4">
-                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                        <MessageSquare className="h-5 w-5" />
-                        <span className="text-sm">{post.comments_count}</span>
-                      </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleSave(post.id)}
+                  className={`flex flex-col items-center gap-1 drop-shadow-md ${
+                    savedPosts.has(post.id) ? "text-primary" : "text-white"
+                  }`}
+                  aria-label={savedPosts.has(post.id) ? "Remove from Watch Later" : "Save to Watch Later"}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur">
+                    <Bookmark className={`h-5 w-5 ${savedPosts.has(post.id) ? "fill-current" : ""}`} />
+                  </span>
+                  <span className="text-xs font-medium">Save</span>
+                </button>
 
-                      <button
-                        onClick={() => handleToggleSave(post.id)}
-                        className={`flex items-center gap-1 transition-colors ml-auto ${
-                          savedPosts.has(post.id)
-                            ? "text-primary"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                        aria-label={savedPosts.has(post.id) ? "Remove from Watch Later" : "Save to Watch Later"}
-                      >
-                        <Bookmark className={`h-5 w-5 ${savedPosts.has(post.id) ? "fill-current" : ""}`} />
-                        <span className="text-sm hidden sm:inline">
-                          {savedPosts.has(post.id) ? "Saved" : "Save"}
-                        </span>
-                      </button>
+                <button
+                  type="button"
+                  onClick={() => handleShare(post)}
+                  className="flex flex-col items-center gap-1 text-white drop-shadow-md"
+                  aria-label="Share post"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-background/40 backdrop-blur">
+                    <Share2 className="h-5 w-5" />
+                  </span>
+                  <span className="text-xs font-medium">Share</span>
+                </button>
+              </div>
 
-                      <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                        <Share2 className="h-5 w-5" />
-                      </button>
-                    </div>
+              {/* Bottom caption / meta */}
+              <div className="absolute left-3 right-16 bottom-4 z-20 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border-2 border-white/30">
+                    <AvatarImage src={post.profiles?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {post.profiles?.username?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-white truncate drop-shadow">
+                      {post.profiles?.full_name || post.profiles?.username || "Anonymous"}
+                    </p>
+                    <p className="text-xs text-white/70">
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      {post.profiles?.sports?.[0] ? ` · ${post.profiles.sports[0]}` : ""}
+                    </p>
                   </div>
                 </div>
+
+                {post.content && (
+                  <p className="text-sm text-white/95 line-clamp-3 drop-shadow">{post.content}</p>
+                )}
+
+                {post.music_url && (
+                  <button
+                    type="button"
+                    className={`w-full max-w-xs p-2 rounded-lg flex items-center gap-2 text-left transition-all ${
+                      playingMusic === post.id
+                        ? "bg-primary/30 border border-primary/40"
+                        : "bg-white/10 backdrop-blur hover:bg-white/15"
+                    }`}
+                    onClick={() => handlePlayMusic(post)}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-background/40">
+                      {playingMusic === post.id ? (
+                        <Pause className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Play className="h-4 w-4 text-white" />
+                      )}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <Music className="h-3 w-3 text-primary flex-shrink-0" />
+                        <p className="text-xs font-medium text-white truncate">{post.music_title}</p>
+                      </div>
+                    </div>
+                    {playingMusic === post.id && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="h-8 w-8 flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMute();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            toggleMute();
+                          }
+                        }}
+                      >
+                        {musicMuted ? (
+                          <VolumeX className="h-4 w-4 text-white" />
+                        ) : (
+                          <Volume2 className="h-4 w-4 text-white" />
+                        )}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="[&_button]:border-white/20 [&_button]:bg-background/30 [&_button]:text-white [&_button]:backdrop-blur">
+                  <PostReactions
+                    postId={post.id}
+                    legacyLikesCount={post.likes_count}
+                    compact
+                  />
+                </div>
+
+                {openCommentsPostId === post.id && (
+                  <div className="max-h-[40vh] overflow-y-auto rounded-xl bg-background/90 backdrop-blur-md border border-border p-1">
+                    <PostComments
+                      postId={post.id}
+                      open
+                      onCountChange={(delta) => {
+                        setPosts((prev) =>
+                          prev.map((p) =>
+                            p.id === post.id
+                              ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) }
+                              : p,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {/* Filters & Animations editor for owner's video posts */}
       {editPost && editPost.video_url && (
@@ -682,17 +694,18 @@ const VideoFeed = () => {
 };
 
 // AutoPlay Video Component with Intersection Observer and Double-Tap to Like
-const AutoPlayVideo = ({ 
-  src, 
-  postId, 
-  onDoubleTap 
-}: { 
-  src: string; 
+const AutoPlayVideo = ({
+  src,
+  postId,
+  onDoubleTap,
+  fill = false,
+}: {
+  src: string;
   postId: string;
   onDoubleTap?: () => void;
+  fill?: boolean;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -702,20 +715,22 @@ const AutoPlayVideo = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [animeFilter, setAnimeFilter] = useState<AnimeFilterType>("none");
   const [filterIntensity, setFilterIntensity] = useState(100);
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(undefined);
+  // Default portrait; updated from video metadata so landscape isn't letterboxed into 9:16
+  const [aspectRatio, setAspectRatio] = useState("9 / 16");
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setAspectRatio("9 / 16");
     import("@/lib/signedMedia").then(({ toSignedUrl }) => {
       toSignedUrl(src).then((u) => { if (alive) setResolvedSrc(u || undefined); });
     });
     return () => { alive = false; };
   }, [src]);
-  
+
   const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 
   // Load user's saved filter preferences
@@ -728,7 +743,7 @@ const AutoPlayVideo = ({
           .select("anime_filter_preference, anime_filter_intensity")
           .eq("id", user.id)
           .single();
-        
+
         if (profile) {
           if (profile.anime_filter_preference) {
             setAnimeFilter(profile.anime_filter_preference as AnimeFilterType);
@@ -738,9 +753,8 @@ const AutoPlayVideo = ({
           }
         }
       }
-      setPrefsLoaded(true);
     };
-    
+
     loadFilterPreferences();
   }, []);
 
@@ -775,22 +789,22 @@ const AutoPlayVideo = ({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting);
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
             video.play().catch(() => {
               // Autoplay blocked, user interaction needed
             });
+            setIsPaused(false);
           } else {
             video.pause();
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: [0.6, 0.75] }
     );
 
     observer.observe(video);
     return () => observer.disconnect();
-  }, []);
+  }, [resolvedSrc]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -803,28 +817,36 @@ const AutoPlayVideo = ({
       }
     };
 
-    const handleLoadedMetadata = () => {
+    const applyAspectFromVideo = () => {
       setDuration(video.duration);
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (vw > 0 && vh > 0) {
+        const ratio = vw / vh;
+        const min = 9 / 16;
+        const max = 16 / 9;
+        const clamped = Math.min(max, Math.max(min, ratio));
+        setAspectRatio(String(clamped));
+      }
     };
 
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    
-    // Set duration if already loaded
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("loadedmetadata", applyAspectFromVideo);
+
     if (video.duration) {
-      setDuration(video.duration);
+      applyAspectFromVideo();
     }
-    
+
     return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("loadedmetadata", applyAspectFromVideo);
     };
-  }, []);
+  }, [resolvedSrc]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const toggleMute = () => {
@@ -837,7 +859,7 @@ const AutoPlayVideo = ({
   const togglePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
-    
+
     if (video.paused) {
       video.play().catch(() => {});
       setIsPaused(false);
@@ -851,19 +873,16 @@ const AutoPlayVideo = ({
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
 
-    // Clear any pending single-tap timeout
     if (tapTimeoutRef.current) {
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected - like
       setShowHeart(true);
       onDoubleTap?.();
       setTimeout(() => setShowHeart(false), 1000);
     } else {
-      // Wait to see if this becomes a double tap
       tapTimeoutRef.current = setTimeout(() => {
         togglePlayPause();
       }, DOUBLE_TAP_DELAY);
@@ -872,22 +891,24 @@ const AutoPlayVideo = ({
   };
 
   return (
-    <div className="relative w-full h-full" onClick={handleTap}>
+    <div
+      className={fill ? "absolute inset-0 w-full h-full" : "relative w-full"}
+      style={fill ? undefined : { aspectRatio }}
+      onClick={handleTap}
+    >
       <video
         ref={videoRef}
         src={resolvedSrc}
-        className="w-full h-full object-contain cursor-pointer bg-black"
+        className="absolute inset-0 w-full h-full object-contain cursor-pointer bg-black"
         style={getAnimeFilterStyle(animeFilter, filterIntensity)}
         loop
         muted={isMuted}
         playsInline
-        preload="metadata"
+        preload={fill ? "auto" : "metadata"}
       />
-      
-      {/* Anime filter overlay effects */}
+
       <AnimeFilterOverlay type={animeFilter} intensity={filterIntensity} />
-      
-      {/* Pause indicator */}
+
       {isPaused && !showHeart && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-black/20">
           <div className="h-16 w-16 rounded-full bg-background/80 flex items-center justify-center">
@@ -895,40 +916,40 @@ const AutoPlayVideo = ({
           </div>
         </div>
       )}
-      
-      {/* Heart animation on double-tap */}
+
       {showHeart && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <Heart 
-            className="h-24 w-24 text-red-500 fill-red-500 animate-scale-in"
-            style={{
-              animation: 'heartPop 1s ease-out forwards'
-            }}
+          <Heart
+            className="h-24 w-24 text-red-500 fill-red-500"
+            style={{ animation: "heartPop 1s ease-out forwards" }}
           />
         </div>
       )}
-      
-      <div className="absolute top-3 left-3 z-10">
-        <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
-          <Play className="h-3 w-3" />
-          Video
-        </Badge>
-      </div>
-      
-      {/* Control buttons container - bottom right */}
-      <div className="absolute bottom-3 right-3 z-10 flex gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
-          onClick={(e) => {
-            e.stopPropagation();
-            setFullscreenOpen(true);
-          }}
-          aria-label="Open fullscreen"
-        >
-          <Maximize className="h-4 w-4" />
-        </Button>
+
+      {!fill && (
+        <div className="absolute top-3 left-3 z-10">
+          <Badge className="bg-primary/90 text-primary-foreground flex items-center gap-1">
+            <Play className="h-3 w-3" />
+            Video
+          </Badge>
+        </div>
+      )}
+
+      <div className={`absolute z-10 flex gap-2 ${fill ? "top-14 left-3" : "bottom-3 right-3"}`}>
+        {!fill && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 w-8 p-0 rounded-full bg-background/80 hover:bg-background"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFullscreenOpen(true);
+            }}
+            aria-label="Open fullscreen"
+          >
+            <Maximize className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           size="sm"
           variant="secondary"
@@ -938,76 +959,94 @@ const AutoPlayVideo = ({
             toggleMute();
           }}
         >
-          {isMuted ? (
-            <VolumeX className="h-4 w-4" />
-          ) : (
-            <Volume2 className="h-4 w-4" />
-          )}
+          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </Button>
+        {fill && (
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
+                const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+                const newSpeed = SPEED_OPTIONS[nextIndex];
+                setPlaybackSpeed(newSpeed);
+                if (videoRef.current) {
+                  videoRef.current.playbackRate = newSpeed;
+                }
+              }}
+            >
+              {playbackSpeed}x
+            </Button>
+            <AnimeFilterSelector
+              selectedFilter={animeFilter}
+              onFilterChange={handleFilterChange}
+              intensity={filterIntensity}
+              onIntensityChange={handleIntensityChange}
+            />
+          </>
+        )}
       </div>
-      
-      {/* Time display */}
-      <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded bg-background/80 text-xs font-medium text-foreground">
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </div>
-      {/* Playback speed control */}
-      <div className="absolute bottom-3 left-3 z-10 flex gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
-          onClick={(e) => {
-            e.stopPropagation();
-            const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
-            const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
-            const newSpeed = SPEED_OPTIONS[nextIndex];
-            setPlaybackSpeed(newSpeed);
-            if (videoRef.current) {
-              videoRef.current.playbackRate = newSpeed;
-            }
-          }}
-        >
-          {playbackSpeed}x
-        </Button>
-        
-        {/* Anime filter selector */}
-        <AnimeFilterSelector 
-          selectedFilter={animeFilter} 
-          onFilterChange={handleFilterChange}
-          intensity={filterIntensity}
-          onIntensityChange={handleIntensityChange}
-        />
-      </div>
-      {/* Progress bar overlay */}
+
+      {!fill && (
+        <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded bg-background/80 text-xs font-medium text-foreground">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </div>
+      )}
+
+      {!fill && (
+        <div className="absolute bottom-3 left-3 z-10 flex gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 px-2 rounded-full bg-background/80 hover:bg-background text-xs font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              const currentIndex = SPEED_OPTIONS.indexOf(playbackSpeed);
+              const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+              const newSpeed = SPEED_OPTIONS[nextIndex];
+              setPlaybackSpeed(newSpeed);
+              if (videoRef.current) {
+                videoRef.current.playbackRate = newSpeed;
+              }
+            }}
+          >
+            {playbackSpeed}x
+          </Button>
+
+          <AnimeFilterSelector
+            selectedFilter={animeFilter}
+            onFilterChange={handleFilterChange}
+            intensity={filterIntensity}
+            onIntensityChange={handleIntensityChange}
+          />
+        </div>
+      )}
+
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 z-10">
-        <div 
+        <div
           className="h-full bg-primary transition-all duration-100 ease-linear"
           style={{ width: `${progress}%` }}
         />
       </div>
-      
+
       <style>{`
         @keyframes heartPop {
-          0% {
-            transform: scale(0);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.2);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 0;
-          }
+          0% { transform: scale(0); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 0; }
         }
       `}</style>
 
-      <FullScreenVideoModal
-        src={resolvedSrc || src}
-        open={fullscreenOpen}
-        onClose={() => setFullscreenOpen(false)}
-      />
+      {!fill && (
+        <FullScreenVideoModal
+          src={resolvedSrc || src}
+          open={fullscreenOpen}
+          onClose={() => setFullscreenOpen(false)}
+        />
+      )}
     </div>
   );
 };

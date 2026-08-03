@@ -14,6 +14,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { SecureVideo } from "@/components/SecureMedia";
+import { storageRefUrl } from "@/lib/signedMedia";
 
 interface TopFiveVideo {
   id: string;
@@ -129,9 +131,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("top-five-videos")
-        .getPublicUrl(fileName);
+      const videoUrl = storageRefUrl("top-five-videos", fileName);
 
       // Insert new record
       const { error: insertError } = await supabase
@@ -140,7 +140,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
           user_id: user.id,
           title,
           description: description || null,
-          video_url: publicUrl,
+          video_url: videoUrl,
           position: editingPosition,
         });
 
@@ -281,9 +281,9 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                 {video ? (
                   <Card className="aspect-[9/16] overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                     <CardContent className="p-0 h-full relative">
-                      <video
+                      <SecureVideo
                         src={video.video_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
                         muted
                         playsInline
                       />
@@ -495,12 +495,15 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
         <DialogContent className="max-w-3xl p-0 overflow-hidden">
           {selectedVideo && (
             <div className="relative">
-              <video
-                src={selectedVideo.video_url}
-                controls
-                autoPlay
-                className="w-full max-h-[80vh]"
-              />
+              <div className="bg-black flex items-center justify-center">
+                <SecureVideo
+                  src={selectedVideo.video_url}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full max-h-[80vh] object-contain"
+                />
+              </div>
               <div className="p-4 bg-background">
                 <h3 className="font-semibold text-lg">{selectedVideo.title}</h3>
                 {selectedVideo.description && (

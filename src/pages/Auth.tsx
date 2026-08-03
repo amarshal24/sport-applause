@@ -1,5 +1,5 @@
-import { useState, useEffect, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
-import { Phone, Mail, ScanFace, Eye, EyeOff } from "lucide-react";
+import { Phone, Mail, ScanFace, Eye, EyeOff, UserPlus } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import LightningLoader from "@/components/LightningLoader";
+import {
+  stashInviteCode,
+  peekPendingInviteCode,
+  lookupPendingInvite,
+  redeemPendingInviteIfAny,
+} from "@/lib/appInvites";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -22,6 +28,7 @@ const authSchema = z.object({
 });
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
@@ -36,7 +43,8 @@ const Auth = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user } = useAuth();
+  const [inviteBanner, setInviteBanner] = useState<string | null>(null);
+  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user, loading } = useAuth();
   const navigate = useNavigate();
   const [biometricRegistered, setBiometricRegistered] = useState(false);
 
@@ -45,20 +53,49 @@ const Auth = () => {
     setBiometricRegistered(!!hasCredential);
   }, []);
 
+  // Capture ?invite= from the friend invite link and prefer signup.
+  useEffect(() => {
+    const inviteFromUrl = searchParams.get("invite");
+    if (inviteFromUrl) {
+      stashInviteCode(inviteFromUrl);
+      setMode("signup");
+    }
+
+    const code = inviteFromUrl?.trim().toUpperCase() || peekPendingInviteCode();
+    if (!code) return;
+
+    setInviteBanner(`Invite code ${code} — create an account or sign in to connect with your friend.`);
+
+    lookupPendingInvite(code).then((invite) => {
+      if (!invite) {
+        setInviteBanner("This invite is invalid or already used.");
+        return;
+      }
+      if (invite.invitee_email) {
+        setEmail((prev) => prev || invite.invitee_email || "");
+      }
+      setInviteBanner(`You've been invited! Sign up or sign in to become friends and play together.`);
+    });
+  }, [searchParams]);
+
   useEffect(() => {
     // Load remembered email on mount
     const rememberedEmail = localStorage.getItem('remembered_email');
     if (rememberedEmail) {
-      setEmail(rememberedEmail);
+      setEmail((prev) => prev || rememberedEmail);
       setRememberMe(true);
     }
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (loading) return;
+    if (!user) return;
+
+    (async () => {
+      await redeemPendingInviteIfAny(user.id);
       navigate("/");
-    }
-  }, [user, navigate]);
+    })();
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,6 +253,13 @@ const Auth = () => {
           <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
+          {inviteBanner && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+              <UserPlus className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+              <p>{inviteBanner}</p>
+            </div>
+          )}
+
           {mode === "signin" && (
             <Tabs value={authMethod} className="mb-4">
               <TabsList className="grid w-full grid-cols-2">

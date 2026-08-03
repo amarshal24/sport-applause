@@ -26,18 +26,25 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
   const [fadeIn, setFadeIn] = useState(0);
   const [fadeOut, setFadeOut] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const animationRef = useRef<number>();
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const fadeRafRef = useRef<number>();
 
   useEffect(() => {
+    setIsLoaded(false);
+    setLoadError(null);
     const audio = new Audio(audioUrl);
+    audio.preload = "metadata";
     audioRef.current = audio;
 
     audio.addEventListener("loadedmetadata", () => {
       setDuration(audio.duration);
       setTrimEnd(Math.min(audio.duration, 30)); // Default max 30 seconds
       setIsLoaded(true);
+    });
+
+    audio.addEventListener("error", () => {
+      setLoadError("Couldn't load this track. Try another, or attach without trimming.");
     });
 
     audio.addEventListener("ended", () => {
@@ -47,7 +54,8 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
 
     return () => {
       audio.pause();
-      audio.src = "";
+      audio.removeAttribute("src");
+      audio.load();
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -82,54 +90,62 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
     };
   }, [isPlaying, updateProgress]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      return;
+    }
+
+    const audio = audioRef.current;
+    audio.currentTime = trimStart;
+    // Native element volume only — createMediaElementSource mutes cross-origin
+    // tracks that lack CORS (e.g. SoundHelix / Pixabay CDN).
+    const targetVol = 0.7;
+    if (fadeIn > 0) {
+      audio.volume = 0;
+      const started = performance.now();
+      const ramp = () => {
+        if (!audioRef.current || audioRef.current !== audio) return;
+        const t = (performance.now() - started) / (fadeIn * 1000);
+        audio.volume = Math.min(targetVol, t * targetVol);
+        if (t < 1 && !audio.paused) {
+          fadeRafRef.current = requestAnimationFrame(ramp);
+        }
+      };
+      fadeRafRef.current = requestAnimationFrame(ramp);
     } else {
-      audioRef.current.currentTime = trimStart;
-      
-      // Set up Web Audio API for fade preview
-      if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContext();
-        const source = audioContextRef.current.createMediaElementSource(audioRef.current);
-        gainNodeRef.current = audioContextRef.current.createGain();
-        source.connect(gainNodeRef.current);
-        gainNodeRef.current.connect(audioContextRef.current.destination);
-      }
-      
-      // Apply fade in
-      if (gainNodeRef.current && fadeIn > 0) {
-        gainNodeRef.current.gain.setValueAtTime(0, audioContextRef.current!.currentTime);
-        gainNodeRef.current.gain.linearRampToValueAtTime(1, audioContextRef.current!.currentTime + fadeIn);
-      } else if (gainNodeRef.current) {
-        gainNodeRef.current.gain.setValueAtTime(1, audioContextRef.current!.currentTime);
-      }
-      
-      audioRef.current.play();
+      audio.volume = targetVol;
+    }
+
+    try {
+      await audio.play();
       setIsPlaying(true);
+    } catch {
+      setIsPlaying(false);
     }
   };
 
-  // Handle fade out during playback
+  // Approximate fade-out with element.volume (no Web Audio / CORS)
   useEffect(() => {
-    if (isPlaying && gainNodeRef.current && audioContextRef.current && fadeOut > 0) {
-      const checkFadeOut = () => {
-        if (audioRef.current && gainNodeRef.current && audioContextRef.current) {
-          const timeUntilEnd = trimEnd - audioRef.current.currentTime;
-          if (timeUntilEnd <= fadeOut && timeUntilEnd > 0) {
-            const fadeProgress = timeUntilEnd / fadeOut;
-            gainNodeRef.current.gain.setValueAtTime(fadeProgress, audioContextRef.current.currentTime);
-          }
-        }
-        if (isPlaying) {
-          requestAnimationFrame(checkFadeOut);
-        }
-      };
-      checkFadeOut();
-    }
+    if (!isPlaying || fadeOut <= 0) return;
+    const tick = () => {
+      const audio = audioRef.current;
+      if (!audio || audio.paused) return;
+      const timeUntilEnd = trimEnd - audio.currentTime;
+      if (timeUntilEnd <= fadeOut && timeUntilEnd > 0) {
+        audio.volume = Math.max(0, 0.7 * (timeUntilEnd / fadeOut));
+      }
+      if (!audio.paused) {
+        fadeRafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    fadeRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+    };
   }, [isPlaying, fadeOut, trimEnd]);
 
   const handleTrimChange = (values: number[]) => {
@@ -161,6 +177,22 @@ export const MusicTrimmer = ({ audioUrl, onTrimComplete, onCancel }: MusicTrimme
   }));
 
   const trimDuration = trimEnd - trimStart;
+
+  if (loadError) {
+    return (
+      <div className="p-4 space-y-3 text-center">
+        <p className="text-sm text-destructive">{loadError}</p>
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={() => onTrimComplete(0, 30, 0, 0)}>
+            Attach without trim
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } from "lucide-react";
 import MusicTrimmer from "@/components/MusicTrimmer";
 import { supabase } from "@/integrations/supabase/client";
+import { storageRefUrl } from "@/lib/signedMedia";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
@@ -48,15 +49,16 @@ interface MusicTrack {
   fadeOut?: number;
 }
 
+// Hosted samples that allow cross-origin playback (Pixabay CDN hotlink returns 403 in-app).
 const musicLibrary: MusicTrack[] = [
-  { id: "1", title: "Victory Anthem", artist: "Sports Beats", duration: "2:45", mood: "energetic", url: "https://cdn.pixabay.com/audio/2024/11/01/audio_06bc1f4e85.mp3" },
-  { id: "2", title: "Champion's Rise", artist: "Athletic Sounds", duration: "3:12", mood: "motivated", url: "https://cdn.pixabay.com/audio/2024/09/14/audio_2e31a36ffb.mp3" },
-  { id: "3", title: "Warm Up Flow", artist: "Gym Vibes", duration: "2:30", mood: "chill", url: "https://cdn.pixabay.com/audio/2024/08/08/audio_c51be6afe9.mp3" },
-  { id: "4", title: "Focus Mode", artist: "Zen Athletics", duration: "3:00", mood: "focused", url: "https://cdn.pixabay.com/audio/2024/05/16/audio_166af04339.mp3" },
-  { id: "5", title: "Game Day Energy", artist: "Sports Beats", duration: "2:55", mood: "pumped", url: "https://cdn.pixabay.com/audio/2024/11/04/audio_e4c0ce3e27.mp3" },
-  { id: "6", title: "Winning Moment", artist: "Victory Lane", duration: "2:20", mood: "victorious", url: "https://cdn.pixabay.com/audio/2024/10/22/audio_c9e6b2bf6f.mp3" },
-  { id: "7", title: "Training Montage", artist: "Workout Mix", duration: "3:30", mood: "energetic", url: "https://cdn.pixabay.com/audio/2024/09/22/audio_e67bcb74e9.mp3" },
-  { id: "8", title: "Cool Down", artist: "Relaxed Beats", duration: "2:40", mood: "chill", url: "https://cdn.pixabay.com/audio/2024/07/30/audio_9ade1be24e.mp3" },
+  { id: "1", title: "Victory Anthem", artist: "Sports Beats", duration: "6:12", mood: "energetic", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "2", title: "Champion's Rise", artist: "Athletic Sounds", duration: "7:05", mood: "motivated", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { id: "3", title: "Warm Up Flow", artist: "Gym Vibes", duration: "5:44", mood: "chill", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  { id: "4", title: "Focus Mode", artist: "Zen Athletics", duration: "4:58", mood: "focused", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+  { id: "5", title: "Game Day Energy", artist: "Sports Beats", duration: "5:22", mood: "pumped", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  { id: "6", title: "Winning Moment", artist: "Victory Lane", duration: "6:01", mood: "victorious", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+  { id: "7", title: "Training Montage", artist: "Workout Mix", duration: "5:36", mood: "energetic", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+  { id: "8", title: "Cool Down", artist: "Relaxed Beats", duration: "5:18", mood: "chill", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
 ];
 
 const moods: Mood[] = [
@@ -107,9 +109,15 @@ const moods: Mood[] = [
 interface UnifiedComposerProps {
   onPostCreated?: () => void;
   initialMode?: "post" | "story";
+  /** Increment to force story mode + scroll/highlight (from Story rail). */
+  storyFocusKey?: number;
 }
 
-const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedComposerProps) => {
+const UnifiedComposer = ({
+  onPostCreated,
+  initialMode = "post",
+  storyFocusKey = 0,
+}: UnifiedComposerProps) => {
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -118,10 +126,31 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [postType, setPostType] = useState<"post" | "story">(initialMode);
+  const [highlightStory, setHighlightStory] = useState(false);
 
   useEffect(() => {
     setPostType(initialMode);
   }, [initialMode]);
+
+  useEffect(() => {
+    if (!storyFocusKey) return;
+    setPostType("story");
+    setHighlightStory(true);
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById("unified-composer")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
+    const clearHighlight = window.setTimeout(() => setHighlightStory(false), 2200);
+    sonnerToast.message("Story mode", {
+      description: "Add a photo or video below, then tap Share.",
+    });
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearHighlight);
+    };
+  }, [storyFocusKey]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -306,12 +335,8 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("post-music")
-      .getPublicUrl(fileName);
-
     setMusicUploadProgress(100);
-    return publicUrl;
+    return storageRefUrl("post-music", fileName);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -387,12 +412,8 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("post-videos")
-      .getPublicUrl(fileName);
-
     setUploadProgress(100);
-    return publicUrl;
+    return storageRefUrl("post-videos", fileName);
   };
 
   const uploadImage = async (file: File, bucketName: string) => {
@@ -405,11 +426,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(fileName);
-
-    return publicUrl;
+    return storageRefUrl(bucketName, fileName);
   };
 
   const handleSubmit = async () => {
@@ -482,7 +499,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
         }
 
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 8);
+        expiresAt.setHours(expiresAt.getHours() + 24);
 
         const { error } = await supabase.from("stories").insert({
           user_id: user.id,
@@ -495,7 +512,7 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
         toast({
           title: "Story posted!",
-          description: "Your story is now live for 8 hours.",
+          description: "Your story is now live for 24 hours.",
         });
       } else {
         const { error } = await supabase.from("posts").insert({
@@ -590,12 +607,20 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
   if (!user) return null;
 
   return (
-    <Card className="glass-effect animate-fade-in mb-6 max-w-5xl mx-auto w-full">
+    <Card
+      id="unified-composer"
+      className={cn(
+        "glass-effect animate-fade-in mb-6 max-w-5xl mx-auto w-full scroll-mt-24 transition-shadow duration-500",
+        highlightStory && "ring-2 ring-primary shadow-glow",
+      )}
+    >
       <CardContent className="pt-6">
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <SportIcon className="w-5 h-5 text-primary" />
-          <h3 className="font-display font-semibold text-lg">What's on your mind today?</h3>
+          <h3 className="font-display font-semibold text-lg">
+            {postType === "story" ? "Share a story" : "What's on your mind today?"}
+          </h3>
         </div>
 
         {/* Post Composer Section */}
@@ -706,7 +731,12 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
             {showTrimmer && pendingTrimTrack && (
               <div className="mb-3 p-4 bg-card border border-border rounded-lg animate-fade-in">
                 <MusicTrimmer
-                  audioUrl={pendingTrimTrack.url}
+                  // Prefer current library URL by id so HMR/stale state can't keep dead Pixabay links.
+                  audioUrl={
+                    pendingTrimTrack.isCustom
+                      ? pendingTrimTrack.url
+                      : (musicLibrary.find((t) => t.id === pendingTrimTrack.id)?.url ?? pendingTrimTrack.url)
+                  }
                   onTrimComplete={handleTrimComplete}
                   onCancel={handleTrimCancel}
                 />

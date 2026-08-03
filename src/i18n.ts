@@ -15,7 +15,10 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    supportedLngs: ["en", "es"],
+    nonExplicitSupportedLngs: true,
     fallbackLng: "en",
+    load: "languageOnly",
     interpolation: {
       escapeValue: false,
     },

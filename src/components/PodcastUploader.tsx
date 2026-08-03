@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageRefUrl } from "@/lib/signedMedia";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ const uploadWithProgress = (
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         onProgress(100);
-        resolve(supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl);
+        resolve(storageRefUrl(bucket, path));
       } else {
         reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
       }

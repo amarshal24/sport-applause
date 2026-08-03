@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Clock, X, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 
 interface WatchLaterItem {
   id: string;
@@ -81,9 +82,9 @@ const WatchLaterVideos = () => {
           className="aspect-square bg-muted/30 relative overflow-hidden rounded-lg group"
         >
           {item.posts?.video_url ? (
-            <video src={item.posts.video_url} className="w-full h-full object-cover" muted />
+            <SecureVideo src={item.posts.video_url} className="w-full h-full object-cover" muted />
           ) : item.posts?.image_url ? (
-            <img src={item.posts.image_url} alt="Saved" className="w-full h-full object-cover" />
+            <SecureImage src={item.posts.image_url} alt="Saved" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted/50 p-2">
               <p className="text-xs text-muted-foreground line-clamp-4 text-center">

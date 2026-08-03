@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, StopCircle, PlayCircle, Upload, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageRefUrl } from "@/lib/signedMedia";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -140,19 +141,17 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("profile-videos")
-        .getPublicUrl(fileName);
+      const videoUrl = storageRefUrl("profile-videos", fileName);
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ profile_video_url: publicUrl })
+        .update({ profile_video_url: videoUrl })
         .eq("id", user.id);
 
       if (updateError) throw updateError;
 
       toast.success("Profile video updated!");
-      onVideoUploaded(publicUrl);
+      onVideoUploaded(videoUrl);
       onClose();
     } catch (error) {
       console.error("Upload error:", error);

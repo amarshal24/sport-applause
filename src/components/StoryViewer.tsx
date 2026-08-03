@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 
 const POSITIVE_EMOJIS = ["❤️", "🔥", "👏", "💪", "🙌", "⚡"];
 
@@ -173,7 +174,7 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg w-full h-[90vh] p-0 bg-black border-none overflow-hidden">
+      <DialogContent className="max-w-lg w-full h-[90vh] p-0 bg-black border-none overflow-hidden !flex !flex-col !gap-0 [&>button]:hidden">
         {/* Progress bars */}
         <div className="absolute top-0 left-0 right-0 z-20 flex gap-1 p-2">
           {stories.map((_, index) => (
@@ -225,22 +226,24 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
           </Button>
         </div>
 
-        {/* Story Media */}
-        <div className="w-full h-full flex items-center justify-center bg-black">
+        {/* Story Media — fill dialog (absolute); signed URLs for private buckets */}
+        <div className="absolute inset-0 z-0 flex items-center justify-center bg-black">
           {/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(currentStory.image_url) ? (
-            <video
+            <SecureVideo
+              key={currentStory.id}
               src={currentStory.image_url}
-              className="max-w-full max-h-full object-contain"
+              className="absolute inset-0 h-full w-full object-contain"
               autoPlay
               muted
               playsInline
               controls={false}
             />
           ) : (
-            <img
+            <SecureImage
+              key={currentStory.id}
               src={currentStory.image_url}
               alt="Story"
-              className="max-w-full max-h-full object-contain"
+              className="absolute inset-0 h-full w-full object-contain"
             />
           )}
         </div>

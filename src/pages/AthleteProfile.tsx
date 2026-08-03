@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { SecureVideo } from "@/components/SecureMedia";
 
 interface Profile {
   id: string;
@@ -362,9 +363,9 @@ const AthleteProfile = () => {
                       onClick={() => handlePlayVideo(video)}
                     >
                       <div className="relative aspect-video overflow-hidden rounded-t-xl bg-black">
-                        <video
+                        <SecureVideo
                           src={video.video_url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           poster={video.thumbnail_url || undefined}
                         />
                         <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -412,13 +413,16 @@ const AthleteProfile = () => {
           className={`fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 ${showVideoPlayer ? 'block' : 'hidden'}`}
           onClick={() => setShowVideoPlayer(false)}
         >
-          <Card className="max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-            <video
-              src={selectedVideo.video_url}
-              className="w-full aspect-video rounded-t-xl"
-              controls
-              autoPlay
-            />
+          <Card className="max-w-4xl w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-black flex items-center justify-center">
+              <SecureVideo
+                src={selectedVideo.video_url}
+                className="w-full max-h-[80vh] object-contain rounded-t-xl"
+                controls
+                autoPlay
+                playsInline
+              />
+            </div>
             <CardContent className="p-4">
               <h3 className="text-lg font-semibold">{selectedVideo.title}</h3>
               {selectedVideo.description && (

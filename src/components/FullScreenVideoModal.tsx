@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Play, Pause, Volume2, VolumeX, X, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toSignedUrl } from "@/lib/signedMedia";
 
 interface FullScreenVideoModalProps {
   src: string;
@@ -22,6 +23,7 @@ const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps)
   const progressRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -29,6 +31,18 @@ const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps)
   const [showControls, setShowControls] = useState(true);
   // CONTAIN = show full video (default), COVER = fill screen (may crop)
   const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
+
+  useEffect(() => {
+    let alive = true;
+    if (!open || !src) {
+      setResolvedSrc(undefined);
+      return;
+    }
+    toSignedUrl(src).then((u) => {
+      if (alive) setResolvedSrc(u || src);
+    });
+    return () => { alive = false; };
+  }, [src, open]);
 
   const scheduleHide = useCallback(() => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
@@ -62,12 +76,13 @@ const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Reset state when src changes
+  // Reset state when opened / src changes — always start in contain (no crop)
   useEffect(() => {
     if (!open) return;
     setIsPlaying(true);
     setCurrentTime(0);
     setDuration(0);
+    setFitMode("contain");
   }, [src, open]);
 
   const togglePlay = () => {
@@ -117,23 +132,27 @@ const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps)
       onMouseMove={revealControls}
       onTouchStart={revealControls}
     >
-      <video
-        ref={videoRef}
-        src={src}
-        autoPlay
-        playsInline
-        muted={isMuted}
-        className={cn(
-          "w-full h-full bg-black cursor-pointer",
-          fitMode === "contain" ? "object-contain" : "object-cover"
-        )}
-        onClick={togglePlay}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => setIsPlaying(false)}
-      />
+      {resolvedSrc ? (
+        <video
+          ref={videoRef}
+          src={resolvedSrc}
+          autoPlay
+          playsInline
+          muted={isMuted}
+          className={cn(
+            "w-full h-full bg-black cursor-pointer",
+            fitMode === "contain" ? "object-contain" : "object-cover"
+          )}
+          onClick={togglePlay}
+          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        />
+      ) : (
+        <div className="w-full h-full bg-black" />
+      )}
 
       {/* Top bar */}
       <div

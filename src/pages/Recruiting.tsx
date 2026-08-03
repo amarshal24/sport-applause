@@ -27,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { parseStorageUrl, storageRefUrl, toSignedUrl } from "@/lib/signedMedia";
+import { SecureVideo } from "@/components/SecureMedia";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SPORTS } from "@/constants/sports";
@@ -227,11 +229,7 @@ const Recruiting = () => {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from("recruiting-videos")
-          .getPublicUrl(fileName);
-
-        videoUrl = publicUrl;
+        videoUrl = storageRefUrl("recruiting-videos", fileName);
       }
 
       if (editingVideo) {
@@ -308,17 +306,13 @@ const Recruiting = () => {
       let storageCleanupNeeded = false;
       let storageCleanupFailed = false;
       try {
-        const marker = "/recruiting-videos/";
-        const idx = video.video_url.indexOf(marker);
-        if (idx !== -1) {
-          const path = decodeURIComponent(video.video_url.substring(idx + marker.length).split("?")[0]);
-          if (path) {
-            storageCleanupNeeded = true;
-            const { error: storageError } = await supabase.storage.from("recruiting-videos").remove([path]);
-            if (storageError) {
-              storageCleanupFailed = true;
-              console.error("Storage cleanup failed:", storageError);
-            }
+        const parsed = parseStorageUrl(video.video_url);
+        if (parsed?.bucket === "recruiting-videos" && parsed.path) {
+          storageCleanupNeeded = true;
+          const { error: storageError } = await supabase.storage.from("recruiting-videos").remove([parsed.path]);
+          if (storageError) {
+            storageCleanupFailed = true;
+            console.error("Storage cleanup failed:", storageError);
           }
         }
       } catch (storageErr) {
@@ -421,7 +415,9 @@ const Recruiting = () => {
   const handleDownload = async (video: RecruitingVideo) => {
     try {
       toast.info("Starting download...");
-      const response = await fetch(video.video_url);
+      const signed = await toSignedUrl(video.video_url);
+      if (!signed) throw new Error("Could not sign video URL");
+      const response = await fetch(signed);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -682,9 +678,9 @@ const Recruiting = () => {
                     className="relative aspect-video overflow-hidden rounded-t-xl bg-black cursor-pointer"
                     onClick={() => handlePlayVideo(video)}
                   >
-                    <video
+                    <SecureVideo
                       src={video.video_url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       poster={video.thumbnail_url || undefined}
                     />
                     <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1083,12 +1079,15 @@ const Recruiting = () => {
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           {selectedVideo && (
             <div>
-              <video
-                src={selectedVideo.video_url}
-                className="w-full aspect-video"
-                controls
-                autoPlay
-              />
+              <div className="bg-black flex items-center justify-center">
+                <SecureVideo
+                  src={selectedVideo.video_url}
+                  className="w-full max-h-[80vh] object-contain"
+                  controls
+                  autoPlay
+                  playsInline
+                />
+              </div>
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">{selectedVideo.title}</h3>

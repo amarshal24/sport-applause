@@ -18,6 +18,8 @@ import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { useToast } from '@/hooks/use-toast';
+import { SecureImage } from '@/components/SecureMedia';
+import { toSignedUrl } from '@/lib/signedMedia';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FriendChatProps {
@@ -235,11 +237,14 @@ const FriendChat: React.FC<FriendChatProps> = ({ initialRecipientId, onClose }) 
                       }`}
                     >
                       {message.imageUrl && (
-                        <img 
-                          src={message.imageUrl} 
+                        <SecureImage
+                          src={message.imageUrl}
                           alt="Shared image"
                           className="rounded-lg max-w-full mb-2 cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => window.open(message.imageUrl!, '_blank')}
+                          onClick={async () => {
+                            const signed = await toSignedUrl(message.imageUrl);
+                            if (signed) window.open(signed, '_blank');
+                          }}
                         />
                       )}
                       {message.content && (

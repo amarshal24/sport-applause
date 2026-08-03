@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star, Heart, Play, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { SecureImage } from "@/components/SecureMedia";
 
 interface FavoritePost {
   id: string;
@@ -122,7 +123,7 @@ const FavoriteVideos = () => {
               <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted">
                 {post.image_url ? (
                   <>
-                    <img
+                    <SecureImage
                       src={post.image_url}
                       alt="Highlight"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"

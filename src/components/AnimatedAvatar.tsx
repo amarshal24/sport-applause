@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toSignedUrl } from "@/lib/signedMedia";
 import { useEffect, useRef, useState } from "react";
 
 interface Props {
@@ -13,16 +14,29 @@ interface Props {
 const AnimatedAvatar = ({ videoUrl, imageUrl, fallback, className, showPlayIcon = false }: Props) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | undefined>(undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (videoUrl && videoRef.current) {
-      videoRef.current.load();
+    let alive = true;
+    if (!videoUrl) {
+      setResolvedVideoUrl(undefined);
+      return;
     }
+    toSignedUrl(videoUrl).then((u) => {
+      if (alive) setResolvedVideoUrl(u || undefined);
+    });
+    return () => { alive = false; };
   }, [videoUrl]);
 
+  useEffect(() => {
+    if (resolvedVideoUrl && videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [resolvedVideoUrl]);
+
   const handleMouseEnter = () => {
-    if (videoUrl && videoRef.current) {
+    if (resolvedVideoUrl && videoRef.current) {
       setShowVideo(true);
       videoRef.current.play().then(() => {
         setIsPlaying(true);
@@ -56,7 +70,7 @@ const AnimatedAvatar = ({ videoUrl, imageUrl, fallback, className, showPlayIcon 
         </Avatar>
 
         {/* Video overlay - only visible when playing */}
-        {showVideo && (
+        {showVideo && resolvedVideoUrl && (
           <video
             ref={videoRef}
             muted
@@ -67,7 +81,7 @@ const AnimatedAvatar = ({ videoUrl, imageUrl, fallback, className, showPlayIcon 
               isPlaying ? "opacity-100" : "opacity-0"
             )}
           >
-            <source src={videoUrl} type="video/webm" />
+            <source src={resolvedVideoUrl} type="video/webm" />
           </video>
         )}
 

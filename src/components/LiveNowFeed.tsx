@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Radio, Eye, Calendar, PlayCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SecureImage } from "@/components/SecureMedia";
 
 type Stream = {
   id: string;
@@ -177,7 +178,7 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
               <Card key={s.id} className="overflow-hidden border-destructive/40">
                 <div className="aspect-video w-full bg-gradient-to-br from-destructive/30 to-primary/20 flex items-center justify-center">
                   {s.thumbnail_url ? (
-                    <img
+                    <SecureImage
                       src={s.thumbnail_url}
                       alt={s.title}
                       className="h-full w-full object-cover"
@@ -266,7 +267,7 @@ export const LiveNowFeed = ({ compact = false, limit = 12 }: LiveNowFeedProps) =
                 <Card className="overflow-hidden transition-shadow group-hover:shadow-glow">
                   <div className="aspect-video w-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative">
                     {s.thumbnail_url ? (
-                      <img
+                      <SecureImage
                         src={s.thumbnail_url}
                         alt={s.title}
                         className="h-full w-full object-cover"

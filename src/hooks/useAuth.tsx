@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { redeemPendingInviteIfAny } from "@/lib/appInvites";
 
 interface AuthContextType {
   user: User | null;
@@ -34,6 +35,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Redeem friend invite after any successful sign-in (email, OAuth, phone).
+        if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+          void redeemPendingInviteIfAny(session.user.id);
+        }
       }
     );
 
@@ -41,6 +47,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.user) {
+        void redeemPendingInviteIfAny(session.user.id);
+      }
     });
 
     // Check if WebAuthn/biometric is available

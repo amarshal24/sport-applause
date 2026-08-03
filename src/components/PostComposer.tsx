@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Image, Video, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageRefUrl } from "@/lib/signedMedia";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -57,11 +58,7 @@ const PostComposer = ({ onPostCreated }: PostComposerProps) => {
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(fileName);
-
-    return publicUrl;
+    return storageRefUrl(bucketName, fileName);
   };
 
   const handleSubmit = async () => {

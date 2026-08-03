@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { storageRefUrl } from '@/lib/signedMedia';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface ChatMessage {
@@ -188,11 +189,7 @@ export const useChat = (recipientId?: string) => {
       return null;
     }
 
-    const { data } = supabase.storage
-      .from('chat-images')
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
+    return storageRefUrl('chat-images', fileName);
   }, [user]);
 
   // Get total unread count

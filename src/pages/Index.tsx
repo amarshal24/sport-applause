@@ -16,6 +16,7 @@ const Index = () => {
   const { recommendations, loading: musicLoading } = useMusicRecommendations();
   const [refreshKey, setRefreshKey] = useState(0);
   const [composerMode, setComposerMode] = useState<"post" | "story">("post");
+  const [storyFocusKey, setStoryFocusKey] = useState(0);
 
   const handlePostCreated = () => {
     setRefreshKey(prev => prev + 1);
@@ -23,8 +24,10 @@ const Index = () => {
   };
 
   const handleCreateStory = () => {
+    // Always bump focus key so composer re-enters story mode even if
+    // parent mode was already "story" (local Post tab desync).
     setComposerMode("story");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setStoryFocusKey((k) => k + 1);
   };
 
   if (loading) {
@@ -45,14 +48,21 @@ const Index = () => {
       <Sidebar />
       <MobileNav />
       
-      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="px-4 lg:px-6 py-6">
+      <main className="pt-20 pb-20 lg:pb-6 lg:pl-64 w-full">
+        <div className="px-4 lg:px-6 pt-4 pb-3 space-y-3 w-full">
           <Stories onCreateStory={handleCreateStory} refreshKey={refreshKey} />
-          <div className="mt-3">
-            <LiveNowFeed compact />
-          </div>
-          <UnifiedComposer onPostCreated={handlePostCreated} initialMode={composerMode} />
+          <LiveNowFeed compact />
+          <UnifiedComposer
+            onPostCreated={handlePostCreated}
+            initialMode={composerMode}
+            storyFocusKey={storyFocusKey}
+          />
           <MusicRecommendations recommendations={recommendations} loading={musicLoading} />
+        </div>
+        <div className="lg:px-6 mt-2">
+          <p className="px-4 lg:px-0 mb-2 text-sm text-muted-foreground">
+            For You — scroll inside the player; swipe up for the next clip
+          </p>
           <VideoFeed key={refreshKey} />
         </div>
       </main>

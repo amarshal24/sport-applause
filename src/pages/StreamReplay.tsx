@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toSignedUrl } from "@/lib/signedMedia";
 
 interface Stream {
   id: string;
@@ -78,6 +79,9 @@ const StreamReplay = () => {
   const [profile, setProfile] = useState<StreamerProfile | null>(null);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [signedReplayUrl, setSignedReplayUrl] = useState<string | null>(null);
+  const [signedPosterUrl, setSignedPosterUrl] = useState<string | null>(null);
+  const [signedCaptionUrl, setSignedCaptionUrl] = useState<string | null>(null);
 
   // Player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -158,6 +162,34 @@ const StreamReplay = () => {
     };
   }, [streamId, navigate]);
 
+  // Resolve private-bucket public URLs → signed URLs for playback
+  useEffect(() => {
+    let alive = true;
+    const replay = stream?.replay_url;
+    if (!replay) {
+      setSignedReplayUrl(null);
+      setSignedPosterUrl(null);
+      setSignedCaptionUrl(null);
+      return;
+    }
+
+    (async () => {
+      const [video, poster, caption] = await Promise.all([
+        toSignedUrl(replay),
+        toSignedUrl(stream?.thumbnail_url),
+        toSignedUrl(stream?.caption_vtt_url),
+      ]);
+      if (!alive) return;
+      setSignedReplayUrl(video);
+      setSignedPosterUrl(poster);
+      setSignedCaptionUrl(caption);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [stream?.replay_url, stream?.thumbnail_url, stream?.caption_vtt_url]);
+
   // ----- Video event wiring -----
   useEffect(() => {
     const v = videoRef.current;
@@ -176,7 +208,7 @@ const StreamReplay = () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
     };
-  }, [stream?.replay_url]);
+  }, [signedReplayUrl]);
 
   // Toggle text track visibility when captionsOn flips
   useEffect(() => {
@@ -185,7 +217,7 @@ const StreamReplay = () => {
     Array.from(v.textTracks).forEach((t) => {
       t.mode = captionsOn ? "showing" : "hidden";
     });
-  }, [captionsOn, stream?.caption_vtt_url]);
+  }, [captionsOn, signedCaptionUrl]);
 
   // ----- Controls -----
   const togglePlay = () => {
@@ -300,28 +332,35 @@ const StreamReplay = () => {
           <div className="relative overflow-hidden rounded-xl bg-black aspect-video">
             {replayAvailable ? (
               <>
+                {signedReplayUrl ? (
                 <video
                   ref={videoRef}
-                  src={stream.replay_url ?? undefined}
-                  poster={stream.thumbnail_url ?? undefined}
+                  key={signedReplayUrl}
+                  src={signedReplayUrl}
+                  poster={signedPosterUrl ?? undefined}
                   className="h-full w-full object-contain"
                   onClick={togglePlay}
                   playsInline
                   crossOrigin="anonymous"
                 >
-                  {stream.caption_vtt_url && (
+                  {signedCaptionUrl && (
                     <track
                       kind="captions"
-                      src={stream.caption_vtt_url}
+                      src={signedCaptionUrl}
                       srcLang="en"
                       label="English"
                       default
                     />
                   )}
                 </video>
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
+                    Loading replay…
+                  </div>
+                )}
 
                 {/* Big play button overlay */}
-                {!isPlaying && (
+                {signedReplayUrl && !isPlaying && (
                   <button
                     type="button"
                     onClick={togglePlay}

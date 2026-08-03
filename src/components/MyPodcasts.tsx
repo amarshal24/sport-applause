@@ -10,8 +10,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, RefreshCw, Music, Loader2 } from "lucide-react";
+import { Pencil, Trash2, RefreshCw, Music, Loader2, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
+import { SecureAudio, SecureImage } from "@/components/SecureMedia";
+import { parseStorageUrl, storageRefUrl } from "@/lib/signedMedia";
 
 interface Podcast {
   id: string;
@@ -26,9 +28,8 @@ interface Podcast {
 }
 
 const bucketPathFromUrl = (url: string) => {
-  const marker = "/storage/v1/object/public/podcasts/";
-  const i = url.indexOf(marker);
-  return i >= 0 ? decodeURIComponent(url.slice(i + marker.length)) : null;
+  const parsed = parseStorageUrl(url);
+  return parsed?.bucket === "podcasts" ? parsed.path : null;
 };
 
 const MyPodcasts = () => {
@@ -41,6 +42,7 @@ const MyPodcasts = () => {
   const [form, setForm] = useState({ title: "", description: "" });
   const [newThumb, setNewThumb] = useState<File | null>(null);
   const [newAudio, setNewAudio] = useState<File | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -78,7 +80,7 @@ const MyPodcasts = () => {
         const path = `${user.id}/thumbnails/${Date.now()}-${newThumb.name}`;
         const { data, error } = await supabase.storage.from("podcasts").upload(path, newThumb, { upsert: true, contentType: newThumb.type });
         if (error) throw error;
-        update.thumbnail_url = supabase.storage.from("podcasts").getPublicUrl(data.path).data.publicUrl;
+        update.thumbnail_url = storageRefUrl("podcasts", data.path);
         const oldThumb = editing.thumbnail_url ? bucketPathFromUrl(editing.thumbnail_url) : null;
         if (oldThumb) await supabase.storage.from("podcasts").remove([oldThumb]);
       }
@@ -88,7 +90,7 @@ const MyPodcasts = () => {
         const path = `${user.id}/${Date.now()}-podcast.${ext}`;
         const { data, error } = await supabase.storage.from("podcasts").upload(path, newAudio, { upsert: true, contentType: newAudio.type });
         if (error) throw error;
-        update.audio_url = supabase.storage.from("podcasts").getPublicUrl(data.path).data.publicUrl;
+        update.audio_url = storageRefUrl("podcasts", data.path);
         try {
           const el = new Audio(URL.createObjectURL(newAudio));
           await new Promise<void>((res) => { el.onloadedmetadata = () => res(); });
@@ -140,22 +142,49 @@ const MyPodcasts = () => {
         <p className="text-sm text-muted-foreground">No podcasts yet — upload your first one above.</p>
       ) : (
         <ul className="space-y-3">
-          {items.map((p) => (
-            <li key={p.id} className="p-4 bg-card border rounded-lg flex flex-col sm:flex-row gap-4 sm:items-center">
-              <div className="w-16 h-16 rounded bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                {p.thumbnail_url ? <img src={p.thumbnail_url} alt={p.title} className="w-full h-full object-cover" /> : <Music className="h-6 w-6 text-muted-foreground" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium truncate">{p.title}</h3>
-                {p.description && <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
-                <p className="text-xs text-muted-foreground mt-1">{p.plays_count} plays · {p.likes_count} likes</p>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => openEdit(p)} className="gap-1"><Pencil className="h-4 w-4" /> Edit</Button>
-                <Button size="sm" variant="destructive" onClick={() => setDeleting(p)} className="gap-1"><Trash2 className="h-4 w-4" /> Delete</Button>
-              </div>
-            </li>
-          ))}
+          {items.map((p) => {
+            const isPlaying = playingId === p.id;
+            return (
+              <li key={p.id} className="p-4 bg-card border rounded-lg space-y-3">
+                <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                  <div className="w-16 h-16 rounded bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {p.thumbnail_url ? (
+                      <SecureImage src={p.thumbnail_url} alt={p.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <Music className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{p.title}</h3>
+                    {p.description && <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">{p.plays_count} plays · {p.likes_count} likes</p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant={isPlaying ? "default" : "outline"}
+                      onClick={() => setPlayingId(isPlaying ? null : p.id)}
+                      className="gap-1"
+                    >
+                      {isPlaying ? <><Pause className="h-4 w-4" /> Pause</> : <><Play className="h-4 w-4" /> Play</>}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => openEdit(p)} className="gap-1"><Pencil className="h-4 w-4" /> Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleting(p)} className="gap-1"><Trash2 className="h-4 w-4" /> Delete</Button>
+                  </div>
+                </div>
+                {isPlaying && (
+                  <SecureAudio
+                    key={p.id}
+                    src={p.audio_url}
+                    controls
+                    autoPlay
+                    className="w-full h-10"
+                    onEnded={() => setPlayingId(null)}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

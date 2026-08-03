@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search as SearchIcon, Users, Video, Mic, Hash, Play, Eye, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SecureImage } from "@/components/SecureMedia";
 
 interface VideoResult {
   id: string;
@@ -134,7 +135,7 @@ const Search = () => {
       <CardContent className="p-3 flex gap-3">
         <div className="relative w-32 h-20 flex-shrink-0 rounded-md overflow-hidden bg-muted">
           {video.thumbnail_url ? (
-            <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+            <SecureImage src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Play className="h-8 w-8 text-muted-foreground" />
@@ -158,12 +159,12 @@ const Search = () => {
   const PodcastCard = ({ podcast }: { podcast: PodcastResult }) => (
     <Card 
       className="cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={() => navigate("/podcasts")}
+      onClick={() => navigate(`/podcasts?id=${podcast.id}`)}
     >
       <CardContent className="p-3 flex gap-3">
         <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
           {podcast.thumbnail_url ? (
-            <img src={podcast.thumbnail_url} alt={podcast.title} className="w-full h-full object-cover" />
+            <SecureImage src={podcast.thumbnail_url} alt={podcast.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Mic className="h-6 w-6 text-muted-foreground" />

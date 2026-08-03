@@ -179,7 +179,10 @@
     "noResults": "No se encontraron páginas"
   },
   "podcasts": {
-    "subtitle": "Escucha podcasts deportivos y sube los tuyos"
+    "subtitle": "Escucha podcasts deportivos y sube los tuyos",
+    "browse": "Explorar",
+    "mine": "Mis podcasts",
+    "signInMessage": "Inicia sesión para explorar y escuchar podcasts de la comunidad"
   },
   "liveStreams": {
     "subtitle": "Transmite en vivo y conecta con tu audiencia",

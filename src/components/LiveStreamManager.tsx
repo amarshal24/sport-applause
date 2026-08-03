@@ -16,6 +16,7 @@ import { Radio, Eye, Trash2, Calendar, Upload, Pencil, Video, Loader2 } from "lu
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { SecureVideo } from "@/components/SecureMedia";
+import { storageRefUrl } from "@/lib/signedMedia";
 
 const BUCKET = "podcasts"; // reused: podcasts bucket holds this user's video podcasts too
 const MAX_VIDEO_MB = 200;
@@ -97,7 +98,7 @@ const LiveStreamManager = () => {
       upsert: true, contentType: file.type,
     });
     if (error) throw error;
-    return supabase.storage.from(BUCKET).getPublicUrl(data.path).data.publicUrl;
+    return storageRefUrl(BUCKET, data.path);
   };
 
   const handleUploadPodcastVideo = async () => {

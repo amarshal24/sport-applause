@@ -25,18 +25,22 @@ const AnimationTutorial = lazy(() =>
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { storageRefUrl } from "@/lib/signedMedia";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
   CharacterPinsOverlay,
   CharacterPinsPanel,
   useCharacterPins,
+  CHARACTER_SKINS,
 } from "@/components/video-fx/CharacterPins";
 import {
   FullscreenFiltersEffectsPanel,
   defaultFxSelection,
   type FxSelection,
 } from "@/components/video-fx/FullscreenFiltersEffectsPanel";
+import { Progress } from "@/components/ui/progress";
+import { bakeVideo, hasBakeableEdits, type VideoBakeInput } from "@/lib/videoBake";
 
 interface TextOverlay {
   id: string;
@@ -189,6 +193,7 @@ const VideoEditor = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [postCaption, setPostCaption] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
 
   // Fullscreen Filters & Effects panel
   const [fxPanelOpen, setFxPanelOpen] = useState(false);
@@ -569,42 +574,143 @@ const VideoEditor = () => {
   };
 
   const exportVideo = () => {
-    if (!videoFile) {
+    if (!videoFile && !videoUrl) {
       toast.error("No video to export");
       return;
     }
     setShowExportDialog(true);
   };
 
-  const handleDownload = () => {
-    if (!videoUrl) return;
-    
-    const link = document.createElement('a');
-    link.href = videoUrl;
-    link.download = `edited-video-${Date.now()}.${videoFile?.name.split('.').pop() || 'mp4'}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Video downloaded!");
+  const pausePreviewPlayback = () => {
+    videoRef.current?.pause();
+    audioRef.current?.pause();
+    setIsPlaying(false);
+  };
+
+  const buildBakeInput = (): VideoBakeInput => {
+    const styles = getVideoStyles();
+    return {
+      source: videoFile ?? videoUrl,
+      filter: styles.filter,
+      flipH,
+      flipV,
+      rotation,
+      trimStartSec: duration > 0 ? (duration * trimStart) / 100 : 0,
+      trimEndSec: duration > 0 ? (duration * trimEnd) / 100 : undefined,
+      playbackSpeed,
+      videoVolume: isMuted ? 0 : volume / 100,
+      textOverlays: textOverlays.map((o) => ({
+        text: o.text,
+        x: o.x,
+        y: o.y,
+        fontSize: o.fontSize,
+        color: o.color,
+        fontFamily: o.fontFamily,
+      })),
+      characterPins: characterPins.pins.map((pin) => ({
+        x: pin.x,
+        y: pin.y,
+        emoji: CHARACTER_SKINS.find((s) => s.id === pin.skin)?.emoji ?? "🏃",
+      })),
+      music: selectedTrack
+        ? { url: selectedTrack.previewUrl, volume: musicVolume / 100 }
+        : null,
+      onProgress: setExportProgress,
+    };
+  };
+
+  const prepareExportFile = async (): Promise<File> => {
+    if (!videoFile && !videoUrl) {
+      throw new Error("No video loaded");
+    }
+
+    pausePreviewPlayback();
+    setExportProgress(0);
+
+    const bakeInput = buildBakeInput();
+    const needsBake = hasBakeableEdits(bakeInput, duration || undefined);
+
+    if (!needsBake && videoFile) {
+      setExportProgress(100);
+      return videoFile;
+    }
+
+    if (!needsBake && videoUrl) {
+      const res = await fetch(videoUrl);
+      if (!res.ok) throw new Error("Failed to fetch video");
+      const blob = await res.blob();
+      setExportProgress(100);
+      return new File([blob], `video-${Date.now()}.mp4`, {
+        type: blob.type || "video/mp4",
+      });
+    }
+
+    toast.info("Rendering edited video…");
+    const result = await bakeVideo(bakeInput);
+    return result.file;
+  };
+
+  const handleDownload = async () => {
+    if (!videoUrl && !videoFile) return;
+
+    setExporting(true);
+    try {
+      const file = await prepareExportFile();
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Edited video downloaded!");
+    } catch (error) {
+      console.error("Download bake failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to export video",
+      );
+    } finally {
+      setExporting(false);
+      setExportProgress(0);
+    }
   };
 
   const handleShare = async () => {
-    if (!videoUrl) return;
+    if (!videoUrl && !videoFile) return;
 
-    if (navigator.share) {
-      try {
+    setExporting(true);
+    try {
+      const file = await prepareExportFile();
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: 'My edited sports video',
-          text: 'Check out this video I created!',
-          url: videoUrl,
+          title: "My edited sports video",
+          text: "Check out this video I created!",
+          files: [file],
         });
         toast.success("Shared successfully!");
-      } catch (error) {
-        console.error('Error sharing:', error);
+      } else if (navigator.share) {
+        const url = URL.createObjectURL(file);
+        await navigator.share({
+          title: "My edited sports video",
+          text: "Check out this video I created!",
+          url,
+        });
+        URL.revokeObjectURL(url);
+        toast.success("Shared successfully!");
+      } else {
+        const url = URL.createObjectURL(file);
+        await navigator.clipboard.writeText(url);
+        toast.success("Edited video ready — link copied (local blob URL)");
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
       }
-    } else {
-      navigator.clipboard.writeText(videoUrl);
-      toast.success("Video link copied to clipboard!");
+    } catch (error) {
+      if ((error as Error)?.name === "AbortError") return;
+      console.error("Share failed:", error);
+      toast.error("Failed to share video");
+    } finally {
+      setExporting(false);
+      setExportProgress(0);
     }
   };
 
@@ -616,63 +722,72 @@ const VideoEditor = () => {
   };
 
   const postToFeed = async () => {
-    if (!user || !videoFile) {
+    if (!user) {
       toast.error("Please sign in to post");
+      return;
+    }
+    if (!videoFile && !videoUrl) {
+      toast.error("No video to post");
       return;
     }
 
     setExporting(true);
     try {
-      const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+      const file = await prepareExportFile();
+      const fileName = `${user.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("posts")
-        .upload(fileName, videoFile);
+        .upload(fileName, file, { contentType: file.type, upsert: false });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("posts")
-        .getPublicUrl(fileName);
+      const videoUrl = storageRefUrl("posts", fileName);
 
       const { error: postError } = await supabase
         .from("posts")
         .insert({
           user_id: user.id,
           content: postCaption || "Check out my edited sports video! 🎬",
-          image_url: publicUrl,
+          video_url: videoUrl,
         });
 
       if (postError) throw postError;
 
-      toast.success("Posted to feed!");
+      toast.success("Posted edited video to feed!");
       setShowExportDialog(false);
       navigate("/");
     } catch (error) {
       console.error("Error posting:", error);
-      toast.error("Failed to post video");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to post video",
+      );
     } finally {
       setExporting(false);
+      setExportProgress(0);
     }
   };
 
   const postToStory = async () => {
-    if (!user || !videoFile) {
+    if (!user) {
       toast.error("Please sign in to post");
+      return;
+    }
+    if (!videoFile && !videoUrl) {
+      toast.error("No video to post");
       return;
     }
 
     setExporting(true);
     try {
-      const fileName = `${user.id}/${Date.now()}-story-${videoFile.name}`;
+      const file = await prepareExportFile();
+      const fileName = `${user.id}/${Date.now()}-story-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("stories")
-        .upload(fileName, videoFile);
+        .upload(fileName, file, { contentType: file.type, upsert: false });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("stories")
-        .getPublicUrl(fileName);
+      const imageUrl = storageRefUrl("stories", fileName);
 
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
@@ -681,20 +796,23 @@ const VideoEditor = () => {
         .from("stories")
         .insert({
           user_id: user.id,
-          image_url: publicUrl,
+          image_url: imageUrl,
           expires_at: expiresAt.toISOString(),
         });
 
       if (storyError) throw storyError;
 
-      toast.success("Posted to story!");
+      toast.success("Posted edited video to story!");
       setShowExportDialog(false);
       navigate("/");
     } catch (error) {
       console.error("Error posting story:", error);
-      toast.error("Failed to post story");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to post story",
+      );
     } finally {
       setExporting(false);
+      setExportProgress(0);
     }
   };
 
@@ -736,13 +854,13 @@ const VideoEditor = () => {
                 <RotateCcw className="mr-1 h-4 w-4" />
                 Reset
               </Button>
-              {videoFile && (
+              {(videoFile || videoUrl) && (
                 <>
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Button variant="outline" size="sm" onClick={handleShare} disabled={exporting}>
                     <Share2 className="mr-1 h-4 w-4" />
                     Share
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Button variant="outline" size="sm" onClick={handleDownload} disabled={exporting}>
                     <Download className="mr-1 h-4 w-4" />
                     Save
                   </Button>
@@ -755,7 +873,7 @@ const VideoEditor = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setFxPanelOpen(true)}
-                disabled={!videoFile}
+                disabled={!videoFile && !videoUrl}
                 className="border-primary/40 text-primary hover:bg-primary/10"
               >
                 <Wand2 className="mr-1 h-4 w-4" />
@@ -765,13 +883,13 @@ const VideoEditor = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setPreviewOpen(true)}
-                disabled={!videoFile}
+                disabled={!videoFile && !videoUrl}
                 className="border-primary/40 text-primary hover:bg-primary/10"
               >
                 <Play className="mr-1 h-4 w-4" />
                 Preview
               </Button>
-              <Button size="sm" onClick={exportVideo} disabled={!videoFile}>
+              <Button size="sm" onClick={exportVideo} disabled={!videoFile && !videoUrl}>
                 <Send className="mr-1 h-4 w-4" />
                 Post
               </Button>
@@ -1660,7 +1778,7 @@ const VideoEditor = () => {
               <div className="aspect-video rounded-lg overflow-hidden bg-black">
                 <video
                   src={videoUrl}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   style={getVideoStyles()}
                   controls
                 />
@@ -1679,6 +1797,16 @@ const VideoEditor = () => {
                 className="resize-none"
               />
             </div>
+
+            {exporting && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Rendering edited video…</span>
+                  <span>{Math.round(exportProgress)}%</span>
+                </div>
+                <Progress value={exportProgress} className="h-2" />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Button
@@ -1707,6 +1835,7 @@ const VideoEditor = () => {
                 variant="outline"
                 size="sm"
                 className="flex-1"
+                disabled={exporting}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download
@@ -1717,15 +1846,16 @@ const VideoEditor = () => {
                 variant="outline"
                 size="sm"
                 className="flex-1"
+                disabled={exporting}
               >
                 <Share2 className="mr-2 h-4 w-4" />
-                Share Link
+                Share
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              Note: Video processing with effects requires server-side rendering. 
-              The original video will be posted.
+              Filters, text, stickers, transforms, trim, speed, and music are
+              baked into the exported file before download or post.
             </p>
           </div>
         </DialogContent>
