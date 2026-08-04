@@ -290,15 +290,15 @@ const Marketplace = () => {
                 ) : (
                   <Button
                     className="w-full"
-                    onClick={() =>
-                      navigate(
-                        `/messages?to=${selected.user_id}&listing=${encodeURIComponent(selected.title)}`
-                      )
-                    }
+                    onClick={() => {
+                      if (!user) return navigate("/auth");
+                      setChatWith({ sellerId: selected.user_id, title: selected.title });
+                    }}
                   >
                     <MessageCircle className="mr-1 h-4 w-4" /> Message seller
                   </Button>
                 )}
+
               </div>
             </>
           )}
