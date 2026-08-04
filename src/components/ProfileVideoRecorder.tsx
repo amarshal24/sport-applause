@@ -50,6 +50,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadDone, setUploadDone] = useState(false);
+  const [clipDuration, setClipDuration] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [squareCrop, setSquareCrop] = useState(true);
+  const [trimming, setTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+
+
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
