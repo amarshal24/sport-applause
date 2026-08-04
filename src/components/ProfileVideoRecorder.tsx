@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -10,6 +10,15 @@ import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { trimVideo } from "@/lib/videoTrim";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -46,7 +55,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [uploading, setUploading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
+    typeof window !== "undefined" && window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+  );
+  const [rotatedWhileRecording, setRotatedWhileRecording] = useState(false);
   const [fitMode, setFitMode] = useState<"cover" | "contain">("cover");
+
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadDone, setUploadDone] = useState(false);
@@ -72,28 +88,88 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     streamRef.current = null;
   }, []);
 
-  const startCamera = useCallback(async (mode: "user" | "environment") => {
-    stopCamera();
+  const refreshCameras = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode, width: { ideal: 1080 }, height: { ideal: 1920 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {});
-      }
-    } catch (error) {
-      toast.error("Unable to access camera");
-      console.error("Camera error:", error);
+      const all = await navigator.mediaDevices.enumerateDevices();
+      setCameras(all.filter((d) => d.kind === "videoinput"));
+    } catch {
+      /* ignore */
     }
-  }, [stopCamera]);
+  }, []);
+
+  const startCamera = useCallback(
+    async (mode: "user" | "environment", id?: string | null) => {
+      stopCamera();
+      const landscape = window.innerWidth > window.innerHeight;
+      const ideal = landscape
+        ? { width: { ideal: 1920 }, height: { ideal: 1080 } }
+        : { width: { ideal: 1080 }, height: { ideal: 1920 } };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: id ? { deviceId: { exact: id }, ...ideal } : { facingMode: mode, ...ideal },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        const settings = stream.getVideoTracks()[0]?.getSettings();
+        if (settings?.deviceId) setDeviceId(settings.deviceId);
+        refreshCameras();
+      } catch (error) {
+        toast.error("Unable to access camera");
+        console.error("Camera error:", error);
+      }
+    },
+    [stopCamera, refreshCameras]
+  );
 
   useEffect(() => {
-    if (!recordedBlob) startCamera(facingMode);
+    if (!recordedBlob) startCamera(facingMode, deviceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facingMode]);
+  }, [facingMode, deviceId]);
+
+  // Keep the camera list fresh when devices are plugged/unplugged
+  useEffect(() => {
+    const handler = () => {
+      refreshCameras();
+      navigator.mediaDevices.enumerateDevices().then((all) => {
+        const cams = all.filter((d) => d.kind === "videoinput");
+        if (deviceId && !cams.some((c) => c.deviceId === deviceId)) {
+          toast.info("Camera disconnected — switching to default");
+          setDeviceId(null);
+        }
+      }).catch(() => {});
+    };
+    navigator.mediaDevices?.addEventListener?.("devicechange", handler);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+  }, [refreshCameras, deviceId]);
+
+  // Orientation changes: keep the preview correct, warn mid-recording
+  useEffect(() => {
+    const onResize = () => {
+      const next = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
+      setOrientation((prev) => {
+        if (prev === next) return prev;
+        if (isRecording) {
+          setRotatedWhileRecording(true);
+        } else if (!recordedBlob) {
+          // Re-acquire the stream at the new aspect ratio
+          startCamera(facingMode, deviceId);
+        }
+        return next;
+      });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    screen.orientation?.addEventListener?.("change", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      screen.orientation?.removeEventListener?.("change", onResize);
+    };
+  }, [isRecording, recordedBlob, facingMode, deviceId, startCamera]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -111,14 +187,27 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     };
   }, [previewUrl]);
 
+  const cameraLabel = (d: MediaDeviceInfo, i: number) => {
+    if (d.label) return d.label;
+    return `Camera ${i + 1}`;
+  };
+
+  const selectCamera = (id: string) => {
+    if (isRecording) return;
+    setDeviceId(id);
+  };
+
   const flipCamera = () => {
     if (isRecording) return;
+    setDeviceId(null);
     setFacingMode((m) => (m === "user" ? "environment" : "user"));
   };
+
 
   const startRecording = () => {
     if (!streamRef.current) return;
 
+    setRotatedWhileRecording(false);
     chunksRef.current = [];
     const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
       ? "video/webm;codecs=vp9"
@@ -357,8 +446,46 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           >
             <SwitchCamera className="w-5 h-5" />
           </Button>
+          {cameras.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+                  disabled={isRecording || !!recordedBlob}
+                  aria-label="Choose camera"
+                >
+                  <Camera className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-[110] w-64">
+                <DropdownMenuLabel>Available cameras</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {cameras.map((cam, i) => (
+                  <DropdownMenuItem
+                    key={cam.deviceId || i}
+                    onClick={() => selectCamera(cam.deviceId)}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span className="truncate">{cameraLabel(cam, i)}</span>
+                    {cam.deviceId === deviceId && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
+
+      {/* Orientation notice */}
+      {rotatedWhileRecording && isRecording && (
+        <div className="relative z-10 mx-4 flex items-center gap-2 rounded-lg bg-background/70 backdrop-blur px-3 py-2 text-xs text-primary-foreground">
+          <SmartphoneCharging className="w-4 h-4 text-primary shrink-0" />
+          Rotation detected — keep the device steady until recording finishes.
+        </div>
+      )}
+
 
       {countdown !== null && (
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
