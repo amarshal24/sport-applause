@@ -30,6 +30,14 @@ export const MARKETPLACE_CATEGORIES = [
 
 export const CONDITIONS = ["New", "Like New", "Good", "Fair", "Used"];
 
+export const LEAGUES = ["NFL", "NBA", "MLB", "NHL", "MLS", "NCAA", "Olympic", "Other"];
+
+export const FULFILLMENT_OPTIONS = [
+  { value: "pickup", label: "Local pickup only" },
+  { value: "shipping", label: "Shipping only" },
+  { value: "both", label: "Pickup or shipping" },
+];
+
 const MAX_IMAGES = 5;
 
 export interface Listing {
@@ -45,7 +53,13 @@ export interface Listing {
   status: string;
   views_count: number;
   created_at: string;
+  team?: string | null;
+  league?: string | null;
+  size?: string | null;
+  fulfillment?: string | null;
+  shipping_cost?: number | null;
 }
+
 
 interface Props {
   open: boolean;
