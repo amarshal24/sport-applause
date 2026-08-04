@@ -412,6 +412,53 @@ export const useChat = (recipientId?: string) => {
     };
   }, [user, recipientId, fetchConversations]);
 
+  // Subscribe to reaction changes for the open thread
+  useEffect(() => {
+    if (!user || !recipientId) return;
+
+    if (reactionChannelRef.current) {
+      supabase.removeChannel(reactionChannelRef.current);
+      reactionChannelRef.current = null;
+    }
+
+    const channel = supabase
+      .channel(`chat-reactions-${user.id}-${recipientId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_message_reactions' },
+        (payload) => {
+          const row = payload.new as { id: string; message_id: string; user_id: string; emoji: string };
+          setMessages(prev => {
+            if (!prev.some(m => m.id === row.message_id)) return prev;
+            setReactions(rs =>
+              rs.some(r => r.id === row.id)
+                ? rs
+                : [...rs, { id: row.id, messageId: row.message_id, userId: row.user_id, emoji: row.emoji }]
+            );
+            return prev;
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'chat_message_reactions' },
+        (payload) => {
+          const oldId = (payload.old as { id?: string })?.id;
+          if (oldId) setReactions(prev => prev.filter(r => r.id !== oldId));
+        }
+      )
+      .subscribe();
+
+    reactionChannelRef.current = channel;
+
+    return () => {
+      if (reactionChannelRef.current) {
+        supabase.removeChannel(reactionChannelRef.current);
+        reactionChannelRef.current = null;
+      }
+    };
+  }, [user, recipientId]);
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -427,6 +474,8 @@ export const useChat = (recipientId?: string) => {
     messages,
     conversations,
     isLoading,
+    reactions,
+    toggleReaction,
     sendMessage,
     uploadImage,
     getTotalUnread,
