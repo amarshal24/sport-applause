@@ -207,6 +207,7 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const startRecording = () => {
     if (!streamRef.current) return;
 
+    setRotatedWhileRecording(false);
     chunksRef.current = [];
     const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
       ? "video/webm;codecs=vp9"
