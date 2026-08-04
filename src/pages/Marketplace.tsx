@@ -25,6 +25,7 @@ import { Search, Plus, MapPin, MessageCircle, Pencil, Trash2, Store, Bell } from
 import ListingFormModal, { MARKETPLACE_CATEGORIES, type Listing } from "@/components/marketplace/ListingFormModal";
 import SavedSearchesDialog, { SaveSearchButton, useSavedSearches } from "@/components/marketplace/SavedSearches";
 import ListingChatDialog from "@/components/marketplace/ListingChatDialog";
+import SafetyDisclaimer from "@/components/marketplace/SafetyDisclaimer";
 
 
 const Marketplace = () => {
@@ -140,6 +141,8 @@ const Marketplace = () => {
               </Button>
             </div>
           </header>
+
+          <SafetyDisclaimer variant="compact" />
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -265,13 +268,7 @@ const Marketplace = () => {
                 {selected.description && (
                   <p className="text-sm whitespace-pre-wrap">{selected.description}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  {selected.fulfillment === "shipping"
-                    ? `Ships to buyer${selected.shipping_cost != null ? ` — ${Number(selected.shipping_cost) === 0 ? "free shipping" : `$${Number(selected.shipping_cost).toLocaleString()} shipping`}` : ""}.`
-                    : selected.fulfillment === "both"
-                      ? `Local pickup or shipping${selected.shipping_cost != null ? ` (${Number(selected.shipping_cost) === 0 ? "free shipping" : `$${Number(selected.shipping_cost).toLocaleString()} shipping`})` : ""}. Meet in a safe public place.`
-                      : "In-person pickup only. Meet in a safe public place."}
-                </p>
+                <SafetyDisclaimer />
 
 
                 {user?.id === selected.user_id ? (

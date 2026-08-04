@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, X, Video as VideoIcon } from "lucide-react";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
+import SafetyDisclaimer from "@/components/marketplace/SafetyDisclaimer";
 
 export const MARKETPLACE_CATEGORIES = [
   "Memorabilia",
@@ -32,11 +33,8 @@ export const CONDITIONS = ["New", "Like New", "Good", "Fair", "Used"];
 
 export const LEAGUES = ["NFL", "NBA", "MLB", "NHL", "MLS", "NCAA", "Olympic", "Other"];
 
-export const FULFILLMENT_OPTIONS = [
-  { value: "pickup", label: "Local pickup only" },
-  { value: "shipping", label: "Shipping only" },
-  { value: "both", label: "Pickup or shipping" },
-];
+// In-person pickup is the only allowed fulfillment method on the app.
+export const FULFILLMENT_OPTIONS = [{ value: "pickup", label: "Local pickup only" }];
 
 const MAX_IMAGES = 6;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
@@ -82,8 +80,6 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
   const [team, setTeam] = useState("");
   const [league, setLeague] = useState("");
   const [size, setSize] = useState("");
-  const [fulfillment, setFulfillment] = useState("pickup");
-  const [shippingCost, setShippingCost] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
@@ -100,12 +96,6 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
     setTeam(listing?.team ?? "");
     setLeague(listing?.league ?? "");
     setSize(listing?.size ?? "");
-    setFulfillment(listing?.fulfillment ?? "pickup");
-    setShippingCost(
-      listing?.shipping_cost !== null && listing?.shipping_cost !== undefined
-        ? String(listing.shipping_cost)
-        : ""
-    );
     setImages(listing?.images ?? []);
     setVideoUrl(listing?.video_url ?? "");
   }, [open, listing]);
@@ -171,7 +161,6 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
 
     setSaving(true);
     try {
-      const parsedShipping = Number(shippingCost);
       const payload = {
         title: title.trim().slice(0, 120),
         description: description.trim().slice(0, 2000) || null,
@@ -182,11 +171,8 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
         team: team.trim().slice(0, 80) || null,
         league: league || null,
         size: size.trim().slice(0, 40) || null,
-        fulfillment,
-        shipping_cost:
-          fulfillment !== "pickup" && shippingCost.trim() !== "" && Number.isFinite(parsedShipping) && parsedShipping >= 0
-            ? parsedShipping
-            : null,
+        fulfillment: "pickup",
+        shipping_cost: null,
         images,
         video_url: videoUrl,
       };
@@ -349,34 +335,6 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Shipping / pickup</Label>
-              <Select value={fulfillment} onValueChange={setFulfillment}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  {FULFILLMENT_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {fulfillment !== "pickup" && (
-              <div className="space-y-2">
-                <Label htmlFor="ml-ship">Shipping cost ($)</Label>
-                <Input
-                  id="ml-ship"
-                  type="number"
-                  min="0"
-                  value={shippingCost}
-                  onChange={(e) => setShippingCost(e.target.value)}
-                  placeholder="0 for free shipping"
-                />
-              </div>
-            )}
-          </div>
-
-
           <div className="space-y-2">
             <Label htmlFor="ml-desc">Description</Label>
             <Textarea
@@ -388,7 +346,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
             />
           </div>
 
-          <p className="text-xs text-muted-foreground">All sales are arranged in person between buyer and seller.</p>
+          <SafetyDisclaimer />
 
           <Button className="w-full" onClick={handleSubmit} disabled={saving || uploading || uploadingVideo}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
