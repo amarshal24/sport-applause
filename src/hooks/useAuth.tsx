@@ -6,17 +6,14 @@ import { toast } from "sonner";
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string, username: string, sports?: string[]) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, username: string, sports?: string[], redirectPath?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signInWithGoogle: () => Promise<{ error: any }>;
-  signInWithApple: () => Promise<{ error: any }>;
+  signInWithGoogle: (redirectPath?: string) => Promise<{ error: any }>;
+  signInWithApple: (redirectPath?: string) => Promise<{ error: any }>;
   signInWithPhone: (phone: string) => Promise<{ error: any }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
-  registerBiometric: (email: string) => Promise<{ error: any }>;
-  signInWithBiometric: () => Promise<{ error: any }>;
-  isBiometricAvailable: boolean;
   loading: boolean;
 }
 
@@ -26,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,20 +39,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
-    // Check if WebAuthn/biometric is available
-    if (window.PublicKeyCredential) {
-      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-        .then((available) => {
-          setIsBiometricAvailable(available);
-        })
-        .catch(() => setIsBiometricAvailable(false));
-    }
-
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string, sports: string[] = []) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signUp = async (email: string, password: string, username: string, sports: string[] = [], redirectPath = "/") => {
+    const redirectUrl = `${window.location.origin}${redirectPath}`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -98,11 +85,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectPath = "/") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${redirectPath}`,
       },
     });
 
@@ -115,11 +102,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signInWithApple = async () => {
+  const signInWithApple = async (redirectPath = "/") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${redirectPath}`,
       },
     });
 
@@ -197,88 +184,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  };
-
-  const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  };
-
-  const registerBiometric = async (email: string) => {
-    try {
-      if (!window.PublicKeyCredential) {
-        return { error: { message: "Biometric authentication is not supported on this device" } };
-      }
-
-      const userId = new Uint8Array(16);
-      crypto.getRandomValues(userId);
-
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: {
-            name: "USportz",
-            id: window.location.hostname,
-          },
-          user: {
-            id: userId,
-            name: email,
-            displayName: email,
-          },
-          pubKeyCredParams: [
-            { alg: -7, type: "public-key" },
-            { alg: -257, type: "public-key" },
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform",
-            userVerification: "required",
-          },
-          timeout: 60000,
-        },
-      }) as PublicKeyCredential | null;
-
-      if (credential) {
-        localStorage.setItem('biometric_credential_id', arrayBufferToBase64((credential.rawId)));
-        localStorage.setItem('biometric_email', email);
-        toast.success("Face ID registered!", {
-          description: "You can now sign in with Face ID.",
-        });
-        return { error: null };
-      }
-
-      return { error: { message: "Failed to register biometric credential" } };
-    } catch (error: any) {
-      toast.error("Biometric registration failed", {
-        description: error.message,
-      });
-      return { error };
-    }
-  };
-
-  const signInWithBiometric = async () => {
-    // SECURITY WARNING: This biometric implementation is for demonstration only.
-    // It does NOT create a real authenticated session with the backend.
-    // For production use, implement proper server-side WebAuthn verification.
-    toast.error("Biometric authentication unavailable", {
-      description: "Please use email/password or social login instead.",
-    });
-    return { error: { message: "Biometric authentication is not available. Please use email/password or social login." } };
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -291,9 +196,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       verifyPhoneOtp, 
       signOut, 
       resetPassword, 
-      registerBiometric,
-      signInWithBiometric,
-      isBiometricAvailable,
       loading 
     }}>
       {children}

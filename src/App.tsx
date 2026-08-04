@@ -30,6 +30,7 @@ const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
 const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
 const Search = lazy(() => import("./pages/Search"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -60,7 +61,8 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+            <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/games" element={<Games />} />
               <Route path="/motivation" element={<MotivationQuotes />} />

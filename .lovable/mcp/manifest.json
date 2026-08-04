@@ -3,7 +3,11 @@
   "sdk_version": "0.20.0",
   "path": "/functions/v1/mcp",
   "auth": {
-    "type": "none"
+    "type": "oauth",
+    "issuer": "https://idcaeqkfrhqgwaprzzvk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
   },
   "mcp": {
     "server": {
@@ -15,7 +19,7 @@
       {
         "name": "list_trending_posts",
         "title": "List trending posts",
-        "description": "List recent public posts from the U⚡️Sportz feed, ordered by most recent.",
+        "description": "List recent posts from the U⚡️Sportz feed, ordered by most recent, visible to the signed-in user.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -29,10 +33,6 @@
               "minimum": 1,
               "maximum": 50,
               "description": "Max posts to return (default 10)."
-            },
-            "sport": {
-              "type": "string",
-              "description": "Optional sport filter (e.g. 'basketball')."
             }
           },
           "additionalProperties": false,
@@ -43,7 +43,7 @@
       {
         "name": "search_athletes",
         "title": "Search athletes",
-        "description": "Search U⚡️Sportz athlete profiles by name, sport, or position.",
+        "description": "Search U⚡️Sportz athlete profiles by name, sport, or position, as the signed-in user.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -55,7 +55,7 @@
             "query": {
               "type": "string",
               "minLength": 1,
-              "description": "Text to match against username, full name, sport, or position."
+              "description": "Text to match against username, full name, or bio."
             },
             "limit": {
               "type": "integer",

@@ -3,29 +3,76 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
 
 // src/lib/mcp/tools/list-trending-posts.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.84.0";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z } from "npm:zod@^3.25.76";
+
+// src/lib/mcp/supabase.ts
+import { createClient } from "npm:@supabase/supabase-js@^2.84.0";
+function runtimeEnv(name) {
+  const runtime = globalThis;
+  return runtime.Deno?.env?.get?.(name) ?? runtime.process?.env?.[name];
+}
+function configuredEnv(names) {
+  for (const name of names) {
+    const value = runtimeEnv(name)?.trim();
+    if (value) return value;
+  }
+  return void 0;
+}
+function supabaseProjectUrl() {
+  const url = configuredEnv(["SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  if (!url) throw new Error("SUPABASE_URL (or VITE_SUPABASE_URL) is required");
+  return url;
+}
+function supabasePublishableKey() {
+  const direct = configuredEnv([
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_PUBLISHABLE_KEY"
+  ]);
+  if (direct) return direct;
+  const keyset = runtimeEnv("SUPABASE_PUBLISHABLE_KEYS");
+  if (keyset) {
+    try {
+      const parsed = JSON.parse(keyset);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const keys = parsed;
+        const key = [keys.default, ...Object.values(keys)].find((v) => typeof v === "string" && v.trim().startsWith("sb_publishable_"))?.trim();
+        if (key) return key;
+      }
+    } catch {
+    }
+  }
+  const legacy = configuredEnv(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
+  if (legacy) return legacy;
+  throw new Error("SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS, or SUPABASE_ANON_KEY is required");
+}
+function supabaseForUser(ctx) {
+  const token = ctx.getToken();
+  if (!token) throw new Error("supabaseForUser requires a verified OAuth token");
+  return createClient(supabaseProjectUrl(), supabasePublishableKey(), {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
+// src/lib/mcp/tools/list-trending-posts.ts
 var list_trending_posts_default = defineTool({
   name: "list_trending_posts",
   title: "List trending posts",
-  description: "List recent public posts from the U\u26A1\uFE0FSportz feed, ordered by most recent.",
+  description: "List recent posts from the U\u26A1\uFE0FSportz feed, ordered by most recent, visible to the signed-in user.",
   inputSchema: {
-    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10)."),
-    sport: z.string().optional().describe("Optional sport filter (e.g. 'basketball').")
+    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit, sport }) => {
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_PUBLISHABLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
-    let q = supabase.from("posts").select("id, caption, sport, video_url, thumbnail_url, likes_count, created_at").order("created_at", { ascending: false }).limit(limit ?? 10);
-    if (sport) q = q.eq("sport", sport);
+  handler: async ({ limit }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    const q = supabase.from("posts").select("id, content, video_url, image_url, likes_count, comments_count, created_at").order("likes_count", { ascending: false }).order("created_at", { ascending: false }).limit(limit ?? 10);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
@@ -36,27 +83,25 @@ var list_trending_posts_default = defineTool({
 });
 
 // src/lib/mcp/tools/search-athletes.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.84.0";
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z as z2 } from "npm:zod@^3.25.76";
 var search_athletes_default = defineTool2({
   name: "search_athletes",
   title: "Search athletes",
-  description: "Search U\u26A1\uFE0FSportz athlete profiles by name, sport, or position.",
+  description: "Search U\u26A1\uFE0FSportz athlete profiles by name, sport, or position, as the signed-in user.",
   inputSchema: {
-    query: z2.string().trim().min(1).describe("Text to match against username, full name, sport, or position."),
+    query: z2.string().trim().min(1).describe("Text to match against username, full name, or bio."),
     limit: z2.number().int().min(1).max(50).optional().describe("Max results (default 10).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ query, limit }) => {
-    const supabase = createClient2(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_PUBLISHABLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
+  handler: async ({ query, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
     const like = `%${query}%`;
-    const { data, error } = await supabase.from("profiles").select("id, username, full_name, sport, position, bio, avatar_url").or(
-      `username.ilike.${like},full_name.ilike.${like},sport.ilike.${like},position.ilike.${like}`
+    const { data, error } = await supabase.from("profiles").select("id, username, full_name, sports, role, bio, avatar_url").or(
+      `username.ilike.${like},full_name.ilike.${like},bio.ilike.${like}`
     ).limit(limit ?? 10);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
@@ -116,11 +161,16 @@ var get_motivation_quote_default = defineTool3({
 });
 
 // src/lib/mcp/index.ts
+var projectRef = "idcaeqkfrhqgwaprzzvk";
 var mcp_default = defineMcp({
   name: "usportz-mcp",
   title: "U\u26A1\uFE0FSportz MCP",
   version: "0.1.0",
-  instructions: "Tools for U\u26A1\uFE0FSportz \u2014 browse trending sports highlights, search athlete profiles, and get AI-generated motivation for athletes.",
+  instructions: "Tools for U\u26A1\uFE0FSportz \u2014 browse trending sports highlights, search athlete profiles, and get AI-generated motivation for athletes. Callers act as the signed-in U\u26A1\uFE0FSportz user.",
+  auth: auth.oauth.issuer({
+    issuer: `https://${projectRef}.supabase.co/auth/v1`,
+    acceptedAudiences: "authenticated"
+  }),
   tools: [list_trending_posts_default, search_athletes_default, get_motivation_quote_default]
 });
 
