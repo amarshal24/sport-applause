@@ -10,6 +10,7 @@ export interface ChatMessage {
   imageUrl: string | null;
   read: boolean;
   readAt: string | null;
+  deliveredAt: string | null;
   createdAt: string;
   isMine: boolean;
 }
@@ -45,6 +46,18 @@ export const useChat = (recipientId?: string) => {
       console.error('Error fetching conversations:', error);
       return;
     }
+
+    // Anything addressed to me that reached this device counts as delivered
+    const undeliveredIds =
+      allMessages?.filter(m => m.recipient_id === user.id && !m.delivered_at).map(m => m.id) || [];
+    if (undeliveredIds.length > 0) {
+      await supabase
+        .from('chat_messages')
+        .update({ delivered_at: new Date().toISOString() })
+        .in('id', undeliveredIds);
+    }
+
+
 
     // Group by conversation partner
     const conversationMap = new Map<string, {
@@ -136,19 +149,22 @@ export const useChat = (recipientId?: string) => {
         imageUrl: msg.image_url,
         read: msg.read,
         readAt: msg.read_at,
+        deliveredAt: msg.delivered_at ?? null,
         createdAt: msg.created_at,
         isMine: msg.sender_id === user.id
       }))
     );
 
-    // Mark unread messages as read
+    // Mark unread messages as read (also implies delivered)
     const unreadIds = data?.filter(m => !m.read && m.recipient_id === user.id).map(m => m.id) || [];
     if (unreadIds.length > 0) {
+      const now = new Date().toISOString();
       await supabase
         .from('chat_messages')
-        .update({ read: true, read_at: new Date().toISOString() })
+        .update({ read: true, read_at: now, delivered_at: now })
         .in('id', unreadIds);
     }
+
 
     setIsLoading(false);
   }, [user, recipientId]);
@@ -222,8 +238,8 @@ export const useChat = (recipientId?: string) => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
-          
+          const now = new Date().toISOString();
+
           // If we're in a conversation with this sender, add the message
           if (recipientId && payload.new.sender_id === recipientId) {
             const newMsg: ChatMessage = {
@@ -234,17 +250,25 @@ export const useChat = (recipientId?: string) => {
               imageUrl: payload.new.image_url,
               read: payload.new.read,
               readAt: payload.new.read_at ?? null,
+              deliveredAt: payload.new.delivered_at ?? now,
               createdAt: payload.new.created_at,
               isMine: false
             };
             setMessages(prev => [...prev, newMsg]);
-            
-            // Mark as read
+
+            // Thread is open: delivered and read
             supabase
               .from('chat_messages')
-              .update({ read: true })
+              .update({ read: true, read_at: now, delivered_at: now })
+              .eq('id', payload.new.id);
+          } else if (!payload.new.delivered_at) {
+            // Thread not open, but the message reached this device: delivered only
+            supabase
+              .from('chat_messages')
+              .update({ delivered_at: now })
               .eq('id', payload.new.id);
           }
+
           
           // Update conversations list
           fetchConversations();
@@ -269,6 +293,8 @@ export const useChat = (recipientId?: string) => {
               imageUrl: payload.new.image_url,
               read: payload.new.read,
               readAt: payload.new.read_at ?? null,
+              deliveredAt: payload.new.delivered_at ?? null,
+
               createdAt: payload.new.created_at,
               isMine: true
             };
@@ -290,11 +316,16 @@ export const useChat = (recipientId?: string) => {
           filter: `sender_id=eq.${user.id}`
         },
         (payload) => {
-          // Read receipt for a message we sent
+          // Delivery / read receipt for a message we sent
           setMessages(prev =>
             prev.map(m =>
               m.id === payload.new.id
-                ? { ...m, read: payload.new.read, readAt: payload.new.read_at ?? null }
+                ? {
+                    ...m,
+                    read: payload.new.read,
+                    readAt: payload.new.read_at ?? null,
+                    deliveredAt: payload.new.delivered_at ?? m.deliveredAt,
+                  }
                 : m
             )
           );

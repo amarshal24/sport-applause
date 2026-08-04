@@ -81,6 +81,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          delivered_at: string | null
           id: string
           image_url: string | null
           read: boolean
@@ -91,6 +92,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           read?: boolean
@@ -101,6 +103,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           read?: boolean

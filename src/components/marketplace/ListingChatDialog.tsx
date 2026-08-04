@@ -222,17 +222,22 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
                         {m.isMine &&
                           (m.read ? (
                             <CheckCheck className="h-3 w-3" aria-label="Seen" />
+                          ) : m.deliveredAt ? (
+                            <CheckCheck className="h-3 w-3 opacity-60" aria-label="Delivered" />
                           ) : (
-                            <Check className="h-3 w-3" aria-label="Sent" />
+                            <Check className="h-3 w-3 opacity-60" aria-label="Sent" />
                           ))}
                       </div>
                     </div>
                   </div>
-                  {m.isMine && m.id === lastMineId && m.read && (
+                  {m.isMine && m.id === lastMineId && (m.read || m.deliveredAt) && (
                     <p className="mt-0.5 pr-1 text-right text-[10px] text-muted-foreground">
-                      Seen{m.readAt ? ` ${format(new Date(m.readAt), isToday(new Date(m.readAt)) ? "p" : "MMM d, p")}` : ""}
+                      {m.read
+                        ? `Seen${m.readAt ? ` ${format(new Date(m.readAt), isToday(new Date(m.readAt)) ? "p" : "MMM d, p")}` : ""}`
+                        : `Delivered${m.deliveredAt ? ` ${format(new Date(m.deliveredAt), isToday(new Date(m.deliveredAt)) ? "p" : "MMM d, p")}` : ""}`}
                     </p>
                   )}
+
                 </div>
               );
             })
