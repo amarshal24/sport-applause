@@ -9,20 +9,19 @@ export default defineTool({
     "List recent posts from the U⚡️Sportz feed, ordered by most recent, visible to the signed-in user.",
   inputSchema: {
     limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10)."),
-    sport: z.string().optional().describe("Optional sport filter (e.g. 'basketball')."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit, sport }, ctx) => {
+  handler: async ({ limit }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    let q = supabase
+    const q = supabase
       .from("posts")
-      .select("id, caption, sport, video_url, thumbnail_url, likes_count, created_at")
+      .select("id, content, video_url, image_url, likes_count, comments_count, created_at")
+      .order("likes_count", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit ?? 10);
-    if (sport) q = q.eq("sport", sport);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {

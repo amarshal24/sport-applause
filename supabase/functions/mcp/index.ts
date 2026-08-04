@@ -64,17 +64,15 @@ var list_trending_posts_default = defineTool({
   title: "List trending posts",
   description: "List recent posts from the U\u26A1\uFE0FSportz feed, ordered by most recent, visible to the signed-in user.",
   inputSchema: {
-    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10)."),
-    sport: z.string().optional().describe("Optional sport filter (e.g. 'basketball').")
+    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit, sport }, ctx) => {
+  handler: async ({ limit }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    let q = supabase.from("posts").select("id, caption, sport, video_url, thumbnail_url, likes_count, created_at").order("created_at", { ascending: false }).limit(limit ?? 10);
-    if (sport) q = q.eq("sport", sport);
+    const q = supabase.from("posts").select("id, content, video_url, image_url, likes_count, comments_count, created_at").order("likes_count", { ascending: false }).order("created_at", { ascending: false }).limit(limit ?? 10);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
@@ -92,7 +90,7 @@ var search_athletes_default = defineTool2({
   title: "Search athletes",
   description: "Search U\u26A1\uFE0FSportz athlete profiles by name, sport, or position, as the signed-in user.",
   inputSchema: {
-    query: z2.string().trim().min(1).describe("Text to match against username, full name, sport, or position."),
+    query: z2.string().trim().min(1).describe("Text to match against username, full name, or bio."),
     limit: z2.number().int().min(1).max(50).optional().describe("Max results (default 10).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -102,8 +100,8 @@ var search_athletes_default = defineTool2({
     }
     const supabase = supabaseForUser(ctx);
     const like = `%${query}%`;
-    const { data, error } = await supabase.from("profiles").select("id, username, full_name, sport, position, bio, avatar_url").or(
-      `username.ilike.${like},full_name.ilike.${like},sport.ilike.${like},position.ilike.${like}`
+    const { data, error } = await supabase.from("profiles").select("id, username, full_name, sports, role, bio, avatar_url").or(
+      `username.ilike.${like},full_name.ilike.${like},bio.ilike.${like}`
     ).limit(limit ?? 10);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
