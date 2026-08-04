@@ -9,6 +9,7 @@ export interface ChatMessage {
   content: string;
   imageUrl: string | null;
   read: boolean;
+  readAt: string | null;
   createdAt: string;
   isMine: boolean;
 }
@@ -134,6 +135,7 @@ export const useChat = (recipientId?: string) => {
         content: msg.content,
         imageUrl: msg.image_url,
         read: msg.read,
+        readAt: msg.read_at,
         createdAt: msg.created_at,
         isMine: msg.sender_id === user.id
       }))
@@ -144,7 +146,7 @@ export const useChat = (recipientId?: string) => {
     if (unreadIds.length > 0) {
       await supabase
         .from('chat_messages')
-        .update({ read: true })
+        .update({ read: true, read_at: new Date().toISOString() })
         .in('id', unreadIds);
     }
 
@@ -231,6 +233,7 @@ export const useChat = (recipientId?: string) => {
               content: payload.new.content,
               imageUrl: payload.new.image_url,
               read: payload.new.read,
+              readAt: payload.new.read_at ?? null,
               createdAt: payload.new.created_at,
               isMine: false
             };
@@ -265,6 +268,7 @@ export const useChat = (recipientId?: string) => {
               content: payload.new.content,
               imageUrl: payload.new.image_url,
               read: payload.new.read,
+              readAt: payload.new.read_at ?? null,
               createdAt: payload.new.created_at,
               isMine: true
             };
@@ -275,6 +279,25 @@ export const useChat = (recipientId?: string) => {
             });
           }
           fetchConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `sender_id=eq.${user.id}`
+        },
+        (payload) => {
+          // Read receipt for a message we sent
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === payload.new.id
+                ? { ...m, read: payload.new.read, readAt: payload.new.read_at ?? null }
+                : m
+            )
+          );
         }
       )
       .subscribe();
