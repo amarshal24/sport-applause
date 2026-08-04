@@ -343,13 +343,34 @@ const Profile = () => {
                           </p>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-3">
                         <div className="flex items-center gap-1 text-foreground">
                           <Sparkles className="h-4 w-4 fill-current" />
                           <span className="font-semibold text-sm">{post.likes_count}</span>
                         </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="h-8 w-8"
+                          aria-label="Delete post"
+                          onClick={() => setDeleteTarget(post)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="h-7 w-7 absolute top-1 right-1 sm:hidden"
+                        aria-label="Delete post"
+                        onClick={() => setDeleteTarget(post)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
+
                   ))}
                 </div>
               ) : (
