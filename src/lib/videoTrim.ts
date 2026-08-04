@@ -4,15 +4,16 @@ export interface TrimOptions {
   start: number;
   end: number;
   square?: boolean;
+  withAudio?: boolean;
   onProgress?: (pct: number) => void;
 }
 
-export const trimVideo = (blob: Blob, { start, end, square, onProgress }: TrimOptions): Promise<Blob> =>
+export const trimVideo = (blob: Blob, { start, end, square, withAudio, onProgress }: TrimOptions): Promise<Blob> =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
     const video = document.createElement("video");
     video.src = url;
-    video.muted = true;
+    video.muted = !withAudio;
     video.playsInline = true;
 
     const cleanup = () => URL.revokeObjectURL(url);
@@ -44,6 +45,21 @@ export const trimVideo = (blob: Blob, { start, end, square, onProgress }: TrimOp
       const sy = square ? (vh - size) / 2 : 0;
 
       const stream = canvas.captureStream(30);
+
+      // Keep the original audio track when the clip was recorded with sound
+      let audioCtx: AudioContext | null = null;
+      if (withAudio) {
+        try {
+          const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          audioCtx = new Ctx();
+          const source = audioCtx.createMediaElementSource(video);
+          const dest = audioCtx.createMediaStreamDestination();
+          source.connect(dest);
+          dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
+        } catch {
+          audioCtx = null;
+        }
+      }
       const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
@@ -58,6 +74,7 @@ export const trimVideo = (blob: Blob, { start, end, square, onProgress }: TrimOp
       };
       recorder.onstop = () => {
         cleanup();
+        audioCtx?.close().catch(() => {});
         onProgress?.(100);
         resolve(new Blob(chunks, { type: "video/webm" }));
       };
