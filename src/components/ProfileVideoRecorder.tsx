@@ -521,8 +521,11 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                 Retake
               </Button>
               <Button onClick={uploadVideo} disabled={uploading || uploadDone} size="lg" className="flex-1">
-                {uploading ? (
+                {trimming ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Trimming</>
+                ) : uploading ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{progress}%</>
+
                 ) : uploadError ? (
                   <><RotateCcw className="mr-2 h-4 w-4" />Retry</>
                 ) : uploadDone ? (
