@@ -210,20 +210,66 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Photos ({images.length}/{MAX_IMAGES}) — different angles</Label>
+            {images.length > 0 && (
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
+                  <SecureImage
+                    src={images[Math.min(previewIndex, images.length - 1)]}
+                    alt={`Angle ${Math.min(previewIndex, images.length - 1) + 1} preview`}
+                    className="h-full w-full object-contain"
+                  />
+                  <span className="absolute bottom-1 left-1 rounded bg-background/80 px-2 py-0.5 text-xs">
+                    {Math.min(previewIndex, images.length - 1) === 0
+                      ? "Cover photo"
+                      : `Angle ${Math.min(previewIndex, images.length - 1) + 1}`}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Drag photos to reorder — the first photo is the cover.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-2">
-              {images.map((url) => (
-                <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                  <SecureImage src={url} alt="Listing photo" className="h-full w-full object-cover" />
+              {images.map((url, index) => (
+                <div
+                  key={url}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    moveImage(dragIndex, index);
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  onClick={() => setPreviewIndex(index)}
+                  className={`relative aspect-square rounded-lg overflow-hidden bg-muted cursor-grab active:cursor-grabbing ring-2 transition-opacity ${
+                    previewIndex === index ? "ring-primary" : "ring-transparent"
+                  } ${dragIndex === index ? "opacity-50" : ""}`}
+                >
+                  <SecureImage src={url} alt={`Angle ${index + 1}`} className="h-full w-full object-cover" />
+                  {index === 0 && (
+                    <span className="absolute bottom-1 left-1 rounded bg-background/80 px-1.5 text-[10px]">
+                      Cover
+                    </span>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setImages((p) => p.filter((i) => i !== url))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImages((p) => p.filter((i) => i !== url));
+                    }}
                     className="absolute top-1 right-1 rounded-full bg-background/80 p-1"
                     aria-label="Remove photo"
                   >
                     <X className="h-3 w-3" />
                   </button>
+                  <div className="absolute top-1 left-1 rounded bg-background/80 p-0.5">
+                    <GripVertical className="h-3 w-3 text-muted-foreground" />
+                  </div>
                 </div>
               ))}
+
               {images.length < MAX_IMAGES && (
                 <label className="aspect-square rounded-lg border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
                   {uploading ? (
