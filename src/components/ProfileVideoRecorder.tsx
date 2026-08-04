@@ -159,6 +159,10 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setUploadError(null);
     setProgress(0);
     setUploadDone(false);
+    setClipDuration(0);
+    setTrimStart(0);
+    setTrimEnd(0);
+    setSquareCrop(true);
     startCamera(facingMode);
   };
 
@@ -178,11 +182,31 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setProgress(0);
 
     try {
+      const needsTrim =
+        clipDuration > 0 && (trimStart > 0.05 || trimEnd < clipDuration - 0.05 || squareCrop);
+
+      let blobToUpload = recordedBlob;
+      if (needsTrim) {
+        setTrimming(true);
+        try {
+          blobToUpload = await trimVideo(recordedBlob, {
+            start: trimStart,
+            end: trimEnd,
+            square: squareCrop,
+            onProgress: setTrimProgress,
+          });
+        } finally {
+          setTrimming(false);
+          setTrimProgress(0);
+        }
+      }
+
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Your session expired. Please sign in again.");
 
       const path = `${user.id}/profile-video-${Date.now()}.webm`;
+
 
       const publicUrl = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
