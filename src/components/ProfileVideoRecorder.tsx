@@ -88,28 +88,88 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     streamRef.current = null;
   }, []);
 
-  const startCamera = useCallback(async (mode: "user" | "environment") => {
-    stopCamera();
+  const refreshCameras = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode, width: { ideal: 1080 }, height: { ideal: 1920 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {});
-      }
-    } catch (error) {
-      toast.error("Unable to access camera");
-      console.error("Camera error:", error);
+      const all = await navigator.mediaDevices.enumerateDevices();
+      setCameras(all.filter((d) => d.kind === "videoinput"));
+    } catch {
+      /* ignore */
     }
-  }, [stopCamera]);
+  }, []);
+
+  const startCamera = useCallback(
+    async (mode: "user" | "environment", id?: string | null) => {
+      stopCamera();
+      const landscape = window.innerWidth > window.innerHeight;
+      const ideal = landscape
+        ? { width: { ideal: 1920 }, height: { ideal: 1080 } }
+        : { width: { ideal: 1080 }, height: { ideal: 1920 } };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: id ? { deviceId: { exact: id }, ...ideal } : { facingMode: mode, ...ideal },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        const settings = stream.getVideoTracks()[0]?.getSettings();
+        if (settings?.deviceId) setDeviceId(settings.deviceId);
+        refreshCameras();
+      } catch (error) {
+        toast.error("Unable to access camera");
+        console.error("Camera error:", error);
+      }
+    },
+    [stopCamera, refreshCameras]
+  );
 
   useEffect(() => {
-    if (!recordedBlob) startCamera(facingMode);
+    if (!recordedBlob) startCamera(facingMode, deviceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facingMode]);
+  }, [facingMode, deviceId]);
+
+  // Keep the camera list fresh when devices are plugged/unplugged
+  useEffect(() => {
+    const handler = () => {
+      refreshCameras();
+      navigator.mediaDevices.enumerateDevices().then((all) => {
+        const cams = all.filter((d) => d.kind === "videoinput");
+        if (deviceId && !cams.some((c) => c.deviceId === deviceId)) {
+          toast.info("Camera disconnected — switching to default");
+          setDeviceId(null);
+        }
+      }).catch(() => {});
+    };
+    navigator.mediaDevices?.addEventListener?.("devicechange", handler);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+  }, [refreshCameras, deviceId]);
+
+  // Orientation changes: keep the preview correct, warn mid-recording
+  useEffect(() => {
+    const onResize = () => {
+      const next = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
+      setOrientation((prev) => {
+        if (prev === next) return prev;
+        if (isRecording) {
+          setRotatedWhileRecording(true);
+        } else if (!recordedBlob) {
+          // Re-acquire the stream at the new aspect ratio
+          startCamera(facingMode, deviceId);
+        }
+        return next;
+      });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    screen.orientation?.addEventListener?.("change", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      screen.orientation?.removeEventListener?.("change", onResize);
+    };
+  }, [isRecording, recordedBlob, facingMode, deviceId, startCamera]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -127,10 +187,22 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     };
   }, [previewUrl]);
 
+  const cameraLabel = (d: MediaDeviceInfo, i: number) => {
+    if (d.label) return d.label;
+    return `Camera ${i + 1}`;
+  };
+
+  const selectCamera = (id: string) => {
+    if (isRecording) return;
+    setDeviceId(id);
+  };
+
   const flipCamera = () => {
     if (isRecording) return;
+    setDeviceId(null);
     setFacingMode((m) => (m === "user" ? "environment" : "user"));
   };
+
 
   const startRecording = () => {
     if (!streamRef.current) return;
