@@ -32,8 +32,53 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
   const [sending, setSending] = useState(false);
   const [seller, setSeller] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [sender, setSender] = useState<"all" | "mine" | "theirs">("all");
+  const [period, setPeriod] = useState<"all" | "today" | "week" | "month">("all");
 
-  const lastMineId = [...messages].reverse().find((m) => m.isMine)?.id;
+  const isFiltering = query.trim().length > 0 || sender !== "all" || period !== "all";
+
+  const visibleMessages = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const now = Date.now();
+    const cutoff =
+      period === "today"
+        ? new Date(new Date().setHours(0, 0, 0, 0)).getTime()
+        : period === "week"
+          ? now - 7 * 864e5
+          : period === "month"
+            ? now - 30 * 864e5
+            : 0;
+    return messages.filter((m) => {
+      if (q && !m.content.toLowerCase().includes(q)) return false;
+      if (sender === "mine" && !m.isMine) return false;
+      if (sender === "theirs" && m.isMine) return false;
+      if (cutoff && new Date(m.createdAt).getTime() < cutoff) return false;
+      return true;
+    });
+  }, [messages, query, sender, period]);
+
+  const highlight = (text: string) => {
+    const q = query.trim();
+    if (!q) return text;
+    const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase() ? (
+        <mark key={i} className="rounded bg-accent px-0.5 text-accent-foreground">
+          {part}
+        </mark>
+      ) : (
+        <span key={i}>{part}</span>
+      ),
+    );
+  };
+
+  const clearFilters = () => {
+    setQuery("");
+    setSender("all");
+    setPeriod("all");
+  };
+
 
   const dayLabel = (iso: string) => {
     const d = new Date(iso);
