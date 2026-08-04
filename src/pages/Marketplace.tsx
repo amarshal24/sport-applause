@@ -339,7 +339,17 @@ const Marketplace = () => {
           setCategory(s.category || "All");
         }}
       />
+
+      {chatWith && (
+        <ListingChatDialog
+          open={!!chatWith}
+          onOpenChange={(o) => !o && setChatWith(null)}
+          sellerId={chatWith.sellerId}
+          listingTitle={chatWith.title}
+        />
+      )}
     </div>
+
   );
 };
 
