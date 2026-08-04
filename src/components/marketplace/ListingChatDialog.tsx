@@ -79,6 +79,7 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
     setPeriod("all");
   };
 
+  const lastMineId = [...messages].reverse().find((m) => m.isMine)?.id;
 
   const dayLabel = (iso: string) => {
     const d = new Date(iso);
