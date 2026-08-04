@@ -37,6 +37,8 @@ const Marketplace = () => {
   const [editing, setEditing] = useState<Listing | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [chatWith, setChatWith] = useState<{ sellerId: string; title: string } | null>(null);
+
   const {
     searches,
     matches,
