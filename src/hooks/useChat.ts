@@ -15,6 +15,15 @@ export interface ChatMessage {
   isMine: boolean;
 }
 
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+}
+
+export const CHAT_REACTIONS = ['👏', '🔥', '❤️', '😂', '💯', '👍'] as const;
+
 export interface ChatConversation {
   oderId: string;
   odername: string;
@@ -29,7 +38,9 @@ export const useChat = (recipientId?: string) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const reactionChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Fetch all conversations
   const fetchConversations = useCallback(async () => {
@@ -164,10 +175,69 @@ export const useChat = (recipientId?: string) => {
         .update({ read: true, read_at: now, delivered_at: now })
         .in('id', unreadIds);
     }
-
+    // Load reactions for this thread
+    const messageIds = (data || []).map(m => m.id);
+    if (messageIds.length > 0) {
+      const { data: reactionRows } = await supabase
+        .from('chat_message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+      setReactions(
+        (reactionRows || []).map(r => ({
+          id: r.id,
+          messageId: r.message_id,
+          userId: r.user_id,
+          emoji: r.emoji,
+        }))
+      );
+    } else {
+      setReactions([]);
+    }
 
     setIsLoading(false);
   }, [user, recipientId]);
+
+  // Add or remove a reaction on a message
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!user) return false;
+
+    const existing = reactions.find(
+      r => r.messageId === messageId && r.userId === user.id && r.emoji === emoji
+    );
+
+    if (existing) {
+      setReactions(prev => prev.filter(r => r.id !== existing.id));
+      const { error } = await supabase
+        .from('chat_message_reactions')
+        .delete()
+        .eq('id', existing.id);
+      if (error) {
+        console.error('Error removing reaction:', error);
+        setReactions(prev => [...prev, existing]);
+        return false;
+      }
+      return true;
+    }
+
+    const { data, error } = await supabase
+      .from('chat_message_reactions')
+      .insert({ message_id: messageId, user_id: user.id, emoji })
+      .select()
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error('Error adding reaction:', error);
+      return false;
+    }
+
+    setReactions(prev =>
+      prev.some(r => r.id === data.id)
+        ? prev
+        : [...prev, { id: data.id, messageId: data.message_id, userId: data.user_id, emoji: data.emoji }]
+    );
+    return true;
+  }, [user, reactions]);
+
 
   // Send a message
   const sendMessage = useCallback(async (content: string, imageUrl?: string) => {
@@ -342,6 +412,53 @@ export const useChat = (recipientId?: string) => {
     };
   }, [user, recipientId, fetchConversations]);
 
+  // Subscribe to reaction changes for the open thread
+  useEffect(() => {
+    if (!user || !recipientId) return;
+
+    if (reactionChannelRef.current) {
+      supabase.removeChannel(reactionChannelRef.current);
+      reactionChannelRef.current = null;
+    }
+
+    const channel = supabase
+      .channel(`chat-reactions-${user.id}-${recipientId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_message_reactions' },
+        (payload) => {
+          const row = payload.new as { id: string; message_id: string; user_id: string; emoji: string };
+          setMessages(prev => {
+            if (!prev.some(m => m.id === row.message_id)) return prev;
+            setReactions(rs =>
+              rs.some(r => r.id === row.id)
+                ? rs
+                : [...rs, { id: row.id, messageId: row.message_id, userId: row.user_id, emoji: row.emoji }]
+            );
+            return prev;
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'chat_message_reactions' },
+        (payload) => {
+          const oldId = (payload.old as { id?: string })?.id;
+          if (oldId) setReactions(prev => prev.filter(r => r.id !== oldId));
+        }
+      )
+      .subscribe();
+
+    reactionChannelRef.current = channel;
+
+    return () => {
+      if (reactionChannelRef.current) {
+        supabase.removeChannel(reactionChannelRef.current);
+        reactionChannelRef.current = null;
+      }
+    };
+  }, [user, recipientId]);
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -357,6 +474,8 @@ export const useChat = (recipientId?: string) => {
     messages,
     conversations,
     isLoading,
+    reactions,
+    toggleReaction,
     sendMessage,
     uploadImage,
     getTotalUnread,

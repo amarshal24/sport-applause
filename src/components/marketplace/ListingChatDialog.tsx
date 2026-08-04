@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Check, CheckCheck, Loader2, Search, Send, X } from "lucide-react";
+import MessageReactions from "@/components/marketplace/MessageReactions";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +28,7 @@ interface Props {
 
 const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage } = useChat(open ? sellerId : undefined);
+  const { messages, isLoading, sendMessage, reactions, toggleReaction } = useChat(open ? sellerId : undefined);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [seller, setSeller] = useState<{ username: string; avatar_url: string | null } | null>(null);
@@ -230,6 +231,13 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
                       </div>
                     </div>
                   </div>
+                  <MessageReactions
+                    messageId={m.id}
+                    reactions={reactions.filter((r) => r.messageId === m.id)}
+                    currentUserId={user?.id}
+                    isMine={m.isMine}
+                    onToggle={toggleReaction}
+                  />
                   {m.isMine && m.id === lastMineId && (m.read || m.deliveredAt) && (
                     <p className="mt-0.5 pr-1 text-right text-[10px] text-muted-foreground">
                       {m.read
