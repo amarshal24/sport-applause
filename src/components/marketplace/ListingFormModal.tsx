@@ -77,6 +77,11 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
   const [category, setCategory] = useState(MARKETPLACE_CATEGORIES[0]);
   const [condition, setCondition] = useState(CONDITIONS[0]);
   const [location, setLocation] = useState("");
+  const [team, setTeam] = useState("");
+  const [league, setLeague] = useState("");
+  const [size, setSize] = useState("");
+  const [fulfillment, setFulfillment] = useState("pickup");
+  const [shippingCost, setShippingCost] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -88,8 +93,18 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
     setCategory(listing?.category ?? MARKETPLACE_CATEGORIES[0]);
     setCondition(listing?.condition ?? CONDITIONS[0]);
     setLocation(listing?.location ?? "");
+    setTeam(listing?.team ?? "");
+    setLeague(listing?.league ?? "");
+    setSize(listing?.size ?? "");
+    setFulfillment(listing?.fulfillment ?? "pickup");
+    setShippingCost(
+      listing?.shipping_cost !== null && listing?.shipping_cost !== undefined
+        ? String(listing.shipping_cost)
+        : ""
+    );
     setImages(listing?.images ?? []);
   }, [open, listing]);
+
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || !user) return;
