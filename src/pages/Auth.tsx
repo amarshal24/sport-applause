@@ -36,13 +36,13 @@ const Auth = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, registerBiometric, signInWithBiometric, isBiometricAvailable, user } = useAuth();
+  const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, user } = useAuth();
   const navigate = useNavigate();
-  const [biometricRegistered, setBiometricRegistered] = useState(false);
 
   useEffect(() => {
-    const hasCredential = localStorage.getItem('biometric_credential_id');
-    setBiometricRegistered(!!hasCredential);
+    // Legacy client-only biometric credentials are no longer used for auth.
+    localStorage.removeItem('biometric_credential_id');
+    localStorage.removeItem('biometric_email');
   }, []);
 
   useEffect(() => {
@@ -539,28 +539,6 @@ const Auth = () => {
                     </Button>
                   </div>
 
-                  {isBiometricAvailable && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full mt-3"
-                      onClick={async () => {
-                        if (biometricRegistered) {
-                          await signInWithBiometric();
-                        } else if (email) {
-                          const { error } = await registerBiometric(email);
-                          if (!error) {
-                            setBiometricRegistered(true);
-                          }
-                        } else {
-                          setErrors({ email: "Enter your email first to register Face ID" });
-                        }
-                      }}
-                    >
-                      <ScanFace className="mr-2 h-4 w-4" />
-                      {biometricRegistered ? "Sign in with Face ID" : "Set up Face ID"}
-                    </Button>
-                  )}
                 </>
               )}
 
