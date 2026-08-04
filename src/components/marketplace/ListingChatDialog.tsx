@@ -231,6 +231,13 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
                       </div>
                     </div>
                   </div>
+                  <MessageReactions
+                    messageId={m.id}
+                    reactions={reactions.filter((r) => r.messageId === m.id)}
+                    currentUserId={user?.id}
+                    isMine={m.isMine}
+                    onToggle={toggleReaction}
+                  />
                   {m.isMine && m.id === lastMineId && (m.read || m.deliveredAt) && (
                     <p className="mt-0.5 pr-1 text-right text-[10px] text-muted-foreground">
                       {m.read
