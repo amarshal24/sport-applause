@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { Search, Plus, MapPin, MessageCircle, Pencil, Trash2, Store, Bell } from "lucide-react";
 import ListingFormModal, { MARKETPLACE_CATEGORIES, type Listing } from "@/components/marketplace/ListingFormModal";
 import SavedSearchesDialog, { SaveSearchButton, useSavedSearches } from "@/components/marketplace/SavedSearches";
+import ListingChatDialog from "@/components/marketplace/ListingChatDialog";
+
 
 const Marketplace = () => {
   const { user } = useAuth();
