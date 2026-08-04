@@ -14,9 +14,6 @@ interface AuthContextType {
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
-  registerBiometric: (email: string) => Promise<{ error: any }>;
-  signInWithBiometric: () => Promise<{ error: any }>;
-  isBiometricAvailable: boolean;
   loading: boolean;
 }
 
@@ -197,88 +194,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  };
-
-  const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  };
-
-  const registerBiometric = async (email: string) => {
-    try {
-      if (!window.PublicKeyCredential) {
-        return { error: { message: "Biometric authentication is not supported on this device" } };
-      }
-
-      const userId = new Uint8Array(16);
-      crypto.getRandomValues(userId);
-
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: {
-            name: "USportz",
-            id: window.location.hostname,
-          },
-          user: {
-            id: userId,
-            name: email,
-            displayName: email,
-          },
-          pubKeyCredParams: [
-            { alg: -7, type: "public-key" },
-            { alg: -257, type: "public-key" },
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform",
-            userVerification: "required",
-          },
-          timeout: 60000,
-        },
-      }) as PublicKeyCredential | null;
-
-      if (credential) {
-        localStorage.setItem('biometric_credential_id', arrayBufferToBase64((credential.rawId)));
-        localStorage.setItem('biometric_email', email);
-        toast.success("Face ID registered!", {
-          description: "You can now sign in with Face ID.",
-        });
-        return { error: null };
-      }
-
-      return { error: { message: "Failed to register biometric credential" } };
-    } catch (error: any) {
-      toast.error("Biometric registration failed", {
-        description: error.message,
-      });
-      return { error };
-    }
-  };
-
-  const signInWithBiometric = async () => {
-    // SECURITY WARNING: This biometric implementation is for demonstration only.
-    // It does NOT create a real authenticated session with the backend.
-    // For production use, implement proper server-side WebAuthn verification.
-    toast.error("Biometric authentication unavailable", {
-      description: "Please use email/password or social login instead.",
-    });
-    return { error: { message: "Biometric authentication is not available. Please use email/password or social login." } };
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -291,9 +206,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       verifyPhoneOtp, 
       signOut, 
       resetPassword, 
-      registerBiometric,
-      signInWithBiometric,
-      isBiometricAvailable,
       loading 
     }}>
       {children}
