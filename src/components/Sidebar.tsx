@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Home, Flame, User, TrendingUp, Heart, Trophy, Gamepad2, MessageCircle, Film, GraduationCap, Mail, ClipboardList, ShoppingBag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 const Sidebar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { unreadCount } = useChatNotifications();
 
   return (
     <aside className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-64 bg-card/50 backdrop-blur-lg border-r border-border p-4 hidden lg:block overflow-y-auto">
@@ -116,6 +119,9 @@ const Sidebar = () => {
         >
           <Mail className="h-5 w-5" />
           <span>{t("sidebar.messages")}</span>
+          {unreadCount > 0 && (
+            <Badge variant="destructive" className="ml-auto">{unreadCount}</Badge>
+          )}
         </NavLink>
       </div>
 
