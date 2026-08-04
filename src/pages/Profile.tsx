@@ -383,15 +383,14 @@ const Profile = () => {
         </div>
       </main>
 
-      {/* Video Recorder Dialog */}
-      <Dialog open={showVideoRecorder} onOpenChange={setShowVideoRecorder}>
-        <DialogContent className="max-w-2xl p-0 bg-transparent border-none">
-          <ProfileVideoRecorder
-            onVideoUploaded={fetchProfile}
-            onClose={() => setShowVideoRecorder(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Fullscreen Video Recorder */}
+      {showVideoRecorder && (
+        <ProfileVideoRecorder
+          onVideoUploaded={fetchProfile}
+          onClose={() => setShowVideoRecorder(false)}
+        />
+      )}
+
 
       {/* Edit Profile Dialog */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>

@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -36,59 +36,84 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [selectedFilter, setSelectedFilter] = useState<Filter>(filters[0]);
   const [uploading, setUploading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [fitMode, setFitMode] = useState<"cover" | "contain">("cover");
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    startCamera();
-    return () => {
-      stopCamera();
-    };
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async (mode: "user" | "environment") => {
+    stopCamera();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 640, facingMode: "user" },
+        video: { facingMode: mode, width: { ideal: 1080 }, height: { ideal: 1920 } },
         audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
       }
     } catch (error) {
       toast.error("Unable to access camera");
       console.error("Camera error:", error);
     }
-  };
+  }, [stopCamera]);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
+  useEffect(() => {
+    if (!recordedBlob) startCamera(facingMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facingMode]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      stopCamera();
+    };
+  }, [stopCamera]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const flipCamera = () => {
+    if (isRecording) return;
+    setFacingMode((m) => (m === "user" ? "environment" : "user"));
   };
 
   const startRecording = () => {
     if (!streamRef.current) return;
 
     chunksRef.current = [];
-    const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: "video/webm",
-    });
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : MediaRecorder.isTypeSupported("video/webm")
+      ? "video/webm"
+      : "";
+    const mediaRecorder = new MediaRecorder(streamRef.current, mimeType ? { mimeType } : undefined);
 
     mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        chunksRef.current.push(event.data);
-      }
+      if (event.data.size > 0) chunksRef.current.push(event.data);
     };
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
       setRecordedBlob(blob);
       const url = URL.createObjectURL(blob);
+      if (videoRef.current) videoRef.current.srcObject = null;
       setPreviewUrl(url);
       stopCamera();
     };
@@ -97,14 +122,13 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     mediaRecorder.start();
     setIsRecording(true);
 
-    // Stop recording after 5 seconds
     let timeLeft = 5;
     setCountdown(timeLeft);
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       timeLeft--;
       setCountdown(timeLeft);
       if (timeLeft <= 0) {
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         setCountdown(null);
         stopRecording();
       }
@@ -112,16 +136,17 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
     }
+    setIsRecording(false);
   };
 
   const retake = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setRecordedBlob(null);
     setPreviewUrl(null);
-    startCamera();
+    startCamera(facingMode);
   };
 
   const uploadVideo = async () => {
@@ -130,19 +155,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setUploading(true);
     try {
       const fileName = `${user.id}/profile-video-${Date.now()}.webm`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from("profile-videos")
-        .upload(fileName, recordedBlob, {
-          contentType: "video/webm",
-          upsert: true,
-        });
+        .upload(fileName, recordedBlob, { contentType: "video/webm", upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("profile-videos")
-        .getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage.from("profile-videos").getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
         .from("profiles")
@@ -162,56 +182,85 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     }
   };
 
-  return (
-    <Card className="glass-effect max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-display">
-            <Video className="w-5 h-5 text-primary" />
-            Record Profile Video
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-4 h-4" />
+  const mirrored = facingMode === "user" && !recordedBlob;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+      {/* Video fills the screen */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        loop={!!previewUrl}
+        src={previewUrl || undefined}
+        className={cn(
+          "absolute inset-0 w-full h-full",
+          fitMode === "cover" ? "object-cover" : "object-contain"
+        )}
+        style={{
+          filter: selectedFilter.cssFilter,
+          transform: mirrored ? "scaleX(-1)" : undefined,
+        }}
+      />
+
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-gradient-to-b from-black/70 to-transparent">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="rounded-full text-primary-foreground hover:bg-white/20"
+          onClick={() => { stopCamera(); onClose(); }}
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+
+        <span className="flex items-center gap-2 text-sm font-display text-primary-foreground">
+          <Video className="w-4 h-4 text-primary" />
+          Profile Video
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20"
+            onClick={() => setFitMode((m) => (m === "cover" ? "contain" : "cover"))}
+            aria-label={fitMode === "cover" ? "Fit video" : "Fill screen"}
+          >
+            {fitMode === "cover" ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+            onClick={flipCamera}
+            disabled={isRecording || !!recordedBlob}
+            aria-label="Flip camera"
+          >
+            <SwitchCamera className="w-5 h-5" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Video Preview */}
-        <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            loop={!!previewUrl}
-            src={previewUrl || undefined}
-            className="w-full h-full object-cover"
-            style={{ filter: selectedFilter.cssFilter }}
-          />
-          
-          {countdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <div className="text-6xl font-bold text-primary animate-pulse-glow">
-                {countdown}
-              </div>
-            </div>
-          )}
+      </div>
 
-          {!recordedBlob && !isRecording && (
-            <div className="absolute bottom-4 left-4 right-4 text-center text-sm text-white bg-background/80 p-2 rounded-lg">
-              5 second video • Position yourself and click record
-            </div>
-          )}
+      {countdown !== null && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <div className="text-7xl font-bold text-primary animate-pulse-glow">{countdown}</div>
         </div>
+      )}
 
-        {/* Filters */}
+      <div className="flex-1" />
+
+      {/* Bottom controls */}
+      <div className="relative z-10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
         {!recordedBlob && (
           <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Choose Filter
+            <label className="text-xs font-medium flex items-center gap-2 text-primary-foreground/80">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Filter
             </label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {filters.map((filter) => (
                 <Button
                   key={filter.id}
@@ -219,8 +268,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                   size="sm"
                   onClick={() => setSelectedFilter(filter)}
                   className={cn(
-                    "flex-shrink-0",
-                    selectedFilter.id === filter.id && "border-primary bg-primary/10"
+                    "flex-shrink-0 bg-background/30 backdrop-blur border-white/20 text-primary-foreground",
+                    selectedFilter.id === filter.id && "border-primary bg-primary/20"
                   )}
                 >
                   <span className="mr-1">{filter.emoji}</span>
@@ -231,53 +280,39 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
-        {/* Controls */}
         <div className="flex gap-3">
           {!recordedBlob ? (
-            <>
-              <Button
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isRecording}
-                className="flex-1"
-                size="lg"
-              >
-                {isRecording ? (
-                  <>
-                    <StopCircle className="mr-2 h-5 w-5 animate-pulse" />
-                    Recording...
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="mr-2 h-5 w-5" />
-                    Start Recording
-                  </>
-                )}
-              </Button>
-            </>
+            <Button
+              onClick={isRecording ? stopRecording : startRecording}
+              className="flex-1"
+              size="lg"
+            >
+              {isRecording ? (
+                <>
+                  <StopCircle className="mr-2 h-5 w-5 animate-pulse" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Record 5s
+                </>
+              )}
+            </Button>
           ) : (
             <>
-              <Button onClick={retake} variant="outline" className="flex-1">
+              <Button onClick={retake} variant="outline" size="lg" className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground">
                 Retake
               </Button>
-              <Button
-                onClick={uploadVideo}
-                disabled={uploading}
-                className="flex-1"
-              >
-                {uploading ? (
-                  "Uploading..."
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
-                )}
+              <Button onClick={uploadVideo} disabled={uploading} size="lg" className="flex-1">
+                {uploading ? "Uploading..." : (<><Upload className="mr-2 h-4 w-4" />Upload</>)}
               </Button>
             </>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>,
+    document.body
   );
 };
 
