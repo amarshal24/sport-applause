@@ -151,41 +151,83 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setRecordedBlob(null);
     setPreviewUrl(null);
+    setUploadError(null);
+    setProgress(0);
+    setUploadDone(false);
     startCamera(facingMode);
+  };
+
+  const cancelUpload = () => {
+    xhrRef.current?.abort();
+    xhrRef.current = null;
+    setUploading(false);
+    setProgress(0);
+    setUploadError("Upload canceled.");
   };
 
   const uploadVideo = async () => {
     if (!recordedBlob || !user) return;
 
     setUploading(true);
+    setUploadError(null);
+    setProgress(0);
+
     try {
-      const fileName = `${user.id}/profile-video-${Date.now()}.webm`;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Your session expired. Please sign in again.");
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-videos")
-        .upload(fileName, recordedBlob, { contentType: "video/webm", upsert: true });
+      const path = `${user.id}/profile-video-${Date.now()}.webm`;
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from("profile-videos").getPublicUrl(fileName);
+      const publicUrl = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
+        xhr.open("POST", `${SUPABASE_URL}/storage/v1/object/profile-videos/${path}`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.setRequestHeader("apikey", SUPABASE_KEY);
+        xhr.setRequestHeader("Content-Type", "video/webm");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 95));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setProgress(97);
+            resolve(supabase.storage.from("profile-videos").getPublicUrl(path).data.publicUrl);
+          } else if (xhr.status === 401 || xhr.status === 403) {
+            reject(new Error("You don't have permission to upload. Try signing in again."));
+          } else {
+            reject(new Error(`Upload failed (${xhr.status}). Please try again.`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error — check your connection and retry."));
+        xhr.onabort = () => reject(new Error("Upload canceled."));
+        xhr.send(recordedBlob);
+      });
 
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ profile_video_url: publicUrl })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error("Video uploaded, but saving it to your profile failed. Retry to finish.");
 
+      setProgress(100);
+      setUploadDone(true);
       toast.success("Profile video updated!");
       onVideoUploaded(publicUrl);
-      onClose();
+      setTimeout(onClose, 600);
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to upload video";
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      setUploadError(message);
+      if (message !== "Upload canceled.") toast.error(message);
     } finally {
+      xhrRef.current = null;
       setUploading(false);
     }
   };
+
 
   const mirrored = facingMode === "user" && !recordedBlob;
 
