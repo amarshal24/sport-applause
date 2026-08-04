@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Check, CheckCheck, Loader2, Search, Send, X } from "lucide-react";
+import MessageReactions from "@/components/marketplace/MessageReactions";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
