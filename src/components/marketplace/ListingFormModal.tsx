@@ -268,6 +268,55 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="ml-team">Team</Label>
+              <Input id="ml-team" value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Lakers" />
+            </div>
+            <div className="space-y-2">
+              <Label>League</Label>
+              <Select value={league || "none"} onValueChange={(v) => setLeague(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="League" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="none">Not specified</SelectItem>
+                  {LEAGUES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ml-size">Size</Label>
+              <Input id="ml-size" value={size} onChange={(e) => setSize(e.target.value)} placeholder="XL / 10.5" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Shipping / pickup</Label>
+              <Select value={fulfillment} onValueChange={setFulfillment}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {FULFILLMENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {fulfillment !== "pickup" && (
+              <div className="space-y-2">
+                <Label htmlFor="ml-ship">Shipping cost ($)</Label>
+                <Input
+                  id="ml-ship"
+                  type="number"
+                  min="0"
+                  value={shippingCost}
+                  onChange={(e) => setShippingCost(e.target.value)}
+                  placeholder="0 for free shipping"
+                />
+              </div>
+            )}
+          </div>
+
+
           <div className="space-y-2">
             <Label htmlFor="ml-desc">Description</Label>
             <Textarea
