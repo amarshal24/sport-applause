@@ -7,6 +7,7 @@ import Hero from "@/components/Hero";
 import MusicRecommendations from "@/components/MusicRecommendations";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import LiveNowFeed from "@/components/LiveNowFeed";
+import MarketplaceHighlights from "@/components/MarketplaceHighlights";
 import { useAuth } from "@/hooks/useAuth";
 import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { useState } from "react";
@@ -52,6 +53,7 @@ const Index = () => {
             <LiveNowFeed compact />
           </div>
           <UnifiedComposer onPostCreated={handlePostCreated} initialMode={composerMode} />
+          <MarketplaceHighlights />
           <MusicRecommendations recommendations={recommendations} loading={musicLoading} />
           <VideoFeed key={refreshKey} />
         </div>
