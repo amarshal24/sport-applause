@@ -246,6 +246,13 @@ const Marketplace = () => {
                     <Badge variant="outline">{selected.condition}</Badge>
                   </div>
                 </div>
+                {(selected.team || selected.league || selected.size) && (
+                  <div className="flex flex-wrap gap-2">
+                    {selected.team && <Badge variant="outline">Team: {selected.team}</Badge>}
+                    {selected.league && <Badge variant="outline">{selected.league}</Badge>}
+                    {selected.size && <Badge variant="outline">Size {selected.size}</Badge>}
+                  </div>
+                )}
                 {selected.location && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-4 w-4" /> {selected.location}
@@ -254,7 +261,14 @@ const Marketplace = () => {
                 {selected.description && (
                   <p className="text-sm whitespace-pre-wrap">{selected.description}</p>
                 )}
-                <p className="text-xs text-muted-foreground">In-person pickup only. Meet in a safe public place.</p>
+                <p className="text-xs text-muted-foreground">
+                  {selected.fulfillment === "shipping"
+                    ? `Ships to buyer${selected.shipping_cost != null ? ` — ${Number(selected.shipping_cost) === 0 ? "free shipping" : `$${Number(selected.shipping_cost).toLocaleString()} shipping`}` : ""}.`
+                    : selected.fulfillment === "both"
+                      ? `Local pickup or shipping${selected.shipping_cost != null ? ` (${Number(selected.shipping_cost) === 0 ? "free shipping" : `$${Number(selected.shipping_cost).toLocaleString()} shipping`})` : ""}. Meet in a safe public place.`
+                      : "In-person pickup only. Meet in a safe public place."}
+                </p>
+
 
                 {user?.id === selected.user_id ? (
                   <div className="flex gap-2">
