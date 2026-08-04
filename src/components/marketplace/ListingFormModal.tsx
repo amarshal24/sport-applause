@@ -38,7 +38,8 @@ export const FULFILLMENT_OPTIONS = [
   { value: "both", label: "Pickup or shipping" },
 ];
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 6;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 export interface Listing {
   id: string;
