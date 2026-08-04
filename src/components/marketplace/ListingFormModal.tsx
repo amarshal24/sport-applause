@@ -110,6 +110,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
     setLeague(listing?.league ?? "");
     setSize(listing?.size ?? "");
     setImages(listing?.images ?? []);
+    setPreviewIndex(0);
     setVideoUrl(listing?.video_url ?? "");
   }, [open, listing]);
 
