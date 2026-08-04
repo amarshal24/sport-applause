@@ -132,18 +132,74 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
           <p className="text-xs text-muted-foreground truncate">About: {listingTitle}</p>
         )}
 
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search this conversation..."
+              className="pl-8 pr-8 h-9"
+              aria-label="Search messages in this thread"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={sender} onValueChange={(v) => setSender(v as typeof sender)}>
+              <SelectTrigger className="h-8 flex-1 text-xs" aria-label="Filter by sender">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Everyone</SelectItem>
+                <SelectItem value="mine">Sent by me</SelectItem>
+                <SelectItem value="theirs">Received</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
+              <SelectTrigger className="h-8 flex-1 text-xs" aria-label="Filter by date">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">Last 7 days</SelectItem>
+                <SelectItem value="month">Last 30 days</SelectItem>
+              </SelectContent>
+            </Select>
+            {isFiltering && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>
+                Clear
+              </Button>
+            )}
+          </div>
+          {isFiltering && (
+            <p className="text-[11px] text-muted-foreground">
+              {visibleMessages.length} of {messages.length} messages match
+            </p>
+          )}
+        </div>
+
         <div className="h-72 overflow-y-auto space-y-2 rounded-lg bg-muted/30 p-3">
           {isLoading ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : messages.length === 0 ? (
+          ) : visibleMessages.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center pt-10">
-              Start the conversation with the seller.
+              {isFiltering ? "No messages match your search." : "Start the conversation with the seller."}
             </p>
           ) : (
-            messages.map((m, i) => {
-              const prev = messages[i - 1];
+            visibleMessages.map((m, i) => {
+              const prev = visibleMessages[i - 1];
               const showDay = !prev || dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
               return (
                 <div key={m.id}>
@@ -158,7 +214,8 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
                         m.isMine ? "bg-primary text-primary-foreground" : "bg-card border border-border"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                      <p className="whitespace-pre-wrap break-words">{highlight(m.content)}</p>
+
                       <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
                         <span>{format(new Date(m.createdAt), "p")}</span>
                         {m.isMine &&
