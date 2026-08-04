@@ -396,6 +396,52 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
+        {/* Trim & crop step */}
+        {recordedBlob && !uploadDone && (
+          <div className="rounded-xl border border-white/20 bg-background/40 backdrop-blur p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium text-primary-foreground">
+                <Scissors className="w-3.5 h-3.5 text-primary" />
+                Trim clip
+              </span>
+              <span className="text-xs font-mono text-primary-foreground/80">
+                {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s ({Math.max(0, trimEnd - trimStart).toFixed(1)}s)
+              </span>
+            </div>
+
+            <Slider
+              value={[trimStart, trimEnd]}
+              min={0}
+              max={clipDuration || 5}
+              step={0.1}
+              minStepsBetweenThumbs={5}
+              disabled={uploading || trimming || !clipDuration}
+              onValueChange={([s, e]) => {
+                setTrimStart(s);
+                setTrimEnd(e);
+                if (videoRef.current && videoRef.current.currentTime < s) {
+                  videoRef.current.currentTime = s;
+                }
+              }}
+              aria-label="Trim range"
+            />
+
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs text-primary-foreground">
+                <Crop className="w-3.5 h-3.5 text-primary" />
+                Square crop (best for avatars)
+              </span>
+              <Switch
+                checked={squareCrop}
+                onCheckedChange={setSquareCrop}
+                disabled={uploading || trimming}
+                aria-label="Square crop"
+              />
+            </div>
+          </div>
+        )}
+
+
         {/* Upload status */}
         {recordedBlob && (uploading || uploadError || uploadDone) && (
           <div
