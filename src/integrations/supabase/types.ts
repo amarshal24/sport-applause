@@ -84,6 +84,7 @@ export type Database = {
           id: string
           image_url: string | null
           read: boolean
+          read_at: string | null
           recipient_id: string
           sender_id: string
         }
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           read?: boolean
+          read_at?: string | null
           recipient_id: string
           sender_id: string
         }
@@ -102,6 +104,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           read?: boolean
+          read_at?: string | null
           recipient_id?: string
           sender_id?: string
         }
