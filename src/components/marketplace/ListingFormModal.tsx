@@ -14,8 +14,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ImagePlus, Loader2, X } from "lucide-react";
-import { SecureImage } from "@/components/SecureMedia";
+import { ImagePlus, Loader2, X, Video as VideoIcon } from "lucide-react";
+import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 
 export const MARKETPLACE_CATEGORIES = [
   "Memorabilia",
@@ -59,6 +59,7 @@ export interface Listing {
   size?: string | null;
   fulfillment?: string | null;
   shipping_cost?: number | null;
+  video_url?: string | null;
 }
 
 
@@ -84,7 +85,9 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
   const [fulfillment, setFulfillment] = useState("pickup");
   const [shippingCost, setShippingCost] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -104,6 +107,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
         : ""
     );
     setImages(listing?.images ?? []);
+    setVideoUrl(listing?.video_url ?? "");
   }, [open, listing]);
 
 
@@ -138,12 +142,32 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
     }
   };
 
+  const handleVideo = async (file: File | null | undefined) => {
+    if (!file || !user) return;
+    if (!file.type.startsWith("video/")) return toast.error("Please choose a video file");
+    if (file.size > MAX_VIDEO_BYTES) return toast.error("Video must be under 100MB");
+    setUploadingVideo(true);
+    try {
+      const ext = file.name.split(".").pop() || "mp4";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("marketplace").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("marketplace").getPublicUrl(path);
+      setVideoUrl(data.publicUrl);
+    } catch (e: any) {
+      toast.error(e?.message || "Video upload failed");
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     if (!title.trim()) return toast.error("Add a title");
     const numericPrice = Number(price);
     if (!Number.isFinite(numericPrice) || numericPrice < 0) return toast.error("Add a valid price");
     if (images.length === 0) return toast.error("Add at least one photo");
+    if (!videoUrl) return toast.error("A video of the item is required");
 
     setSaving(true);
     try {
@@ -164,6 +188,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
             ? parsedShipping
             : null,
         images,
+        video_url: videoUrl,
       };
 
       if (listing) {
@@ -198,7 +223,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Photos ({images.length}/{MAX_IMAGES})</Label>
+            <Label>Photos ({images.length}/{MAX_IMAGES}) — different angles</Label>
             <div className="grid grid-cols-3 gap-2">
               {images.map((url) => (
                 <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
@@ -230,6 +255,40 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
                 </label>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Item video (required)</Label>
+            {videoUrl ? (
+              <div className="relative rounded-lg overflow-hidden bg-muted">
+                <SecureVideo src={videoUrl} controls className="w-full max-h-56 object-contain" />
+                <button
+                  type="button"
+                  onClick={() => setVideoUrl("")}
+                  className="absolute top-1 right-1 rounded-full bg-background/80 p-1"
+                  aria-label="Remove video"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex h-24 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border cursor-pointer hover:bg-muted/50 transition-colors text-sm text-muted-foreground">
+                {uploadingVideo ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <VideoIcon className="h-5 w-5" />
+                    Upload a video (max 100MB)
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={(e) => handleVideo(e.target.files?.[0])}
+                />
+              </label>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -331,7 +390,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
 
           <p className="text-xs text-muted-foreground">All sales are arranged in person between buyer and seller.</p>
 
-          <Button className="w-full" onClick={handleSubmit} disabled={saving || uploading}>
+          <Button className="w-full" onClick={handleSubmit} disabled={saving || uploading || uploadingVideo}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {listing ? "Save changes" : "Post listing"}
           </Button>
