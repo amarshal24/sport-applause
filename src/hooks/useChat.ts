@@ -175,10 +175,69 @@ export const useChat = (recipientId?: string) => {
         .update({ read: true, read_at: now, delivered_at: now })
         .in('id', unreadIds);
     }
-
+    // Load reactions for this thread
+    const messageIds = (data || []).map(m => m.id);
+    if (messageIds.length > 0) {
+      const { data: reactionRows } = await supabase
+        .from('chat_message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+      setReactions(
+        (reactionRows || []).map(r => ({
+          id: r.id,
+          messageId: r.message_id,
+          userId: r.user_id,
+          emoji: r.emoji,
+        }))
+      );
+    } else {
+      setReactions([]);
+    }
 
     setIsLoading(false);
   }, [user, recipientId]);
+
+  // Add or remove a reaction on a message
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!user) return false;
+
+    const existing = reactions.find(
+      r => r.messageId === messageId && r.userId === user.id && r.emoji === emoji
+    );
+
+    if (existing) {
+      setReactions(prev => prev.filter(r => r.id !== existing.id));
+      const { error } = await supabase
+        .from('chat_message_reactions')
+        .delete()
+        .eq('id', existing.id);
+      if (error) {
+        console.error('Error removing reaction:', error);
+        setReactions(prev => [...prev, existing]);
+        return false;
+      }
+      return true;
+    }
+
+    const { data, error } = await supabase
+      .from('chat_message_reactions')
+      .insert({ message_id: messageId, user_id: user.id, emoji })
+      .select()
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error('Error adding reaction:', error);
+      return false;
+    }
+
+    setReactions(prev =>
+      prev.some(r => r.id === data.id)
+        ? prev
+        : [...prev, { id: data.id, messageId: data.message_id, userId: data.user_id, emoji: data.emoji }]
+    );
+    return true;
+  }, [user, reactions]);
+
 
   // Send a message
   const sendMessage = useCallback(async (content: string, imageUrl?: string) => {
