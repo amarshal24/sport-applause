@@ -317,7 +317,9 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
             start: trimStart,
             end: trimEnd,
             square: squareCrop,
+            withAudio: audioEnabled,
             onProgress: setTrimProgress,
+
           });
         } finally {
           setTrimming(false);
