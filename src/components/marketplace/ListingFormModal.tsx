@@ -146,6 +146,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
 
     setSaving(true);
     try {
+      const parsedShipping = Number(shippingCost);
       const payload = {
         title: title.trim().slice(0, 120),
         description: description.trim().slice(0, 2000) || null,
@@ -153,8 +154,17 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
         category,
         condition,
         location: location.trim() || null,
+        team: team.trim().slice(0, 80) || null,
+        league: league || null,
+        size: size.trim().slice(0, 40) || null,
+        fulfillment,
+        shipping_cost:
+          fulfillment !== "pickup" && shippingCost.trim() !== "" && Number.isFinite(parsedShipping) && parsedShipping >= 0
+            ? parsedShipping
+            : null,
         images,
       };
+
       if (listing) {
         const { error } = await supabase
           .from("marketplace_listings")
