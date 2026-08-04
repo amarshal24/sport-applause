@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { Search, Plus, MapPin, MessageCircle, Pencil, Trash2, Store, Bell } from "lucide-react";
 import ListingFormModal, { MARKETPLACE_CATEGORIES, type Listing } from "@/components/marketplace/ListingFormModal";
 import SavedSearchesDialog, { SaveSearchButton, useSavedSearches } from "@/components/marketplace/SavedSearches";
+import ListingChatDialog from "@/components/marketplace/ListingChatDialog";
+
 
 const Marketplace = () => {
   const { user } = useAuth();
@@ -37,6 +39,8 @@ const Marketplace = () => {
   const [editing, setEditing] = useState<Listing | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [chatWith, setChatWith] = useState<{ sellerId: string; title: string } | null>(null);
+
   const {
     searches,
     matches,
@@ -290,15 +294,15 @@ const Marketplace = () => {
                 ) : (
                   <Button
                     className="w-full"
-                    onClick={() =>
-                      navigate(
-                        `/messages?to=${selected.user_id}&listing=${encodeURIComponent(selected.title)}`
-                      )
-                    }
+                    onClick={() => {
+                      if (!user) return navigate("/auth");
+                      setChatWith({ sellerId: selected.user_id, title: selected.title });
+                    }}
                   >
                     <MessageCircle className="mr-1 h-4 w-4" /> Message seller
                   </Button>
                 )}
+
               </div>
             </>
           )}
@@ -337,7 +341,17 @@ const Marketplace = () => {
           setCategory(s.category || "All");
         }}
       />
+
+      {chatWith && (
+        <ListingChatDialog
+          open={!!chatWith}
+          onOpenChange={(o) => !o && setChatWith(null)}
+          sellerId={chatWith.sellerId}
+          listingTitle={chatWith.title}
+        />
+      )}
     </div>
+
   );
 };
 
