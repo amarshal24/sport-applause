@@ -90,6 +90,7 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
 
   useEffect(() => {
     if (!open) return;
+    clearFilters();
     setDraft(listingTitle ? `Hi! I'm interested in your listing "${listingTitle}". Is it still available?` : "");
     supabase
       .from("profiles")
