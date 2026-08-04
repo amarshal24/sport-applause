@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
-import { Phone, Mail, ScanFace, Eye, EyeOff } from "lucide-react";
+import { Phone, Mail, Eye, EyeOff } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import LightningLoader from "@/components/LightningLoader";
 
