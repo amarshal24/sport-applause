@@ -84,6 +84,19 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
+
+  const moveImage = (from: number | null, to: number) => {
+    if (from === null || from === to) return;
+    setImages((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setPreviewIndex(to);
+  };
 
   useEffect(() => {
     if (!open) return;
