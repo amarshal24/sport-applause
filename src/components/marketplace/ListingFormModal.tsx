@@ -14,7 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ImagePlus, Loader2, X, Video as VideoIcon } from "lucide-react";
+import { ImagePlus, Loader2, X, Video as VideoIcon, GripVertical } from "lucide-react";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 import SafetyDisclaimer from "@/components/marketplace/SafetyDisclaimer";
 
