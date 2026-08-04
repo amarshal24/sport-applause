@@ -365,11 +365,12 @@ const Profile = () => {
                           </p>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <div className="flex items-center gap-1 text-foreground">
                           <Sparkles className="h-4 w-4 fill-current" />
                           <span className="font-semibold text-sm">{post.likes_count}</span>
                         </div>
+                        <ApplauseButton postId={post.id} />
                         <Button
                           type="button"
                           size="icon"
@@ -381,6 +382,11 @@ const Profile = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      <ApplauseButton
+                        postId={post.id}
+                        className="absolute bottom-1 left-1 sm:hidden backdrop-blur"
+                      />
+
                       <Button
                         type="button"
                         size="icon"
