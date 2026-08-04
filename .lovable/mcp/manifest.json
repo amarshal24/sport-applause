@@ -19,7 +19,7 @@
       {
         "name": "list_trending_posts",
         "title": "List trending posts",
-        "description": "List recent public posts from the U⚡️Sportz feed, ordered by most recent.",
+        "description": "List recent posts from the U⚡️Sportz feed, ordered by most recent, visible to the signed-in user.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

@@ -6,41 +6,11 @@
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
 
 // src/lib/mcp/tools/list-trending-posts.ts
-import { createClient } from "npm:@supabase/supabase-js@^2.84.0";
 import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z } from "npm:zod@^3.25.76";
-var list_trending_posts_default = defineTool({
-  name: "list_trending_posts",
-  title: "List trending posts",
-  description: "List recent public posts from the U\u26A1\uFE0FSportz feed, ordered by most recent.",
-  inputSchema: {
-    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10)."),
-    sport: z.string().optional().describe("Optional sport filter (e.g. 'basketball').")
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ limit, sport }) => {
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_PUBLISHABLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
-    let q = supabase.from("posts").select("id, caption, sport, video_url, thumbnail_url, likes_count, created_at").order("created_at", { ascending: false }).limit(limit ?? 10);
-    if (sport) q = q.eq("sport", sport);
-    const { data, error } = await q;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    return {
-      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-      structuredContent: { posts: data ?? [] }
-    };
-  }
-});
-
-// src/lib/mcp/tools/search-athletes.ts
-import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z2 } from "npm:zod@^3.25.76";
 
 // src/lib/mcp/supabase.ts
-import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.84.0";
+import { createClient } from "npm:@supabase/supabase-js@^2.84.0";
 function runtimeEnv(name) {
   const runtime = globalThis;
   return runtime.Deno?.env?.get?.(name) ?? runtime.process?.env?.[name];
@@ -82,13 +52,41 @@ function supabasePublishableKey() {
 function supabaseForUser(ctx) {
   const token = ctx.getToken();
   if (!token) throw new Error("supabaseForUser requires a verified OAuth token");
-  return createClient2(supabaseProjectUrl(), supabasePublishableKey(), {
+  return createClient(supabaseProjectUrl(), supabasePublishableKey(), {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
 
+// src/lib/mcp/tools/list-trending-posts.ts
+var list_trending_posts_default = defineTool({
+  name: "list_trending_posts",
+  title: "List trending posts",
+  description: "List recent posts from the U\u26A1\uFE0FSportz feed, ordered by most recent, visible to the signed-in user.",
+  inputSchema: {
+    limit: z.number().int().min(1).max(50).optional().describe("Max posts to return (default 10)."),
+    sport: z.string().optional().describe("Optional sport filter (e.g. 'basketball').")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, sport }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    let q = supabase.from("posts").select("id, caption, sport, video_url, thumbnail_url, likes_count, created_at").order("created_at", { ascending: false }).limit(limit ?? 10);
+    if (sport) q = q.eq("sport", sport);
+    const { data, error } = await q;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: { posts: data ?? [] }
+    };
+  }
+});
+
 // src/lib/mcp/tools/search-athletes.ts
+import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z2 } from "npm:zod@^3.25.76";
 var search_athletes_default = defineTool2({
   name: "search_athletes",
   title: "Search athletes",
