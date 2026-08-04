@@ -445,8 +445,46 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           >
             <SwitchCamera className="w-5 h-5" />
           </Button>
+          {cameras.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+                  disabled={isRecording || !!recordedBlob}
+                  aria-label="Choose camera"
+                >
+                  <Camera className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-[110] w-64">
+                <DropdownMenuLabel>Available cameras</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {cameras.map((cam, i) => (
+                  <DropdownMenuItem
+                    key={cam.deviceId || i}
+                    onClick={() => selectCamera(cam.deviceId)}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span className="truncate">{cameraLabel(cam, i)}</span>
+                    {cam.deviceId === deviceId && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
+
+      {/* Orientation notice */}
+      {rotatedWhileRecording && isRecording && (
+        <div className="relative z-10 mx-4 flex items-center gap-2 rounded-lg bg-background/70 backdrop-blur px-3 py-2 text-xs text-primary-foreground">
+          <SmartphoneCharging className="w-4 h-4 text-primary shrink-0" />
+          Rotation detected — keep the device steady until recording finishes.
+        </div>
+      )}
+
 
       {countdown !== null && (
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
