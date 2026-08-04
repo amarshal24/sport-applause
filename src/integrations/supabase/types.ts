@@ -795,6 +795,48 @@ export type Database = {
           },
         ]
       }
+      saved_searches: {
+        Row: {
+          alerts_enabled: boolean
+          category: string | null
+          created_at: string
+          id: string
+          last_checked_at: string
+          max_price: number | null
+          min_price: number | null
+          name: string
+          query: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerts_enabled?: boolean
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          query?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerts_enabled?: boolean
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          query?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           created_at: string
