@@ -27,7 +27,7 @@ interface Props {
 
 const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage } = useChat(open ? sellerId : undefined);
+  const { messages, isLoading, sendMessage, reactions, toggleReaction } = useChat(open ? sellerId : undefined);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [seller, setSeller] = useState<{ username: string; avatar_url: string | null } | null>(null);
