@@ -304,11 +304,16 @@ export const useChat = (recipientId?: string) => {
           filter: `sender_id=eq.${user.id}`
         },
         (payload) => {
-          // Read receipt for a message we sent
+          // Delivery / read receipt for a message we sent
           setMessages(prev =>
             prev.map(m =>
               m.id === payload.new.id
-                ? { ...m, read: payload.new.read, readAt: payload.new.read_at ?? null }
+                ? {
+                    ...m,
+                    read: payload.new.read,
+                    readAt: payload.new.read_at ?? null,
+                    deliveredAt: payload.new.delivered_at ?? m.deliveredAt,
+                  }
                 : m
             )
           );
