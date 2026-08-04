@@ -21,13 +21,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Search, Plus, MapPin, MessageCircle, Pencil, Trash2, Store } from "lucide-react";
+import { Search, Plus, MapPin, MessageCircle, Pencil, Trash2, Store, Bell } from "lucide-react";
 import ListingFormModal, { MARKETPLACE_CATEGORIES, type Listing } from "@/components/marketplace/ListingFormModal";
+import SavedSearchesDialog, { SaveSearchButton, useSavedSearches } from "@/components/marketplace/SavedSearches";
 
 const Marketplace = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All");
