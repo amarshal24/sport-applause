@@ -100,8 +100,9 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
   }, [open, sellerId, listingTitle]);
 
   useEffect(() => {
+    if (isFiltering) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, isFiltering]);
 
   const handleSend = async () => {
     const content = draft.trim();
