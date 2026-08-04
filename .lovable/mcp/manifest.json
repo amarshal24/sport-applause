@@ -3,7 +3,11 @@
   "sdk_version": "0.20.0",
   "path": "/functions/v1/mcp",
   "auth": {
-    "type": "none"
+    "type": "oauth",
+    "issuer": "https://idcaeqkfrhqgwaprzzvk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
   },
   "mcp": {
     "server": {
@@ -43,7 +47,7 @@
       {
         "name": "search_athletes",
         "title": "Search athletes",
-        "description": "Search U⚡️Sportz athlete profiles by name, sport, or position.",
+        "description": "Search U⚡️Sportz athlete profiles by name, sport, or position, as the signed-in user.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
