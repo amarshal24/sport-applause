@@ -10,6 +10,8 @@ import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { SportIcon } from "@/components/SportIcon";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
+import ApplauseButton from "@/components/ApplauseButton";
+
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
