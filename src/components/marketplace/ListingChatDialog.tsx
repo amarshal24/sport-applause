@@ -14,7 +14,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sellerId: string;
-  listingTitle: string;
+  listingTitle?: string;
 }
 
 const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props) => {
@@ -27,7 +27,7 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
 
   useEffect(() => {
     if (!open) return;
-    setDraft(`Hi! I'm interested in your listing "${listingTitle}". Is it still available?`);
+    setDraft(listingTitle ? `Hi! I'm interested in your listing "${listingTitle}". Is it still available?` : "");
     supabase
       .from("profiles")
       .select("username, avatar_url")
@@ -64,7 +64,9 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-xs text-muted-foreground truncate">About: {listingTitle}</p>
+        {listingTitle && (
+          <p className="text-xs text-muted-foreground truncate">About: {listingTitle}</p>
+        )}
 
         <div className="h-72 overflow-y-auto space-y-2 rounded-lg bg-muted/30 p-3">
           {isLoading ? (
