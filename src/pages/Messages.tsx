@@ -17,6 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useChat } from "@/hooks/useChat";
+import ListingChatDialog from "@/components/marketplace/ListingChatDialog";
+import { MessageCircle } from "lucide-react";
 
 interface Message {
   id: string;
@@ -52,6 +55,8 @@ const Messages = () => {
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
+  const [chatWith, setChatWith] = useState<string | null>(null);
+  const { conversations } = useChat();
 
   // Compose state (used when navigated with ?to=<userId>)
   const [showComposeModal, setShowComposeModal] = useState(false);
@@ -65,6 +70,14 @@ const Messages = () => {
       fetchMessages();
     }
   }, [user, activeTab]);
+
+  useEffect(() => {
+    const chat = searchParams.get("chat");
+    if (chat && user && chat !== user.id) {
+      setActiveTab("chats");
+      setChatWith(chat);
+    }
+  }, [searchParams, user]);
 
   useEffect(() => {
     const to = searchParams.get("to");
@@ -374,6 +387,15 @@ const Messages = () => {
                   <Send className="w-4 h-4" />
                   Sent
                 </TabsTrigger>
+                <TabsTrigger value="chats" className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Chats
+                  {conversations.reduce((sum, c) => sum + c.unreadCount, 0) > 0 && (
+                    <Badge variant="destructive" className="ml-1">
+                      {conversations.reduce((sum, c) => sum + c.unreadCount, 0)}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="inbox" className="space-y-2">
@@ -491,10 +513,60 @@ const Messages = () => {
                   ))
                 )}
               </TabsContent>
+              <TabsContent value="chats" className="space-y-2">
+                {conversations.length === 0 ? (
+                  <Card className="glass-effect">
+                    <CardContent className="p-12 text-center">
+                      <MessageCircle className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold mb-2">No Chats Yet</h3>
+                      <p className="text-muted-foreground">
+                        Message a seller from the marketplace to start chatting
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  conversations.map((c) => (
+                    <Card
+                      key={c.oderId}
+                      className="glass-effect cursor-pointer hover:shadow-glow transition-all"
+                      onClick={() => setChatWith(c.oderId)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={c.oderAvatar || undefined} />
+                            <AvatarFallback>{c.odername[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium truncate">{c.odername}</p>
+                              {c.unreadCount > 0 && (
+                                <Badge variant="default" className="text-xs">{c.unreadCount} new</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground truncate">{c.lastMessage}</p>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(c.lastMessageTime), "MMM d")}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
             </Tabs>
           )}
         </div>
       </main>
+
+      {chatWith && (
+        <ListingChatDialog
+          open={!!chatWith}
+          onOpenChange={(o) => !o && setChatWith(null)}
+          sellerId={chatWith}
+        />
+      )}
 
       {/* Reply Modal */}
       <Dialog open={showReplyModal} onOpenChange={setShowReplyModal}>
