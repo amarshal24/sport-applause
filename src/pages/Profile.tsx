@@ -33,6 +33,27 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePost = async () => {
+    if (!deleteTarget || !user) return;
+    setDeleting(true);
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", deleteTarget.id)
+      .eq("user_id", user.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Could not delete post");
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    toast.success("Post deleted");
+  };
+
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editForm, setEditForm] = useState({
