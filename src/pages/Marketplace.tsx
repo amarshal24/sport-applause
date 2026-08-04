@@ -310,6 +310,19 @@ const Marketplace = () => {
         listing={editing}
         onSaved={fetchListings}
       />
+
+      <SavedSearchesDialog
+        open={alertsOpen}
+        onOpenChange={setAlertsOpen}
+        searches={searches}
+        matches={matches}
+        loading={searchesLoading}
+        onRefresh={refreshSearches}
+        onApply={(s) => {
+          setQuery(s.query || "");
+          setCategory(s.category || "All");
+        }}
+      />
     </div>
   );
 };
