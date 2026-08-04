@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -56,6 +56,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [micDenied, setMicDenied] = useState(false);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
     typeof window !== "undefined" && window.innerWidth > window.innerHeight ? "landscape" : "portrait"
@@ -98,7 +100,7 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   }, []);
 
   const startCamera = useCallback(
-    async (mode: "user" | "environment", id?: string | null) => {
+    async (mode: "user" | "environment", id?: string | null, wantAudio = audioEnabled) => {
       stopCamera();
       const landscape = window.innerWidth > window.innerHeight;
       const ideal = landscape
@@ -107,7 +109,7 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: id ? { deviceId: { exact: id }, ...ideal } : { facingMode: mode, ...ideal },
-          audio: false,
+          audio: wantAudio ? { echoCancellation: true, noiseSuppression: true } : false,
         });
         streamRef.current = stream;
         if (videoRef.current) {
@@ -118,15 +120,36 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
         if (settings?.deviceId) setDeviceId(settings.deviceId);
         refreshCameras();
       } catch (error) {
+        // Microphone blocked? Fall back to a video-only stream.
+        if (wantAudio) {
+          console.warn("Falling back to video-only capture:", error);
+          setMicDenied(true);
+          setAudioEnabled(false);
+          toast.error("Microphone unavailable — recording without sound");
+          await startCameraRef.current?.(mode, id, false);
+          return;
+        }
         toast.error("Unable to access camera");
         console.error("Camera error:", error);
       }
     },
-    [stopCamera, refreshCameras]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stopCamera, refreshCameras, audioEnabled]
   );
 
+  const startCameraRef = useRef<typeof startCamera | null>(null);
+  startCameraRef.current = startCamera;
+
+  const toggleAudio = async () => {
+    if (isRecording || recordedBlob) return;
+    const next = !audioEnabled;
+    setAudioEnabled(next);
+    if (next) setMicDenied(false);
+    await startCamera(facingMode, deviceId, next);
+  };
+
   useEffect(() => {
-    if (!recordedBlob) startCamera(facingMode, deviceId);
+    if (!recordedBlob) startCamera(facingMode, deviceId, audioEnabled);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facingMode, deviceId]);
 
@@ -445,6 +468,17 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
             aria-label="Flip camera"
           >
             <SwitchCamera className="w-5 h-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+            onClick={toggleAudio}
+            disabled={isRecording || !!recordedBlob}
+            aria-label={audioEnabled ? "Mute microphone" : "Record with sound"}
+            aria-pressed={audioEnabled}
+          >
+            {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5 text-muted-foreground" />}
           </Button>
           {cameras.length > 1 && (
             <DropdownMenu>
