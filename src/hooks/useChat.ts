@@ -15,6 +15,15 @@ export interface ChatMessage {
   isMine: boolean;
 }
 
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+}
+
+export const CHAT_REACTIONS = ['👏', '🔥', '❤️', '😂', '💯', '👍'] as const;
+
 export interface ChatConversation {
   oderId: string;
   odername: string;
