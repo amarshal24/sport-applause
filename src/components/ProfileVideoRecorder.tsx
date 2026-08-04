@@ -2,11 +2,15 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, RotateCcw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { trimVideo } from "@/lib/videoTrim";
+
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -46,6 +50,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadDone, setUploadDone] = useState(false);
+  const [clipDuration, setClipDuration] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [squareCrop, setSquareCrop] = useState(true);
+  const [trimming, setTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+
+
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -159,6 +171,10 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setUploadError(null);
     setProgress(0);
     setUploadDone(false);
+    setClipDuration(0);
+    setTrimStart(0);
+    setTrimEnd(0);
+    setSquareCrop(true);
     startCamera(facingMode);
   };
 
@@ -178,11 +194,31 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setProgress(0);
 
     try {
+      const needsTrim =
+        clipDuration > 0 && (trimStart > 0.05 || trimEnd < clipDuration - 0.05 || squareCrop);
+
+      let blobToUpload = recordedBlob;
+      if (needsTrim) {
+        setTrimming(true);
+        try {
+          blobToUpload = await trimVideo(recordedBlob, {
+            start: trimStart,
+            end: trimEnd,
+            square: squareCrop,
+            onProgress: setTrimProgress,
+          });
+        } finally {
+          setTrimming(false);
+          setTrimProgress(0);
+        }
+      }
+
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Your session expired. Please sign in again.");
 
       const path = `${user.id}/profile-video-${Date.now()}.webm`;
+
 
       const publicUrl = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -244,8 +280,28 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
         autoPlay
         playsInline
         muted
-        loop={!!previewUrl}
+        loop={false}
         src={previewUrl || undefined}
+        onLoadedMetadata={(e) => {
+          if (!previewUrl) return;
+          const d = isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 5;
+          setClipDuration(d);
+          setTrimStart(0);
+          setTrimEnd(d);
+        }}
+        onTimeUpdate={(e) => {
+          if (!previewUrl || !clipDuration) return;
+          const v = e.currentTarget;
+          if (v.currentTime >= trimEnd || v.currentTime < trimStart - 0.1) {
+            v.currentTime = trimStart;
+            v.play().catch(() => {});
+          }
+        }}
+        onEnded={(e) => {
+          if (!previewUrl) return;
+          e.currentTarget.currentTime = trimStart;
+          e.currentTarget.play().catch(() => {});
+        }}
         className={cn(
           "absolute inset-0 w-full h-full",
           fitMode === "cover" ? "object-cover" : "object-contain"
@@ -255,6 +311,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           transform: mirrored ? "scaleX(-1)" : undefined,
         }}
       />
+
+      {/* Square crop guide */}
+      {previewUrl && squareCrop && (
+        <div className="absolute inset-0 z-[5] pointer-events-none flex items-center justify-center">
+          <div className="aspect-square w-[92vw] max-w-[92vh] border-2 border-white/70 rounded-2xl shadow-[0_0_0_9999px_hsl(0_0%_0%/0.45)]" />
+        </div>
+      )}
+
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-gradient-to-b from-black/70 to-transparent">
@@ -332,6 +396,52 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
+        {/* Trim & crop step */}
+        {recordedBlob && !uploadDone && (
+          <div className="rounded-xl border border-white/20 bg-background/40 backdrop-blur p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium text-primary-foreground">
+                <Scissors className="w-3.5 h-3.5 text-primary" />
+                Trim clip
+              </span>
+              <span className="text-xs font-mono text-primary-foreground/80">
+                {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s ({Math.max(0, trimEnd - trimStart).toFixed(1)}s)
+              </span>
+            </div>
+
+            <Slider
+              value={[trimStart, trimEnd]}
+              min={0}
+              max={clipDuration || 5}
+              step={0.1}
+              minStepsBetweenThumbs={5}
+              disabled={uploading || trimming || !clipDuration}
+              onValueChange={([s, e]) => {
+                setTrimStart(s);
+                setTrimEnd(e);
+                if (videoRef.current && videoRef.current.currentTime < s) {
+                  videoRef.current.currentTime = s;
+                }
+              }}
+              aria-label="Trim range"
+            />
+
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs text-primary-foreground">
+                <Crop className="w-3.5 h-3.5 text-primary" />
+                Square crop (best for avatars)
+              </span>
+              <Switch
+                checked={squareCrop}
+                onCheckedChange={setSquareCrop}
+                disabled={uploading || trimming}
+                aria-label="Square crop"
+              />
+            </div>
+          </div>
+        )}
+
+
         {/* Upload status */}
         {recordedBlob && (uploading || uploadError || uploadDone) && (
           <div
@@ -357,11 +467,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                   ? uploadError
                   : uploadDone
                   ? "Upload complete"
+                  : trimming
+                  ? `Trimming clip… ${trimProgress}%`
                   : progress < 95
                   ? `Uploading video… ${progress}%`
                   : "Saving to your profile…"}
               </span>
-              {uploading && (
+
+              {uploading && !trimming && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -372,7 +485,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                 </Button>
               )}
             </div>
-            {!uploadError && <Progress value={progress} className="h-1.5" />}
+            {!uploadError && <Progress value={trimming ? trimProgress : progress} className="h-1.5" />}
+
           </div>
         )}
 
@@ -407,8 +521,11 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                 Retake
               </Button>
               <Button onClick={uploadVideo} disabled={uploading || uploadDone} size="lg" className="flex-1">
-                {uploading ? (
+                {trimming ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Trimming</>
+                ) : uploading ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{progress}%</>
+
                 ) : uploadError ? (
                   <><RotateCcw className="mr-2 h-4 w-4" />Retry</>
                 ) : uploadDone ? (
