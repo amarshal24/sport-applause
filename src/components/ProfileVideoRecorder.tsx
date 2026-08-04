@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -10,6 +10,15 @@ import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { trimVideo } from "@/lib/videoTrim";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
