@@ -467,10 +467,13 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                   ? uploadError
                   : uploadDone
                   ? "Upload complete"
+                  : trimming
+                  ? `Trimming clip… ${trimProgress}%`
                   : progress < 95
                   ? `Uploading video… ${progress}%`
                   : "Saving to your profile…"}
               </span>
+
               {uploading && (
                 <Button
                   variant="ghost"
