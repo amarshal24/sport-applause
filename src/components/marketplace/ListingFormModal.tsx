@@ -30,6 +30,14 @@ export const MARKETPLACE_CATEGORIES = [
 
 export const CONDITIONS = ["New", "Like New", "Good", "Fair", "Used"];
 
+export const LEAGUES = ["NFL", "NBA", "MLB", "NHL", "MLS", "NCAA", "Olympic", "Other"];
+
+export const FULFILLMENT_OPTIONS = [
+  { value: "pickup", label: "Local pickup only" },
+  { value: "shipping", label: "Shipping only" },
+  { value: "both", label: "Pickup or shipping" },
+];
+
 const MAX_IMAGES = 5;
 
 export interface Listing {
@@ -45,7 +53,13 @@ export interface Listing {
   status: string;
   views_count: number;
   created_at: string;
+  team?: string | null;
+  league?: string | null;
+  size?: string | null;
+  fulfillment?: string | null;
+  shipping_cost?: number | null;
 }
+
 
 interface Props {
   open: boolean;
@@ -63,6 +77,11 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
   const [category, setCategory] = useState(MARKETPLACE_CATEGORIES[0]);
   const [condition, setCondition] = useState(CONDITIONS[0]);
   const [location, setLocation] = useState("");
+  const [team, setTeam] = useState("");
+  const [league, setLeague] = useState("");
+  const [size, setSize] = useState("");
+  const [fulfillment, setFulfillment] = useState("pickup");
+  const [shippingCost, setShippingCost] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -74,8 +93,18 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
     setCategory(listing?.category ?? MARKETPLACE_CATEGORIES[0]);
     setCondition(listing?.condition ?? CONDITIONS[0]);
     setLocation(listing?.location ?? "");
+    setTeam(listing?.team ?? "");
+    setLeague(listing?.league ?? "");
+    setSize(listing?.size ?? "");
+    setFulfillment(listing?.fulfillment ?? "pickup");
+    setShippingCost(
+      listing?.shipping_cost !== null && listing?.shipping_cost !== undefined
+        ? String(listing.shipping_cost)
+        : ""
+    );
     setImages(listing?.images ?? []);
   }, [open, listing]);
+
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || !user) return;
@@ -117,6 +146,7 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
 
     setSaving(true);
     try {
+      const parsedShipping = Number(shippingCost);
       const payload = {
         title: title.trim().slice(0, 120),
         description: description.trim().slice(0, 2000) || null,
@@ -124,8 +154,17 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
         category,
         condition,
         location: location.trim() || null,
+        team: team.trim().slice(0, 80) || null,
+        league: league || null,
+        size: size.trim().slice(0, 40) || null,
+        fulfillment,
+        shipping_cost:
+          fulfillment !== "pickup" && shippingCost.trim() !== "" && Number.isFinite(parsedShipping) && parsedShipping >= 0
+            ? parsedShipping
+            : null,
         images,
       };
+
       if (listing) {
         const { error } = await supabase
           .from("marketplace_listings")
@@ -228,6 +267,55 @@ const ListingFormModal = ({ open, onOpenChange, listing, onSaved }: Props) => {
               <Input id="ml-loc" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="City, State" />
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="ml-team">Team</Label>
+              <Input id="ml-team" value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Lakers" />
+            </div>
+            <div className="space-y-2">
+              <Label>League</Label>
+              <Select value={league || "none"} onValueChange={(v) => setLeague(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="League" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="none">Not specified</SelectItem>
+                  {LEAGUES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ml-size">Size</Label>
+              <Input id="ml-size" value={size} onChange={(e) => setSize(e.target.value)} placeholder="XL / 10.5" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Shipping / pickup</Label>
+              <Select value={fulfillment} onValueChange={setFulfillment}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {FULFILLMENT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {fulfillment !== "pickup" && (
+              <div className="space-y-2">
+                <Label htmlFor="ml-ship">Shipping cost ($)</Label>
+                <Input
+                  id="ml-ship"
+                  type="number"
+                  min="0"
+                  value={shippingCost}
+                  onChange={(e) => setShippingCost(e.target.value)}
+                  placeholder="0 for free shipping"
+                />
+              </div>
+            )}
+          </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="ml-desc">Description</Label>

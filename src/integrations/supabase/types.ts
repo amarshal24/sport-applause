@@ -329,11 +329,16 @@ export type Database = {
           condition: string
           created_at: string
           description: string | null
+          fulfillment: string
           id: string
           images: string[] | null
+          league: string | null
           location: string | null
           price: number
+          shipping_cost: number | null
+          size: string | null
           status: string
+          team: string | null
           title: string
           updated_at: string
           user_id: string
@@ -345,11 +350,16 @@ export type Database = {
           condition?: string
           created_at?: string
           description?: string | null
+          fulfillment?: string
           id?: string
           images?: string[] | null
+          league?: string | null
           location?: string | null
           price: number
+          shipping_cost?: number | null
+          size?: string | null
           status?: string
+          team?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -361,11 +371,16 @@ export type Database = {
           condition?: string
           created_at?: string
           description?: string | null
+          fulfillment?: string
           id?: string
           images?: string[] | null
+          league?: string | null
           location?: string | null
           price?: number
+          shipping_cost?: number | null
+          size?: string | null
           status?: string
+          team?: string | null
           title?: string
           updated_at?: string
           user_id?: string
