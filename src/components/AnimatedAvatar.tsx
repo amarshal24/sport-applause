@@ -1,19 +1,32 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
+import { vttToObjectUrl } from "@/lib/captions";
 
 interface Props {
   videoUrl?: string | null;
+  captionVtt?: string | null;
   imageUrl?: string | null;
   fallback: string;
   className?: string;
   showPlayIcon?: boolean;
 }
 
-const AnimatedAvatar = ({ videoUrl, imageUrl, fallback, className, showPlayIcon = false }: Props) => {
+const AnimatedAvatar = ({ videoUrl, captionVtt, imageUrl, fallback, className, showPlayIcon = false }: Props) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [captionUrl, setCaptionUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!captionVtt) {
+      setCaptionUrl(null);
+      return;
+    }
+    const url = vttToObjectUrl(captionVtt);
+    setCaptionUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [captionVtt]);
 
   useEffect(() => {
     if (videoUrl && videoRef.current) {
@@ -68,6 +81,9 @@ const AnimatedAvatar = ({ videoUrl, imageUrl, fallback, className, showPlayIcon 
             )}
           >
             <source src={videoUrl} type="video/webm" />
+            {captionUrl && (
+              <track kind="captions" src={captionUrl} srcLang="en" label="English" default />
+            )}
           </video>
         )}
 

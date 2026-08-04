@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging, Mic, MicOff } from "lucide-react";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging, Mic, MicOff, Captions } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { trimVideo } from "@/lib/videoTrim";
+import { buildVtt } from "@/lib/captions";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +76,11 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [squareCrop, setSquareCrop] = useState(true);
   const [trimming, setTrimming] = useState(false);
   const [trimProgress, setTrimProgress] = useState(0);
+
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [caption, setCaption] = useState("");
+  const [captioning, setCaptioning] = useState(false);
+  const [captionError, setCaptionError] = useState<string | null>(null);
 
 
 
@@ -250,6 +257,7 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
       if (videoRef.current) videoRef.current.srcObject = null;
       setPreviewUrl(url);
       stopCamera();
+      if (captionsEnabled && audioEnabled) generateCaptions(blob);
     };
 
     mediaRecorderRef.current = mediaRecorder;
@@ -287,6 +295,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setTrimStart(0);
     setTrimEnd(0);
     setSquareCrop(true);
+    setCaption("");
+    setCaptionError(null);
     startCamera(facingMode);
   };
 
@@ -297,6 +307,31 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     setProgress(0);
     setUploadError("Upload canceled.");
   };
+
+  const generateCaptions = useCallback(
+    async (blob: Blob) => {
+      setCaptioning(true);
+      setCaptionError(null);
+      try {
+        const form = new FormData();
+        form.append("file", blob, "clip.webm");
+        const { data, error } = await supabase.functions.invoke("transcribe-video", { body: form });
+        if (error) throw error;
+        const text = (data as { text?: string; error?: string })?.text?.trim();
+        if (!text) throw new Error((data as { error?: string })?.error || "No speech detected in this clip.");
+        setCaption(text);
+        toast.success("Captions generated");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Could not generate captions for this clip.";
+        console.error("Caption error:", err);
+        setCaptionError(message);
+      } finally {
+        setCaptioning(false);
+      }
+    },
+    []
+  );
 
   const uploadVideo = async () => {
     if (!recordedBlob || !user) return;
@@ -362,7 +397,13 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ profile_video_url: publicUrl })
+        .update({
+          profile_video_url: publicUrl,
+          profile_video_caption: caption.trim() || null,
+          profile_video_caption_vtt: caption.trim()
+            ? buildVtt(caption.trim(), Math.max(0.5, (trimEnd || clipDuration) - trimStart))
+            : null,
+        })
         .eq("id", user.id);
 
       if (updateError) throw new Error("Video uploaded, but saving it to your profile failed. Retry to finish.");
@@ -604,6 +645,76 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
+
+        {/* Captions */}
+        {recordedBlob && !uploadDone && (
+          <div className="rounded-xl border border-white/20 bg-background/40 backdrop-blur p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium text-primary-foreground">
+                <Captions className="w-3.5 h-3.5 text-primary" />
+                Auto captions
+              </span>
+              <Switch
+                checked={captionsEnabled}
+                onCheckedChange={(v) => {
+                  setCaptionsEnabled(v);
+                  if (!v) {
+                    setCaption("");
+                    setCaptionError(null);
+                  }
+                }}
+                disabled={uploading || captioning}
+                aria-label="Auto captions"
+              />
+            </div>
+
+            {captionsEnabled && (
+              <>
+                {!audioEnabled ? (
+                  <p className="text-xs text-primary-foreground/70">
+                    Turn the microphone on and re-record to caption your highlights.
+                  </p>
+                ) : captioning ? (
+                  <p className="flex items-center gap-2 text-xs text-primary-foreground/80">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Listening to your clip and writing captions…
+                  </p>
+                ) : (
+                  <>
+                    <Textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="Captions will appear here — you can edit them before uploading."
+                      rows={3}
+                      disabled={uploading}
+                      aria-label="Video captions"
+                      className="bg-background/50 text-sm text-primary-foreground placeholder:text-primary-foreground/50 border-white/20"
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      {captionError ? (
+                        <span className="text-xs text-destructive">{captionError}</span>
+                      ) : (
+                        <span className="text-xs text-primary-foreground/60">
+                          Viewers can read these under your video.
+                        </span>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => recordedBlob && generateCaptions(recordedBlob)}
+                        disabled={uploading || captioning || !audioEnabled}
+                        className="bg-background/30 border-white/20 text-primary-foreground shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        {caption ? "Redo" : "Generate"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* Upload status */}
         {recordedBlob && (uploading || uploadError || uploadDone) && (

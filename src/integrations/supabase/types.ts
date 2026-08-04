@@ -708,6 +708,8 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          profile_video_caption: string | null
+          profile_video_caption_vtt: string | null
           profile_video_url: string | null
           role: string
           sports: string[] | null
@@ -722,6 +724,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          profile_video_caption?: string | null
+          profile_video_caption_vtt?: string | null
           profile_video_url?: string | null
           role?: string
           sports?: string[] | null
@@ -736,6 +740,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          profile_video_caption?: string | null
+          profile_video_caption_vtt?: string | null
           profile_video_url?: string | null
           role?: string
           sports?: string[] | null

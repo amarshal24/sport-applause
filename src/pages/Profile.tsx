@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock, Captions } from "lucide-react";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import WatchLaterVideos from "@/components/WatchLaterVideos";
 import { toast } from "sonner";
@@ -170,6 +170,7 @@ const Profile = () => {
                   <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
                   <AnimatedAvatar
                     videoUrl={profile?.profile_video_url}
+                    captionVtt={profile?.profile_video_caption_vtt}
                     imageUrl={profile?.avatar_url}
                     fallback={profile?.username?.[0]?.toUpperCase() || "U"}
                     className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
@@ -208,6 +209,18 @@ const Profile = () => {
                     </Button>
                   </div>
                   
+                  {profile?.profile_video_caption && (
+                    <div className="rounded-lg border border-border/50 bg-muted/40 p-3 text-left">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                        <Captions className="w-3.5 h-3.5 text-primary" />
+                        Video captions
+                      </p>
+                      <p className="text-sm text-foreground/90 leading-relaxed">
+                        {profile.profile_video_caption}
+                      </p>
+                    </div>
+                  )}
+
                   {profile?.full_name && (
                     <p className="text-sm text-muted-foreground font-medium">
                       {profile.full_name}
