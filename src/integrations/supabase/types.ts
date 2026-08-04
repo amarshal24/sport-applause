@@ -1060,6 +1060,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+          level: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+          level?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+          level?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_daily_challenges: {
         Row: {
           challenge_id: string
@@ -1170,6 +1200,7 @@ export type Database = {
           status: string
         }[]
       }
+      is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
