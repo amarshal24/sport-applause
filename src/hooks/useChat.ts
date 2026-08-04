@@ -10,6 +10,7 @@ export interface ChatMessage {
   imageUrl: string | null;
   read: boolean;
   readAt: string | null;
+  deliveredAt: string | null;
   createdAt: string;
   isMine: boolean;
 }
