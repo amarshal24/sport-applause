@@ -26,7 +26,24 @@ const moods: Mood[] = [
   { id: "motivated", emoji: "💪", label: "Motivated" },
   { id: "peaceful", emoji: "😌", label: "Peaceful" },
   { id: "stressed", emoji: "😫", label: "Stressed" },
+  { id: "confident", emoji: "😎", label: "Confident" },
+  { id: "focused", emoji: "🎯", label: "Focused" },
+  { id: "angry", emoji: "😠", label: "Angry" },
+  { id: "lonely", emoji: "🥺", label: "Lonely" },
+  { id: "excited", emoji: "🤩", label: "Excited" },
+  { id: "nervous", emoji: "😬", label: "Nervous" },
+  { id: "injured", emoji: "🤕", label: "Injured" },
+  { id: "burned-out", emoji: "🔋", label: "Burned Out" },
+  { id: "determined", emoji: "🔥", label: "Determined" },
+  { id: "defeated", emoji: "😔", label: "Defeated" },
+  { id: "proud", emoji: "🏆", label: "Proud" },
+  { id: "overwhelmed", emoji: "🌊", label: "Overwhelmed" },
+  { id: "doubtful", emoji: "🤔", label: "Doubtful" },
+  { id: "energized", emoji: "⚡️", label: "Energized" },
+  { id: "healing", emoji: "🌱", label: "Healing" },
+  { id: "fearless", emoji: "🦁", label: "Fearless" },
 ];
+
 
 const religions: Religion[] = [
   { id: "christianity", label: "Christianity", icon: "✝️" },
@@ -133,7 +150,7 @@ const MoodReligionSelector = ({ onContentGenerated }: MoodReligionSelectorProps)
         {/* Mood Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">How are you feeling?</label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
             {moods.map((mood) => (
               <button
                 key={mood.id}
