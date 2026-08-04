@@ -332,6 +332,50 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
+        {/* Upload status */}
+        {recordedBlob && (uploading || uploadError || uploadDone) && (
+          <div
+            className={cn(
+              "rounded-xl border p-3 space-y-2 backdrop-blur",
+              uploadError
+                ? "border-destructive/50 bg-destructive/15"
+                : "border-white/20 bg-background/40"
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2 text-sm text-primary-foreground">
+              {uploadError ? (
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+              ) : uploadDone ? (
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              )}
+              <span className="flex-1">
+                {uploadError
+                  ? uploadError
+                  : uploadDone
+                  ? "Upload complete"
+                  : progress < 95
+                  ? `Uploading video… ${progress}%`
+                  : "Saving to your profile…"}
+              </span>
+              {uploading && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelUpload}
+                  className="h-7 px-2 text-primary-foreground hover:bg-white/20"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
+            {!uploadError && <Progress value={progress} className="h-1.5" />}
+          </div>
+        )}
+
         <div className="flex gap-3">
           {!recordedBlob ? (
             <Button
@@ -353,15 +397,30 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
             </Button>
           ) : (
             <>
-              <Button onClick={retake} variant="outline" size="lg" className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground">
+              <Button
+                onClick={retake}
+                variant="outline"
+                size="lg"
+                disabled={uploading || uploadDone}
+                className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground"
+              >
                 Retake
               </Button>
-              <Button onClick={uploadVideo} disabled={uploading} size="lg" className="flex-1">
-                {uploading ? "Uploading..." : (<><Upload className="mr-2 h-4 w-4" />Upload</>)}
+              <Button onClick={uploadVideo} disabled={uploading || uploadDone} size="lg" className="flex-1">
+                {uploading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{progress}%</>
+                ) : uploadError ? (
+                  <><RotateCcw className="mr-2 h-4 w-4" />Retry</>
+                ) : uploadDone ? (
+                  <><CheckCircle2 className="mr-2 h-4 w-4" />Done</>
+                ) : (
+                  <><Upload className="mr-2 h-4 w-4" />Upload</>
+                )}
               </Button>
             </>
           )}
         </div>
+
       </div>
     </div>,
     document.body
