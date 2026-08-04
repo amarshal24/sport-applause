@@ -474,7 +474,7 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                   : "Saving to your profile…"}
               </span>
 
-              {uploading && (
+              {uploading && !trimming && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -485,7 +485,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                 </Button>
               )}
             </div>
-            {!uploadError && <Progress value={progress} className="h-1.5" />}
+            {!uploadError && <Progress value={trimming ? trimProgress : progress} className="h-1.5" />}
+
           </div>
         )}
 
