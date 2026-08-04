@@ -47,6 +47,18 @@ export const useChat = (recipientId?: string) => {
       return;
     }
 
+    // Anything addressed to me that reached this device counts as delivered
+    const undeliveredIds =
+      allMessages?.filter(m => m.recipient_id === user.id && !m.delivered_at).map(m => m.id) || [];
+    if (undeliveredIds.length > 0) {
+      await supabase
+        .from('chat_messages')
+        .update({ delivered_at: new Date().toISOString() })
+        .in('id', undeliveredIds);
+    }
+
+
+
     // Group by conversation partner
     const conversationMap = new Map<string, {
       oderId: string;
