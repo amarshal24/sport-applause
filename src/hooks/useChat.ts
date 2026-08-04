@@ -38,7 +38,9 @@ export const useChat = (recipientId?: string) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const reactionChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Fetch all conversations
   const fetchConversations = useCallback(async () => {
