@@ -226,8 +226,8 @@ export const useChat = (recipientId?: string) => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
-          
+          const now = new Date().toISOString();
+
           // If we're in a conversation with this sender, add the message
           if (recipientId && payload.new.sender_id === recipientId) {
             const newMsg: ChatMessage = {
@@ -238,17 +238,25 @@ export const useChat = (recipientId?: string) => {
               imageUrl: payload.new.image_url,
               read: payload.new.read,
               readAt: payload.new.read_at ?? null,
+              deliveredAt: payload.new.delivered_at ?? now,
               createdAt: payload.new.created_at,
               isMine: false
             };
             setMessages(prev => [...prev, newMsg]);
-            
-            // Mark as read
+
+            // Thread is open: delivered and read
             supabase
               .from('chat_messages')
-              .update({ read: true })
+              .update({ read: true, read_at: now, delivered_at: now })
+              .eq('id', payload.new.id);
+          } else if (!payload.new.delivered_at) {
+            // Thread not open, but the message reached this device: delivered only
+            supabase
+              .from('chat_messages')
+              .update({ delivered_at: now })
               .eq('id', payload.new.id);
           }
+
           
           // Update conversations list
           fetchConversations();
