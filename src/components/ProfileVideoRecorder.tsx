@@ -280,8 +280,28 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
         autoPlay
         playsInline
         muted
-        loop={!!previewUrl}
+        loop={false}
         src={previewUrl || undefined}
+        onLoadedMetadata={(e) => {
+          if (!previewUrl) return;
+          const d = isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 5;
+          setClipDuration(d);
+          setTrimStart(0);
+          setTrimEnd(d);
+        }}
+        onTimeUpdate={(e) => {
+          if (!previewUrl || !clipDuration) return;
+          const v = e.currentTarget;
+          if (v.currentTime >= trimEnd || v.currentTime < trimStart - 0.1) {
+            v.currentTime = trimStart;
+            v.play().catch(() => {});
+          }
+        }}
+        onEnded={(e) => {
+          if (!previewUrl) return;
+          e.currentTarget.currentTime = trimStart;
+          e.currentTarget.play().catch(() => {});
+        }}
         className={cn(
           "absolute inset-0 w-full h-full",
           fitMode === "cover" ? "object-cover" : "object-contain"
@@ -291,6 +311,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           transform: mirrored ? "scaleX(-1)" : undefined,
         }}
       />
+
+      {/* Square crop guide */}
+      {previewUrl && squareCrop && (
+        <div className="absolute inset-0 z-[5] pointer-events-none flex items-center justify-center">
+          <div className="aspect-square w-[92vw] max-w-[92vh] border-2 border-white/70 rounded-2xl shadow-[0_0_0_9999px_hsl(0_0%_0%/0.45)]" />
+        </div>
+      )}
+
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-gradient-to-b from-black/70 to-transparent">
