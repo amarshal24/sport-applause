@@ -3,12 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Send } from "lucide-react";
+import { Check, CheckCheck, Loader2, Send } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 
 interface Props {
   open: boolean;
@@ -24,6 +24,15 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
   const [sending, setSending] = useState(false);
   const [seller, setSeller] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const lastMineId = [...messages].reverse().find((m) => m.isMine)?.id;
+
+  const dayLabel = (iso: string) => {
+    const d = new Date(iso);
+    if (isToday(d)) return "Today";
+    if (isYesterday(d)) return "Yesterday";
+    return format(d, "MMMM d, yyyy");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -78,18 +87,42 @@ const ListingChatDialog = ({ open, onOpenChange, sellerId, listingTitle }: Props
               Start the conversation with the seller.
             </p>
           ) : (
-            messages.map((m) => (
-              <div key={m.id} className={`flex ${m.isMine ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                    m.isMine ? "bg-primary text-primary-foreground" : "bg-card border border-border"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                  <p className="mt-1 text-[10px] opacity-70">{format(new Date(m.createdAt), "MMM d, p")}</p>
+            messages.map((m, i) => {
+              const prev = messages[i - 1];
+              const showDay = !prev || dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
+              return (
+                <div key={m.id}>
+                  {showDay && (
+                    <p className="my-2 text-center text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {dayLabel(m.createdAt)}
+                    </p>
+                  )}
+                  <div className={`flex ${m.isMine ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                        m.isMine ? "bg-primary text-primary-foreground" : "bg-card border border-border"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                      <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
+                        <span>{format(new Date(m.createdAt), "p")}</span>
+                        {m.isMine &&
+                          (m.read ? (
+                            <CheckCheck className="h-3 w-3" aria-label="Seen" />
+                          ) : (
+                            <Check className="h-3 w-3" aria-label="Sent" />
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                  {m.isMine && m.id === lastMineId && m.read && (
+                    <p className="mt-0.5 pr-1 text-right text-[10px] text-muted-foreground">
+                      Seen{m.readAt ? ` ${format(new Date(m.readAt), isToday(new Date(m.readAt)) ? "p" : "MMM d, p")}` : ""}
+                    </p>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={bottomRef} />
         </div>
