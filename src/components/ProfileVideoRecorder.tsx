@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, RotateCcw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 
 interface Filter {
   id: string;
@@ -38,12 +43,17 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [fitMode, setFitMode] = useState<"cover" | "contain">("cover");
+  const [progress, setProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadDone, setUploadDone] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -146,41 +156,83 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setRecordedBlob(null);
     setPreviewUrl(null);
+    setUploadError(null);
+    setProgress(0);
+    setUploadDone(false);
     startCamera(facingMode);
+  };
+
+  const cancelUpload = () => {
+    xhrRef.current?.abort();
+    xhrRef.current = null;
+    setUploading(false);
+    setProgress(0);
+    setUploadError("Upload canceled.");
   };
 
   const uploadVideo = async () => {
     if (!recordedBlob || !user) return;
 
     setUploading(true);
+    setUploadError(null);
+    setProgress(0);
+
     try {
-      const fileName = `${user.id}/profile-video-${Date.now()}.webm`;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Your session expired. Please sign in again.");
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-videos")
-        .upload(fileName, recordedBlob, { contentType: "video/webm", upsert: true });
+      const path = `${user.id}/profile-video-${Date.now()}.webm`;
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from("profile-videos").getPublicUrl(fileName);
+      const publicUrl = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
+        xhr.open("POST", `${SUPABASE_URL}/storage/v1/object/profile-videos/${path}`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.setRequestHeader("apikey", SUPABASE_KEY);
+        xhr.setRequestHeader("Content-Type", "video/webm");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 95));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setProgress(97);
+            resolve(supabase.storage.from("profile-videos").getPublicUrl(path).data.publicUrl);
+          } else if (xhr.status === 401 || xhr.status === 403) {
+            reject(new Error("You don't have permission to upload. Try signing in again."));
+          } else {
+            reject(new Error(`Upload failed (${xhr.status}). Please try again.`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error — check your connection and retry."));
+        xhr.onabort = () => reject(new Error("Upload canceled."));
+        xhr.send(recordedBlob);
+      });
 
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ profile_video_url: publicUrl })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error("Video uploaded, but saving it to your profile failed. Retry to finish.");
 
+      setProgress(100);
+      setUploadDone(true);
       toast.success("Profile video updated!");
       onVideoUploaded(publicUrl);
-      onClose();
+      setTimeout(onClose, 600);
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to upload video";
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      setUploadError(message);
+      if (message !== "Upload canceled.") toast.error(message);
     } finally {
+      xhrRef.current = null;
       setUploading(false);
     }
   };
+
 
   const mirrored = facingMode === "user" && !recordedBlob;
 
@@ -280,6 +332,50 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
+        {/* Upload status */}
+        {recordedBlob && (uploading || uploadError || uploadDone) && (
+          <div
+            className={cn(
+              "rounded-xl border p-3 space-y-2 backdrop-blur",
+              uploadError
+                ? "border-destructive/50 bg-destructive/15"
+                : "border-white/20 bg-background/40"
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2 text-sm text-primary-foreground">
+              {uploadError ? (
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+              ) : uploadDone ? (
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              )}
+              <span className="flex-1">
+                {uploadError
+                  ? uploadError
+                  : uploadDone
+                  ? "Upload complete"
+                  : progress < 95
+                  ? `Uploading video… ${progress}%`
+                  : "Saving to your profile…"}
+              </span>
+              {uploading && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelUpload}
+                  className="h-7 px-2 text-primary-foreground hover:bg-white/20"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
+            {!uploadError && <Progress value={progress} className="h-1.5" />}
+          </div>
+        )}
+
         <div className="flex gap-3">
           {!recordedBlob ? (
             <Button
@@ -301,15 +397,30 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
             </Button>
           ) : (
             <>
-              <Button onClick={retake} variant="outline" size="lg" className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground">
+              <Button
+                onClick={retake}
+                variant="outline"
+                size="lg"
+                disabled={uploading || uploadDone}
+                className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground"
+              >
                 Retake
               </Button>
-              <Button onClick={uploadVideo} disabled={uploading} size="lg" className="flex-1">
-                {uploading ? "Uploading..." : (<><Upload className="mr-2 h-4 w-4" />Upload</>)}
+              <Button onClick={uploadVideo} disabled={uploading || uploadDone} size="lg" className="flex-1">
+                {uploading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{progress}%</>
+                ) : uploadError ? (
+                  <><RotateCcw className="mr-2 h-4 w-4" />Retry</>
+                ) : uploadDone ? (
+                  <><CheckCircle2 className="mr-2 h-4 w-4" />Done</>
+                ) : (
+                  <><Upload className="mr-2 h-4 w-4" />Upload</>
+                )}
               </Button>
             </>
           )}
         </div>
+
       </div>
     </div>,
     document.body
