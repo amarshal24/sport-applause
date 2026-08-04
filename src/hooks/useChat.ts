@@ -281,6 +281,8 @@ export const useChat = (recipientId?: string) => {
               imageUrl: payload.new.image_url,
               read: payload.new.read,
               readAt: payload.new.read_at ?? null,
+              deliveredAt: payload.new.delivered_at ?? null,
+
               createdAt: payload.new.created_at,
               isMine: true
             };
