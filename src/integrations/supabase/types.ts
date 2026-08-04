@@ -1160,7 +1160,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_invite_by_code: {
+        Args: { _invite_code: string }
+        Returns: {
+          created_at: string
+          id: string
+          invite_code: string
+          inviter_id: string
+          status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
