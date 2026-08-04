@@ -37,6 +37,15 @@ const Marketplace = () => {
   const [editing, setEditing] = useState<Listing | null>(null);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const {
+    searches,
+    matches,
+    loading: searchesLoading,
+    refresh: refreshSearches,
+    totalNew,
+  } = useSavedSearches(user?.id);
+
+
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -105,9 +114,27 @@ const Marketplace = () => {
               </h1>
               <p className="text-sm text-muted-foreground">Buy and sell sports memorabilia locally.</p>
             </div>
-            <Button onClick={openSell} className="shrink-0">
-              <Plus className="mr-1 h-4 w-4" /> Sell
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => setAlertsOpen(true)}
+                  aria-label="Saved searches and alerts"
+                >
+                  <Bell className="h-5 w-5" />
+                  {totalNew > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {totalNew > 9 ? "9+" : totalNew}
+                    </span>
+                  )}
+                </Button>
+              )}
+              <Button onClick={openSell}>
+                <Plus className="mr-1 h-4 w-4" /> Sell
+              </Button>
+            </div>
           </header>
 
           <div className="relative">
@@ -119,6 +146,22 @@ const Marketplace = () => {
               className="pl-9 bg-muted/50"
             />
           </div>
+
+          {user && (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {totalNew > 0
+                  ? `${totalNew} new listing${totalNew > 1 ? "s" : ""} match your saved searches`
+                  : "Save this search to get alerts on new matches"}
+              </p>
+              <SaveSearchButton
+                userId={user.id}
+                query={query}
+                category={category}
+                onSaved={refreshSearches}
+              />
+            </div>
+          )}
 
           <div className="flex gap-2 overflow-x-auto pb-1">
             {["All", ...MARKETPLACE_CATEGORIES].map((c) => (
