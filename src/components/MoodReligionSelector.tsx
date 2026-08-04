@@ -150,7 +150,7 @@ const MoodReligionSelector = ({ onContentGenerated }: MoodReligionSelectorProps)
         {/* Mood Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">How are you feeling?</label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
             {moods.map((mood) => (
               <button
                 key={mood.id}
