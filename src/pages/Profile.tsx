@@ -18,7 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock, Captions } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock, Captions, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import WatchLaterVideos from "@/components/WatchLaterVideos";
 import { toast } from "sonner";
@@ -32,6 +33,27 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePost = async () => {
+    if (!deleteTarget || !user) return;
+    setDeleting(true);
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", deleteTarget.id)
+      .eq("user_id", user.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Could not delete post");
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    toast.success("Post deleted");
+  };
+
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -343,13 +365,34 @@ const Profile = () => {
                           </p>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-3">
                         <div className="flex items-center gap-1 text-foreground">
                           <Sparkles className="h-4 w-4 fill-current" />
                           <span className="font-semibold text-sm">{post.likes_count}</span>
                         </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="h-8 w-8"
+                          aria-label="Delete post"
+                          onClick={() => setDeleteTarget(post)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="h-7 w-7 absolute top-1 right-1 sm:hidden"
+                        aria-label="Delete post"
+                        onClick={() => setDeleteTarget(post)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
+
                   ))}
                 </div>
               ) : (
@@ -451,7 +494,25 @@ const Profile = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the post from your profile and the feed. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeletePost(); }} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 
