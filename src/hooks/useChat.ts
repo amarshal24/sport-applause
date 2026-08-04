@@ -137,19 +137,22 @@ export const useChat = (recipientId?: string) => {
         imageUrl: msg.image_url,
         read: msg.read,
         readAt: msg.read_at,
+        deliveredAt: msg.delivered_at ?? null,
         createdAt: msg.created_at,
         isMine: msg.sender_id === user.id
       }))
     );
 
-    // Mark unread messages as read
+    // Mark unread messages as read (also implies delivered)
     const unreadIds = data?.filter(m => !m.read && m.recipient_id === user.id).map(m => m.id) || [];
     if (unreadIds.length > 0) {
+      const now = new Date().toISOString();
       await supabase
         .from('chat_messages')
-        .update({ read: true, read_at: new Date().toISOString() })
+        .update({ read: true, read_at: now, delivered_at: now })
         .in('id', unreadIds);
     }
+
 
     setIsLoading(false);
   }, [user, recipientId]);
