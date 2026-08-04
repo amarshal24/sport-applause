@@ -55,7 +55,14 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [uploading, setUploading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
+    typeof window !== "undefined" && window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+  );
+  const [rotatedWhileRecording, setRotatedWhileRecording] = useState(false);
   const [fitMode, setFitMode] = useState<"cover" | "contain">("cover");
+
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadDone, setUploadDone] = useState(false);
