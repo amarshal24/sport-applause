@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Home, Gamepad2, GraduationCap, MessageCircle, User } from "lucide-react";
+import { Home, Gamepad2, GraduationCap, Store, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -11,7 +11,7 @@ const MobileNav = () => {
     { to: "/", icon: Home, label: t("nav.home"), end: true },
     { to: "/games", icon: Gamepad2, label: t("nav.games") },
     { to: "/recruiting", icon: GraduationCap, label: t("nav.recruit") },
-    { to: "/motivation", icon: MessageCircle, label: t("nav.motivate") },
+    { to: "/marketplace", icon: Store, label: "Market" },
     { to: user ? "/profile" : "/auth", icon: User, label: user ? t("nav.profile") : t("nav.signIn") },
   ];
 
