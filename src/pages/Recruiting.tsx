@@ -98,6 +98,9 @@ const Recruiting = () => {
   
   // Form state
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
+  const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sport, setSport] = useState("");
