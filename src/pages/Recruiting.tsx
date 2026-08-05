@@ -34,6 +34,14 @@ import ContactAthleteModal from "@/components/ContactAthleteModal";
 import AthleteSearch from "@/components/AthleteSearch";
 import AthleteComparison from "@/components/AthleteComparison";
 import ProAthleteComparison from "@/components/ProAthleteComparison";
+import {
+  AnimatedFilter,
+  animatedFilters,
+  colorFilters,
+  getColorFilterStyle,
+  type FilterType,
+  type ColorFilterType,
+} from "@/components/AnimatedFilters";
 
 interface RecruitingVideo {
   id: string;
@@ -90,6 +98,9 @@ const Recruiting = () => {
   
   // Form state
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
+  const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sport, setSport] = useState("");
@@ -187,8 +198,16 @@ const Recruiting = () => {
         if (video.duration > 180) { // 3 minutes
           toast.error("Video must be 3 minutes or less");
           setVideoFile(null);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
         } else {
           setVideoFile(file);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+          });
           toast.success("Video loaded successfully!");
         }
       };
@@ -465,6 +484,12 @@ const Recruiting = () => {
 
   const resetForm = () => {
     setVideoFile(null);
+    setVideoPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setColorFilter("none");
+    setAnimatedFilter("none");
     setTitle("");
     setDescription("");
     setSport("");
@@ -909,7 +934,34 @@ const Recruiting = () => {
                 className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {videoFile ? (
+                {videoFile && videoPreviewUrl ? (
+                  <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative rounded-lg overflow-hidden bg-black">
+                      <video
+                        src={videoPreviewUrl}
+                        controls
+                        playsInline
+                        className="w-full max-h-[320px] object-contain"
+                        style={getColorFilterStyle(colorFilter)}
+                      />
+                      <div className="absolute inset-0 pointer-events-none">
+                        <AnimatedFilter type={animatedFilter} />
+                      </div>
+                    </div>
+                    <p className="font-medium truncate">{videoFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Choose a different video
+                    </Button>
+                  </div>
+                ) : videoFile ? (
                   <div className="space-y-2">
                     <Play className="w-12 h-12 text-primary mx-auto" />
                     <p className="font-medium">{videoFile.name}</p>
@@ -943,6 +995,51 @@ const Recruiting = () => {
                 />
               </div>
             </div>
+
+            {/* Filters (only when a clip is loaded) */}
+            {videoFile && videoPreviewUrl && (
+              <div className="space-y-3 rounded-lg border border-border p-4">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-primary" />
+                  <Label className="m-0">Animated filters</Label>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Color look</p>
+                  <div className="flex flex-wrap gap-2">
+                    {colorFilters.map((f) => (
+                      <Button
+                        key={f.type}
+                        type="button"
+                        size="sm"
+                        variant={colorFilter === f.type ? "default" : "outline"}
+                        onClick={() => setColorFilter(f.type)}
+                      >
+                        {f.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Animation overlay</p>
+                  <div className="flex flex-wrap gap-2">
+                    {animatedFilters.map((f) => (
+                      <Button
+                        key={f.type}
+                        type="button"
+                        size="sm"
+                        variant={animatedFilter === f.type ? "default" : "outline"}
+                        onClick={() => setAnimatedFilter(f.type)}
+                      >
+                        <span className="mr-1">{f.icon}</span>
+                        {f.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Title */}
             <div>
