@@ -484,6 +484,12 @@ const Recruiting = () => {
 
   const resetForm = () => {
     setVideoFile(null);
+    setVideoPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setColorFilter("none");
+    setAnimatedFilter("none");
     setTitle("");
     setDescription("");
     setSport("");
