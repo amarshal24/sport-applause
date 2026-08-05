@@ -34,6 +34,14 @@ import ContactAthleteModal from "@/components/ContactAthleteModal";
 import AthleteSearch from "@/components/AthleteSearch";
 import AthleteComparison from "@/components/AthleteComparison";
 import ProAthleteComparison from "@/components/ProAthleteComparison";
+import {
+  AnimatedFilter,
+  animatedFilters,
+  colorFilters,
+  getColorFilterStyle,
+  type FilterType,
+  type ColorFilterType,
+} from "@/components/AnimatedFilters";
 
 interface RecruitingVideo {
   id: string;
