@@ -198,8 +198,16 @@ const Recruiting = () => {
         if (video.duration > 180) { // 3 minutes
           toast.error("Video must be 3 minutes or less");
           setVideoFile(null);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
         } else {
           setVideoFile(file);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+          });
           toast.success("Video loaded successfully!");
         }
       };
