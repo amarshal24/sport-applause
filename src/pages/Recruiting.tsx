@@ -517,6 +517,39 @@ const Recruiting = () => {
     setShowContactModal(true);
   };
 
+  const handleAddPin = () => {
+    if (pins.length >= MAX_PINS) return;
+    setPins((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        x: 50,
+        y: 50,
+        skin: "athlete",
+        animation: "glow",
+      },
+    ]);
+    setPlaceMode(false);
+  };
+
+  const handleUpdatePin = (id: string, patch: Partial<CharacterPin>) =>
+    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  const handleRemovePin = (id: string) =>
+    setPins((prev) => prev.filter((p) => p.id !== id));
+
+  const handleMovePin = (id: string, x: number, y: number) =>
+    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+
+  const handlePlacePin = (x: number, y: number) => {
+    setPins((prev) =>
+      prev.length >= MAX_PINS
+        ? prev
+        : [...prev, { id: crypto.randomUUID(), x, y, skin: "athlete", animation: "glow" }]
+    );
+    setPlaceMode(false);
+  };
+
   const resetForm = () => {
     setVideoFile(null);
     setVideoPreviewUrl((prev) => {
@@ -525,6 +558,9 @@ const Recruiting = () => {
     });
     setColorFilter("none");
     setAnimatedFilter("none");
+    setPins([]);
+    setPlaceMode(false);
+
     setTitle("");
     setDescription("");
     setSport("");
