@@ -262,6 +262,7 @@ const Profile = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <h1 className="text-xl font-display font-bold text-foreground flex items-center justify-center sm:justify-start gap-2">
                       {profile?.username}
+                      {profile?.sports?.[0] && <InlineSportIcon sportId={profile.sports[0]} />}
                       {isPremium && <ProBadge />}
                     </h1>
                     <Button 
