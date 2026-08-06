@@ -150,6 +150,36 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "checkout.session.async_payment_succeeded":
       await recordOneTimePurchase(event.data.object, env);
       break;
+    case "invoice.paid": {
+      // Membership renewals: log creator earnings for each recurring charge.
+      const invoice: any = event.data.object;
+      const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
+      if (!subId || invoice.billing_reason === "subscription_create") break;
+      const { data: membership } = await getSupabase()
+        .from("creator_memberships")
+        .select("fan_id, creator_id")
+        .eq("stripe_subscription_id", subId)
+        .maybeSingle();
+      if (!membership) break;
+      const amount = Number(invoice.amount_paid ?? 0);
+      const fee = Math.round(amount * 0.05);
+      await getSupabase().from("podcast_payments").upsert(
+        {
+          payer_id: membership.fan_id,
+          creator_id: membership.creator_id,
+          kind: "membership",
+          amount_cents: amount,
+          platform_fee_cents: fee,
+          creator_net_cents: amount - fee,
+          stripe_session_id: invoice.id,
+          stripe_subscription_id: subId,
+          environment: env,
+        },
+        { onConflict: "stripe_session_id" },
+      );
+      break;
+    }
+
     default:
       console.log("Unhandled event:", event.type);
   }
