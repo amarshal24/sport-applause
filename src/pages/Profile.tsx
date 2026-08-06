@@ -14,6 +14,7 @@ import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { SportIcon } from "@/components/SportIcon";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 import ApplauseButton from "@/components/ApplauseButton";
+import StoryViewer from "@/components/StoryViewer";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -560,6 +561,13 @@ const Profile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <StoryViewer
+        stories={myStories}
+        initialIndex={0}
+        open={storyViewerOpen}
+        onOpenChange={setStoryViewerOpen}
+      />
     </div>
 
   );
