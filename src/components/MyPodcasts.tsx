@@ -183,7 +183,10 @@ const MyPodcasts = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{p.title}</h3>
                 {p.description && <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
-                <p className="text-xs text-muted-foreground mt-1">{p.plays_count} plays · {p.likes_count} likes</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {p.plays_count} plays · {p.likes_count} likes
+                  {p.is_premium && <span className="ml-2 inline-flex items-center gap-1 text-primary"><Lock className="h-3 w-3" /> ${(p.unlock_price_cents / 100).toFixed(2)}</span>}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => openEdit(p)} className="gap-1"><Pencil className="h-4 w-4" /> Edit</Button>
