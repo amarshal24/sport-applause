@@ -129,6 +129,28 @@ const VideoFeed = () => {
     fetchPosts();
   }, [fetchPosts, refreshKey]);
 
+  // Realtime: refresh the feed as soon as anyone publishes or removes a post
+  useEffect(() => {
+    const channel = supabase
+      .channel("feed_posts_realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "posts" },
+        () => fetchPosts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "posts" },
+        () => fetchPosts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchPosts]);
+
+
   // Load the people this user follows (accepted friendships) for the Following feed
   useEffect(() => {
     if (!user) {
