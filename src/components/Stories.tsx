@@ -134,8 +134,11 @@ const Stories = ({ onCreateStory, refreshKey = 0 }: StoriesProps) => {
                     <SportIcon sportId={story.profiles.sports[0]} />
                   )}
                 </div>
-                <span className="text-xs text-center line-clamp-1 max-w-[80px] font-medium">
-                  {story.profiles?.username}
+                <span className="text-xs text-center line-clamp-1 max-w-[80px] font-medium flex items-center gap-1">
+                  <span className="truncate">{story.profiles?.username}</span>
+                  {story.profiles?.sports?.[0] && (
+                    <InlineSportIcon sportId={story.profiles.sports[0]} className="p-0.5" />
+                  )}
                 </span>
               </div>
             ))
