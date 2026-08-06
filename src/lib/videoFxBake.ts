@@ -210,13 +210,24 @@ const drawPin = (
     ctx.fill();
   }
 
-  if (pin.animation === "shockwave" || pin.animation === "electric") {
+  if (pin.animation === "shockwave" || pin.animation === "electric" || pin.animation === "sonic-boom" || pin.animation === "frost-nova") {
     ctx.strokeStyle = `rgba(${color ?? "255,255,255"},${1 - (t % 1)})`;
     ctx.lineWidth = Math.max(2, w / 250);
     ctx.beginPath();
     ctx.arc(cx, cy, size * (0.8 + (t % 1) * 1.2), 0, Math.PI * 2);
     ctx.stroke();
   }
+
+  if (pin.animation === "shadow-clone") {
+    ctx.globalAlpha = 0.35;
+    ctx.font = `${Math.round(size)}px serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(pin.emoji, cx - size * 0.5, cy);
+    ctx.fillText(pin.emoji, cx + size * 0.5, cy);
+    ctx.globalAlpha = 1;
+  }
+
 
   ctx.font = `${Math.round(size)}px serif`;
   ctx.textAlign = "center";
