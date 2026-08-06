@@ -46,7 +46,57 @@ async function upsertSubscription(subscription: any, env: StripeEnv) {
   );
 }
 
+async function recordCreatorPayment(session: any, env: StripeEnv) {
+  const md = session.metadata ?? {};
+  const kind = String(md.kind ?? "").replace("podcast_", "");
+  if (!["tip", "unlock", "membership"].includes(kind)) return false;
+  if (!md.userId || !md.creatorId) return true;
+
+  await getSupabase().from("podcast_payments").upsert(
+    {
+      payer_id: md.userId,
+      creator_id: md.creatorId,
+      podcast_id: md.podcastId ?? null,
+      kind,
+      amount_cents: Number(md.amountCents ?? session.amount_total ?? 0),
+      platform_fee_cents: Number(md.platformFeeCents ?? 0),
+      creator_net_cents: Number(md.creatorNetCents ?? 0),
+      stripe_session_id: session.id,
+      stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null,
+      environment: env,
+    },
+    { onConflict: "stripe_session_id" },
+  );
+  return true;
+}
+
+async function upsertCreatorMembership(subscription: any, env: StripeEnv) {
+  const md = subscription.metadata ?? {};
+  if (md.kind !== "podcast_membership" || !md.userId || !md.creatorId) return false;
+  const item = subscription.items?.data?.[0];
+  const periodEnd = item?.current_period_end ?? subscription.current_period_end;
+
+  await getSupabase().from("creator_memberships").upsert(
+    {
+      fan_id: md.userId,
+      creator_id: md.creatorId,
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
+      status: subscription.status,
+      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
+      price_cents: Number(md.amountCents ?? 0),
+      environment: env,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "stripe_subscription_id" },
+  );
+  return true;
+}
+
 async function recordOneTimePurchase(session: any, env: StripeEnv) {
+  if (await recordCreatorPayment(session, env)) return;
+
   const userId = session.metadata?.userId;
   const priceId = session.metadata?.priceId;
   if (!userId || !priceId) {
@@ -66,6 +116,7 @@ async function recordOneTimePurchase(session: any, env: StripeEnv) {
     { onConflict: "stripe_session_id" },
   );
 }
+
 
 async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
