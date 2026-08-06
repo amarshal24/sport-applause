@@ -529,7 +529,7 @@ const Recruiting = () => {
     setShowContactModal(true);
   };
 
-  const handleAddPin = () => {
+  const handleAddPin = (preset?: { skin: any; animation: any }) => {
     if (pins.length >= MAX_PINS) return;
     setPins((prev) => [
       ...prev,
@@ -537,8 +537,8 @@ const Recruiting = () => {
         id: crypto.randomUUID(),
         x: 50,
         y: 50,
-        skin: "athlete",
-        animation: "glow",
+        skin: preset?.skin ?? "athlete",
+        animation: preset?.animation ?? "glow",
       },
     ]);
     setPlaceMode(false);

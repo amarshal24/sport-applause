@@ -49,7 +49,26 @@ export const CHARACTER_SKINS = [
   { id: "trophy", label: "Trophy", emoji: "🏆", kind: "object" },
   { id: "medal", label: "Medal", emoji: "🥇", kind: "object" },
   { id: "flag", label: "Flag", emoji: "🏁", kind: "object" },
+  { id: "sharkfin", label: "Shark Fin", emoji: "🦈", kind: "object" },
+  { id: "flame", label: "Flame", emoji: "🔥", kind: "object" },
+  { id: "smokepuff", label: "Smoke Puff", emoji: "💨", kind: "object" },
+  { id: "bolt", label: "Lightning Bolt", emoji: "⚡", kind: "object" },
+  { id: "wave", label: "Wave", emoji: "🌊", kind: "object" },
+  { id: "rocket", label: "Rocket", emoji: "🚀", kind: "object" },
 ] as const;
+
+// One-tap combos: object/character + animation
+export const FX_PRESETS = [
+  { id: "ball-on-fire", label: "Ball On Fire", emoji: "🔥", skin: "basketball", animation: "fire-aura", hint: "Basketball lit on fire" },
+  { id: "flaming-hoop", label: "Flaming Hoop", emoji: "🏀", skin: "hoop", animation: "hoop-fire", hint: "Fire through the net" },
+  { id: "smoke-trail", label: "Smoke Trail", emoji: "💨", skin: "smokepuff", animation: "smoke", hint: "Smoke behind a runner" },
+  { id: "shark-swim", label: "Shark Fin", emoji: "🦈", skin: "sharkfin", animation: "speed-lines", hint: "Fin follows the swimmer" },
+  { id: "speed-demon", label: "Speed Demon", emoji: "🏃", skin: "athlete", animation: "speed-lines", hint: "Blur lines on a sprinter" },
+  { id: "electric-play", label: "Electric", emoji: "⚡", skin: "bolt", animation: "electric", hint: "Electric field burst" },
+  { id: "comet-ball", label: "Comet Ball", emoji: "☄️", skin: "football", animation: "comet", hint: "Trail behind the ball" },
+  { id: "ice-cold", label: "Ice Cold", emoji: "❄️", skin: "champ", animation: "ice", hint: "Freeze the moment" },
+] as const;
+
 
 export type CharacterAnimationId = (typeof CHARACTER_ANIMATIONS)[number]["id"];
 export type CharacterSkinId = (typeof CHARACTER_SKINS)[number]["id"];
@@ -252,7 +271,7 @@ export const CharacterPinsOverlay = ({
 // ===== Panel =====
 interface PanelProps {
   pins: CharacterPin[];
-  onAdd: () => void;
+  onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
 }
@@ -260,6 +279,7 @@ interface PanelProps {
 export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelProps) => {
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
+  const full = pins.length >= MAX_PINS;
 
   return (
     <div className="space-y-4">
@@ -273,11 +293,39 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
             Add up to {MAX_PINS}. Drag on the video to reposition.
           </p>
         </div>
-        <Button size="sm" onClick={onAdd} disabled={pins.length >= MAX_PINS} className="gap-1">
+        <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
           <Plus className="h-4 w-4" />
           Add ({pins.length}/{MAX_PINS})
         </Button>
       </div>
+
+      {/* One-tap FX combos */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          One-tap effects
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {FX_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              disabled={full}
+              onClick={() => onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })}
+              className={cn(
+                "rounded-lg border border-border bg-card/60 p-2 text-left transition-colors hover:bg-accent/60",
+                full && "opacity-50 pointer-events-none"
+              )}
+            >
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <span>{p.emoji}</span>
+                {p.label}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">{p.hint}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* AI Skin Swap (coming soon) */}
       <button
@@ -412,12 +460,18 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
 export const useCharacterPins = () => {
   const [pins, setPins] = useState<CharacterPin[]>([]);
 
-  const add = () => {
+  const add = (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => {
     setPins((prev) => {
       if (prev.length >= MAX_PINS) return prev;
       return [
         ...prev,
-        { id: `pin-${Date.now()}`, x: 50, y: 50, skin: "athlete", animation: "glow" },
+        {
+          id: `pin-${Date.now()}`,
+          x: 50,
+          y: 50,
+          skin: preset?.skin ?? "athlete",
+          animation: preset?.animation ?? "glow",
+        },
       ];
     });
   };

@@ -38,7 +38,7 @@ interface PanelProps {
 
   // Character pins (existing functionality reused)
   pins: CharacterPin[];
-  onAddPin: () => void;
+  onAddPin: (preset?: { skin: any; animation: any }) => void;
   onUpdatePin: (id: string, patch: Partial<CharacterPin>) => void;
   onRemovePin: (id: string) => void;
 }
