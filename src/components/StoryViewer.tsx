@@ -228,7 +228,7 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
         {/* Story Media */}
         <div className="w-full h-full flex items-center justify-center bg-black">
           {/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(currentStory.image_url) ? (
-            <video
+            <SecureVideo
               src={currentStory.image_url}
               className="max-w-full max-h-full object-contain"
               autoPlay
@@ -237,7 +237,7 @@ const StoryViewer = ({ stories, initialIndex, open, onOpenChange }: StoryViewerP
               controls={false}
             />
           ) : (
-            <img
+            <SecureImage
               src={currentStory.image_url}
               alt="Story"
               className="max-w-full max-h-full object-contain"
