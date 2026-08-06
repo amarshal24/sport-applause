@@ -100,6 +100,8 @@ const VideoFeed = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [playingMusic, setPlayingMusic] = useState<string | null>(null);
   const [musicMuted, setMusicMuted] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
@@ -186,7 +188,7 @@ const VideoFeed = () => {
       if (postsRes.error) throw postsRes.error;
       const newPosts = ((postsRes.data as any) || []) as Post[];
       setPosts(newPosts);
-      oldestPostAtRef.current = newPosts.at(-1)?.created_at ?? null;
+      oldestPostAtRef.current = newPosts.length ? newPosts[newPosts.length - 1].created_at : null;
 
       if (repostsRes.error) {
         console.error("Error fetching reposts:", repostsRes.error);
@@ -195,7 +197,7 @@ const VideoFeed = () => {
       } else {
         const newReposts = ((repostsRes.data as any) || []) as Repost[];
         setReposts(newReposts);
-        oldestRepostAtRef.current = newReposts.at(-1)?.created_at ?? null;
+        oldestRepostAtRef.current = newReposts.length ? newReposts[newReposts.length - 1].created_at : null;
       }
 
       setHasMore(
@@ -244,11 +246,11 @@ const VideoFeed = () => {
 
       if (morePosts.length) {
         setPosts((prev) => mergeById(prev, morePosts));
-        oldestPostAtRef.current = morePosts.at(-1)!.created_at;
+        oldestPostAtRef.current = morePosts[morePosts.length - 1].created_at;
       }
       if (moreReposts.length) {
         setReposts((prev) => mergeById(prev, moreReposts));
-        oldestRepostAtRef.current = moreReposts.at(-1)!.created_at;
+        oldestRepostAtRef.current = moreReposts[moreReposts.length - 1].created_at;
       }
 
       setHasMore(morePosts.length === PAGE_SIZE || moreReposts.length === PAGE_SIZE);
