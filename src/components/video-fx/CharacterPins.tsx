@@ -4,6 +4,9 @@ import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle } from "lucid
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
+import { usePremium } from "@/hooks/usePremium";
+import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
+import { Crown } from "lucide-react";
 
 const AnimationTutorialLazy = lazy(() =>
   import("@/components/video-fx/AnimationTutorial").then((m) => ({ default: m.AnimationTutorial }))
