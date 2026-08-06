@@ -34,8 +34,11 @@ Deno.serve(async (req) => {
   const supabase = serviceClient();
   const token = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
 
+  const cronSecret = Deno.env.get("PAYOUT_CRON_SECRET");
+  const isCron = !!cronSecret && req.headers.get("x-cron-secret") === cronSecret;
+
   let onlyUserId: string | null = null;
-  if (token !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+  if (!isCron && token !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
