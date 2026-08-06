@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
 import { usePremium } from "@/hooks/usePremium";
 import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
+import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
+import { hasSkinTier, skinTierOf, SKIN_TIER_RANK } from "@/constants/skinTiers";
+
 import { Crown } from "lucide-react";
 
 const AnimationTutorialLazy = lazy(() =>
