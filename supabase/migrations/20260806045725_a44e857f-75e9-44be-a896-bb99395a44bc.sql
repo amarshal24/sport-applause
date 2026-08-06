@@ -1,0 +1,2 @@
+DELETE FROM public.stories WHERE user_id='6d726b8f-74b2-44f1-9b70-fae80cef1b73' AND created_at > now() - interval '30 minutes';
+DELETE FROM public.posts WHERE user_id='6d726b8f-74b2-44f1-9b70-fae80cef1b73' AND content='test post from diagnostics';
