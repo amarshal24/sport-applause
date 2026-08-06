@@ -3,11 +3,12 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Trophy, Timer, Target, Zap, Sparkles } from "lucide-react";
+import { Brain, Trophy, Timer, Target, Zap, Sparkles, Users } from "lucide-react";
 import { useState } from "react";
 import SportsTrivia from "@/components/games/SportsTrivia";
 import GuessTheSport from "@/components/games/GuessTheSport";
 import SportsAnimator from "@/components/games/SportsAnimator";
+import AthleteMatch from "@/components/games/AthleteMatch";
 
 const Games = () => {
   const { t } = useTranslation();
@@ -29,6 +30,14 @@ const Games = () => {
       icon: Target,
       color: "from-purple-500 to-pink-500",
       component: GuessTheSport,
+    },
+    {
+      id: "athlete-match",
+      title: t("games.athleteMatch"),
+      description: t("games.athleteMatchDesc"),
+      icon: Users,
+      color: "from-orange-500 to-red-500",
+      component: AthleteMatch,
     },
     {
       id: "sports-animator",
@@ -61,7 +70,7 @@ const Games = () => {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {games.map((game) => {
                   const Icon = game.icon;
                   return (
@@ -95,7 +104,7 @@ const Games = () => {
                   <Trophy className="w-6 h-6 text-primary" />
                   {t("games.title")}
                 </h2>
-                <div className="grid md:grid-cols-3 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Brain className="w-5 h-5 text-primary" />
@@ -112,6 +121,15 @@ const Games = () => {
                     <h3 className="font-semibold">{t("games.guessTheSport")}</h3>
                     <p className="text-sm text-muted-foreground">
                       {t("games.guessDesc")}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-semibold">{t("games.athleteMatch")}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t("games.athleteMatchDesc")}
                     </p>
                   </div>
                   <div className="space-y-2">
