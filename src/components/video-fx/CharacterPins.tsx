@@ -118,6 +118,15 @@ export const CHARACTER_SKINS = [
   { id: "skull", label: "Skull", emoji: "💀", kind: "object", pro: true },
   { id: "guitar", label: "Guitar", emoji: "🎸", kind: "object", pro: true },
   { id: "clock", label: "Time Stop", emoji: "⏱️", kind: "object", pro: true },
+  { id: "cash", label: "Cash Stack", emoji: "💵", kind: "object", pro: true },
+  { id: "ring", label: "Championship Ring", emoji: "💍", kind: "object", pro: true },
+  { id: "jet", label: "Jet Boost", emoji: "✈️", kind: "object", pro: true },
+  { id: "comet-obj", label: "Comet", emoji: "🌠", kind: "object", pro: true },
+  { id: "galaxy-orb", label: "Galaxy Orb", emoji: "🪐", kind: "object", pro: true },
+  { id: "bomb", label: "Bomb Drop", emoji: "💣", kind: "object", pro: true },
+  { id: "wings", label: "Wings", emoji: "🪽", kind: "object", pro: true },
+  { id: "halo", label: "Halo", emoji: "😇", kind: "object", pro: true },
+  { id: "trident", label: "Trident", emoji: "🔱", kind: "object", pro: true },
 ] as const;
 
 // One-tap combos: object/character + animation
