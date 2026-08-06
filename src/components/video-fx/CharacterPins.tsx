@@ -299,6 +299,39 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
         </Button>
       </div>
 
+      {/* Video preview: how to customize your video */}
+      <button
+        type="button"
+        onClick={() => setHowToOpen(true)}
+        className="w-full rounded-lg border border-border bg-card/60 p-2.5 flex items-center gap-3 text-left hover:bg-accent/60 transition-colors"
+      >
+        <div className="h-10 w-16 rounded-md overflow-hidden bg-muted relative shrink-0">
+          <video
+            src={(tutorialVideo as { url?: string })?.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+          />
+          <span className="absolute inset-0 flex items-center justify-center bg-background/40">
+            <PlayCircle className="h-5 w-5 text-primary" />
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Watch: customize your video</p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            60-sec preview — filters, characters & saving
+          </p>
+        </div>
+      </button>
+
+      {howToOpen && (
+        <Suspense fallback={null}>
+          <AnimationTutorialLazy open={howToOpen} onOpenChange={setHowToOpen} />
+        </Suspense>
+      )}
+
+
       {/* One-tap FX combos */}
       <div className="space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
