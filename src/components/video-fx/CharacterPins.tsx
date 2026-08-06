@@ -460,12 +460,18 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
 export const useCharacterPins = () => {
   const [pins, setPins] = useState<CharacterPin[]>([]);
 
-  const add = () => {
+  const add = (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => {
     setPins((prev) => {
       if (prev.length >= MAX_PINS) return prev;
       return [
         ...prev,
-        { id: `pin-${Date.now()}`, x: 50, y: 50, skin: "athlete", animation: "glow" },
+        {
+          id: `pin-${Date.now()}`,
+          x: 50,
+          y: 50,
+          skin: preset?.skin ?? "athlete",
+          animation: preset?.animation ?? "glow",
+        },
       ];
     });
   };
