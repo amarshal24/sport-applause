@@ -10,8 +10,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, RefreshCw, Music, Loader2 } from "lucide-react";
+import { Pencil, Trash2, RefreshCw, Music, Loader2, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import MonetizationSettings from "@/components/podcast/MonetizationSettings";
+import CreatorEarnings from "@/components/podcast/CreatorEarnings";
 
 interface Podcast {
   id: string;
@@ -23,7 +26,11 @@ interface Podcast {
   plays_count: number;
   likes_count: number;
   created_at: string;
+  is_premium: boolean;
+  unlock_price_cents: number;
+  tips_enabled: boolean;
 }
+
 
 const bucketPathFromUrl = (url: string) => {
   const marker = "/storage/v1/object/public/podcasts/";
