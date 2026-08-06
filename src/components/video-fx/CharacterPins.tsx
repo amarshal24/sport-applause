@@ -271,7 +271,7 @@ export const CharacterPinsOverlay = ({
 // ===== Panel =====
 interface PanelProps {
   pins: CharacterPin[];
-  onAdd: () => void;
+  onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
 }
@@ -279,6 +279,7 @@ interface PanelProps {
 export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelProps) => {
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
+  const full = pins.length >= MAX_PINS;
 
   return (
     <div className="space-y-4">
@@ -292,11 +293,39 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
             Add up to {MAX_PINS}. Drag on the video to reposition.
           </p>
         </div>
-        <Button size="sm" onClick={onAdd} disabled={pins.length >= MAX_PINS} className="gap-1">
+        <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
           <Plus className="h-4 w-4" />
           Add ({pins.length}/{MAX_PINS})
         </Button>
       </div>
+
+      {/* One-tap FX combos */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          One-tap effects
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {FX_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              disabled={full}
+              onClick={() => onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })}
+              className={cn(
+                "rounded-lg border border-border bg-card/60 p-2 text-left transition-colors hover:bg-accent/60",
+                full && "opacity-50 pointer-events-none"
+              )}
+            >
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <span>{p.emoji}</span>
+                {p.label}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">{p.hint}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* AI Skin Swap (coming soon) */}
       <button
