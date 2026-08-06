@@ -44,7 +44,10 @@ import {
   type ColorFilterType,
 } from "@/components/AnimatedFilters";
 import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
+import { usePremium } from "@/hooks/usePremium";
+import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
 import {
+
   CharacterPinsOverlay,
   CharacterPinsPanel,
   CHARACTER_SKINS,
