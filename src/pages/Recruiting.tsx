@@ -554,7 +554,10 @@ const Recruiting = () => {
     setPins((prev) => prev.filter((p) => p.id !== id));
 
   const handleMovePin = (id: string, x: number, y: number) =>
-    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+    setPins(
+      (prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      { coalesceKey: `move-${id}` }
+    );
 
   const handlePlacePin = (x: number, y: number) => {
     setPins((prev) =>
@@ -573,7 +576,7 @@ const Recruiting = () => {
     });
     setColorFilter("none");
     setAnimatedFilter("none");
-    setPins([]);
+    pinHistory.reset([]);
     setPlaceMode(false);
 
     setTitle("");
