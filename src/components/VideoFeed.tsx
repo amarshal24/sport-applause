@@ -135,41 +135,129 @@ const VideoFeed = () => {
     )
   `;
 
+  const PAGE_SIZE = 20;
+  const oldestPostAtRef = useRef<string | null>(null);
+  const oldestRepostAtRef = useRef<string | null>(null);
+
+  // Merge by id (newest copy wins) and keep strict newest-first ordering.
+  const mergeById = useCallback(<T extends { id: string; created_at: string }>(
+    prev: T[],
+    incoming: T[]
+  ): T[] => {
+    const map = new Map<string, T>();
+    for (const item of prev) map.set(item.id, item);
+    for (const item of incoming) map.set(item.id, item);
+    return Array.from(map.values()).sort(
+      (a, b) => +new Date(b.created_at) - +new Date(a.created_at)
+    );
+  }, []);
+
+  const fetchPage = useCallback(
+    async (beforePost: string | null, beforeRepost: string | null) => {
+      let postsQuery = supabase
+        .from("posts")
+        .select(POST_FIELDS)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+      if (beforePost) postsQuery = postsQuery.lt("created_at", beforePost);
+
+      let repostsQuery = supabase
+        .from("post_reposts")
+        .select(
+          `id, caption, created_at, user_id, post_id,
+             reposter:user_id ( username, full_name, avatar_url ),
+             post:post_id ( ${POST_FIELDS} )`
+        )
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+      if (beforeRepost) repostsQuery = repostsQuery.lt("created_at", beforeRepost);
+
+      return Promise.all([postsQuery, repostsQuery]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const [postsRes, repostsRes] = await Promise.all([
-        supabase
-          .from("posts")
-          .select(POST_FIELDS)
-          .order("created_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("post_reposts")
-          .select(
-            `id, caption, created_at, user_id, post_id,
-             reposter:user_id ( username, full_name, avatar_url ),
-             post:post_id ( ${POST_FIELDS} )`
-          )
-          .order("created_at", { ascending: false })
-          .limit(20),
-      ]);
+      const [postsRes, repostsRes] = await fetchPage(null, null);
 
       if (postsRes.error) throw postsRes.error;
-      setPosts((postsRes.data as any) || []);
+      const newPosts = ((postsRes.data as any) || []) as Post[];
+      setPosts(newPosts);
+      oldestPostAtRef.current = newPosts.at(-1)?.created_at ?? null;
+
       if (repostsRes.error) {
         console.error("Error fetching reposts:", repostsRes.error);
         setReposts([]);
+        oldestRepostAtRef.current = null;
       } else {
-        setReposts((repostsRes.data as any) || []);
+        const newReposts = ((repostsRes.data as any) || []) as Repost[];
+        setReposts(newReposts);
+        oldestRepostAtRef.current = newReposts.at(-1)?.created_at ?? null;
       }
+
+      setHasMore(
+        newPosts.length === PAGE_SIZE ||
+          ((repostsRes.data as any)?.length ?? 0) === PAGE_SIZE
+      );
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchPage]);
+
+  // Realtime refresh: pull the newest page and merge it into what's already
+  // loaded so paginated items are never dropped or duplicated.
+  const refreshLatest = useCallback(async () => {
+    try {
+      const [postsRes, repostsRes] = await fetchPage(null, null);
+      if (!postsRes.error) {
+        setPosts((prev) => mergeById(prev, ((postsRes.data as any) || []) as Post[]));
+      }
+      if (!repostsRes.error) {
+        setReposts((prev) =>
+          mergeById(prev, ((repostsRes.data as any) || []) as Repost[])
+        );
+      }
+    } catch (error) {
+      console.error("Error refreshing feed:", error);
+    }
+  }, [fetchPage, mergeById]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const [postsRes, repostsRes] = await fetchPage(
+        oldestPostAtRef.current,
+        oldestRepostAtRef.current
+      );
+
+      const morePosts = (!postsRes.error ? ((postsRes.data as any) || []) : []) as Post[];
+      const moreReposts = (!repostsRes.error
+        ? ((repostsRes.data as any) || [])
+        : []) as Repost[];
+
+      if (morePosts.length) {
+        setPosts((prev) => mergeById(prev, morePosts));
+        oldestPostAtRef.current = morePosts.at(-1)!.created_at;
+      }
+      if (moreReposts.length) {
+        setReposts((prev) => mergeById(prev, moreReposts));
+        oldestRepostAtRef.current = moreReposts.at(-1)!.created_at;
+      }
+
+      setHasMore(morePosts.length === PAGE_SIZE || moreReposts.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error loading more posts:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, mergeById, hasMore, loadingMore]);
 
   useEffect(() => {
     fetchPosts();
@@ -182,24 +270,49 @@ const VideoFeed = () => {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
-        () => fetchPosts()
+        () => refreshLatest()
       )
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "posts" },
-        () => fetchPosts()
+        (payload) => {
+          const removedId = (payload.old as any)?.id;
+          if (removedId) {
+            setPosts((prev) => prev.filter((p) => p.id !== removedId));
+            setReposts((prev) => prev.filter((r) => r.post_id !== removedId));
+          } else {
+            refreshLatest();
+          }
+        }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "post_reposts" },
-        () => fetchPosts()
+        { event: "DELETE", schema: "public", table: "post_reposts" },
+        (payload) => {
+          const removedId = (payload.old as any)?.id;
+          if (removedId) {
+            setReposts((prev) => prev.filter((r) => r.id !== removedId));
+          } else {
+            refreshLatest();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "post_reposts" },
+        () => refreshLatest()
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "post_reposts" },
+        () => refreshLatest()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPosts]);
+  }, [refreshLatest]);
 
 
   // Load the people this user follows (accepted friendships) for the Following feed
