@@ -42,6 +42,7 @@ import {
   type FilterType,
   type ColorFilterType,
 } from "@/components/AnimatedFilters";
+import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
 
 interface RecruitingVideo {
   id: string;
