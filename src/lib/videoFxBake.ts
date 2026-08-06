@@ -173,6 +173,17 @@ const PIN_AURA_COLORS: Record<string, string> = {
   comet: "251,191,36",
   "hoop-fire": "239,68,68",
   sparkle: "245,158,11",
+  // PRO auras
+  inferno: "220,38,38",
+  "neon-trail": "16,185,129",
+  "shadow-clone": "30,41,59",
+  galaxy: "129,140,248",
+  matrix: "34,197,94",
+  "gold-aura": "234,179,8",
+  "toxic-glow": "132,204,22",
+  "frost-nova": "56,189,248",
+  "sonic-boom": "244,114,182",
+  "confetti-burst": "251,146,60",
 };
 
 const drawPin = (
