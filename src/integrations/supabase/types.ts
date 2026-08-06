@@ -184,6 +184,87 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_memberships: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          creator_id: string
+          current_period_end: string | null
+          environment: string
+          fan_id: string
+          id: string
+          price_cents: number
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          creator_id: string
+          current_period_end?: string | null
+          environment?: string
+          fan_id: string
+          id?: string
+          price_cents?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string | null
+          environment?: string
+          fan_id?: string
+          id?: string
+          price_cents?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      creator_payouts: {
+        Row: {
+          created_at: string
+          membership_enabled: boolean
+          membership_price_cents: number
+          payout_country: string | null
+          payout_email: string | null
+          payout_status: string
+          tips_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          membership_enabled?: boolean
+          membership_price_cents?: number
+          payout_country?: string | null
+          payout_email?: string | null
+          payout_status?: string
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          membership_enabled?: boolean
+          membership_price_cents?: number
+          payout_country?: string | null
+          payout_email?: string | null
+          payout_status?: string
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_challenges: {
         Row: {
           challenge_date: string
@@ -554,6 +635,62 @@ export type Database = {
         }
         Relationships: []
       }
+      podcast_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          creator_id: string
+          creator_net_cents: number
+          currency: string
+          environment: string
+          id: string
+          kind: string
+          payer_id: string
+          platform_fee_cents: number
+          podcast_id: string | null
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          creator_id: string
+          creator_net_cents?: number
+          currency?: string
+          environment?: string
+          id?: string
+          kind: string
+          payer_id: string
+          platform_fee_cents?: number
+          podcast_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          creator_id?: string
+          creator_net_cents?: number
+          currency?: string
+          environment?: string
+          id?: string
+          kind?: string
+          payer_id?: string
+          platform_fee_cents?: number
+          podcast_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "podcast_payments_podcast_id_fkey"
+            columns: ["podcast_id"]
+            isOneToOne: false
+            referencedRelation: "podcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       podcasts: {
         Row: {
           audio_url: string
@@ -561,10 +698,13 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_premium: boolean
           likes_count: number
           plays_count: number
           thumbnail_url: string | null
+          tips_enabled: boolean
           title: string
+          unlock_price_cents: number
           updated_at: string
           user_id: string
         }
@@ -574,10 +714,13 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean
           likes_count?: number
           plays_count?: number
           thumbnail_url?: string | null
+          tips_enabled?: boolean
           title: string
+          unlock_price_cents?: number
           updated_at?: string
           user_id: string
         }
@@ -587,10 +730,13 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean
           likes_count?: number
           plays_count?: number
           thumbnail_url?: string | null
+          tips_enabled?: boolean
           title?: string
+          unlock_price_cents?: number
           updated_at?: string
           user_id?: string
         }
@@ -1286,6 +1432,10 @@ export type Database = {
       }
       has_fx_access: {
         Args: { check_env?: string; user_uuid: string }
+        Returns: boolean
+      }
+      has_podcast_access: {
+        Args: { _podcast_id: string; _user_id: string }
         Returns: boolean
       }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
