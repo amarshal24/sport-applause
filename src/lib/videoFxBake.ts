@@ -173,6 +173,17 @@ const PIN_AURA_COLORS: Record<string, string> = {
   comet: "251,191,36",
   "hoop-fire": "239,68,68",
   sparkle: "245,158,11",
+  // PRO auras
+  inferno: "220,38,38",
+  "neon-trail": "16,185,129",
+  "shadow-clone": "30,41,59",
+  galaxy: "129,140,248",
+  matrix: "34,197,94",
+  "gold-aura": "234,179,8",
+  "toxic-glow": "132,204,22",
+  "frost-nova": "56,189,248",
+  "sonic-boom": "244,114,182",
+  "confetti-burst": "251,146,60",
 };
 
 const drawPin = (
@@ -199,13 +210,24 @@ const drawPin = (
     ctx.fill();
   }
 
-  if (pin.animation === "shockwave" || pin.animation === "electric") {
+  if (pin.animation === "shockwave" || pin.animation === "electric" || pin.animation === "sonic-boom" || pin.animation === "frost-nova") {
     ctx.strokeStyle = `rgba(${color ?? "255,255,255"},${1 - (t % 1)})`;
     ctx.lineWidth = Math.max(2, w / 250);
     ctx.beginPath();
     ctx.arc(cx, cy, size * (0.8 + (t % 1) * 1.2), 0, Math.PI * 2);
     ctx.stroke();
   }
+
+  if (pin.animation === "shadow-clone") {
+    ctx.globalAlpha = 0.35;
+    ctx.font = `${Math.round(size)}px serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(pin.emoji, cx - size * 0.5, cy);
+    ctx.fillText(pin.emoji, cx + size * 0.5, cy);
+    ctx.globalAlpha = 1;
+  }
+
 
   ctx.font = `${Math.round(size)}px serif`;
   ctx.textAlign = "center";
@@ -223,6 +245,25 @@ const drawPin = (
     ctx.font = `${Math.round(size * 0.7)}px serif`;
     ctx.globalAlpha = pulse;
     ctx.fillText("⚡", cx, cy - size * 0.9);
+    ctx.globalAlpha = 1;
+  }
+
+  const PRO_ACCENTS: Record<string, string> = {
+    inferno: "🔥",
+    "neon-trail": "🟢",
+    galaxy: "🌌",
+    matrix: "🟩",
+    "gold-aura": "✨",
+    "toxic-glow": "☢️",
+    "confetti-burst": "🎉",
+  };
+  const accent = PRO_ACCENTS[pin.animation];
+  if (accent) {
+    ctx.font = `${Math.round(size * 0.55)}px serif`;
+    ctx.globalAlpha = pulse;
+    const wobble = Math.sin(t * Math.PI * 2) * size * 0.3;
+    ctx.fillText(accent, cx + size * 0.7, cy - size * 0.7 + wobble);
+    ctx.fillText(accent, cx - size * 0.7, cy + size * 0.5 - wobble);
     ctx.globalAlpha = 1;
   }
 };
