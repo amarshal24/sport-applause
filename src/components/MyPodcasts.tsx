@@ -62,7 +62,13 @@ const MyPodcasts = () => {
 
   const openEdit = (p: Podcast) => {
     setEditing(p);
-    setForm({ title: p.title, description: p.description ?? "" });
+    setForm({
+      title: p.title,
+      description: p.description ?? "",
+      is_premium: p.is_premium ?? false,
+      price: ((p.unlock_price_cents ?? 299) / 100).toFixed(2),
+      tips_enabled: p.tips_enabled ?? true,
+    });
     setNewThumb(null);
     setNewAudio(null);
   };
