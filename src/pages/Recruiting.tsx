@@ -79,6 +79,8 @@ interface RecruitingVideo {
 
 const Recruiting = () => {
   const { user } = useAuth();
+  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
+
   const navigate = useNavigate();
   const [videos, setVideos] = useState<RecruitingVideo[]>([]);
   const [loading, setLoading] = useState(true);
