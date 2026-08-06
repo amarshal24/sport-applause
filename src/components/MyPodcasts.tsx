@@ -82,10 +82,30 @@ const MyPodcasts = () => {
     if (newAudio && !newAudio.type.startsWith("audio/")) return toast.error("Invalid audio file");
     if (newAudio && newAudio.size > 100 * 1024 * 1024) return toast.error("Audio must be under 100MB");
     if (newThumb && !newThumb.type.startsWith("image/")) return toast.error("Invalid image file");
+    const priceCents = Math.round(parseFloat(form.price) * 100);
+    if (form.is_premium && (!Number.isFinite(priceCents) || priceCents < 100 || priceCents > 50000)) {
+      return toast.error("Episode price must be between $1 and $500");
+    }
 
     setSaving(true);
     try {
-      const update: { title: string; description: string | null; thumbnail_url?: string; audio_url?: string; duration?: number } = { title, description: form.description || null };
+      const update: {
+        title: string;
+        description: string | null;
+        thumbnail_url?: string;
+        audio_url?: string;
+        duration?: number;
+        is_premium: boolean;
+        unlock_price_cents: number;
+        tips_enabled: boolean;
+      } = {
+        title,
+        description: form.description || null,
+        is_premium: form.is_premium,
+        unlock_price_cents: Number.isFinite(priceCents) ? priceCents : 299,
+        tips_enabled: form.tips_enabled,
+      };
+
 
       if (newThumb) {
         const path = `${user.id}/thumbnails/${Date.now()}-${newThumb.name}`;
