@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import PodcastUploader from "@/components/PodcastUploader";
 import MyPodcasts from "@/components/MyPodcasts";
+import PodcastDiscover from "@/components/podcast/PodcastDiscover";
 import { useState } from "react";
 import { Headphones } from "lucide-react";
 
@@ -34,6 +35,7 @@ const Podcasts = () => {
         
         <PodcastUploader onUploadComplete={() => setRefreshKey((k) => k + 1)} />
         <MyPodcasts key={refreshKey} />
+        <PodcastDiscover />
       </main>
       <MobileNav />
     </div>

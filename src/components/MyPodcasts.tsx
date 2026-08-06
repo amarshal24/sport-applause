@@ -10,8 +10,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, RefreshCw, Music, Loader2 } from "lucide-react";
+import { Pencil, Trash2, RefreshCw, Music, Loader2, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import MonetizationSettings from "@/components/podcast/MonetizationSettings";
+import CreatorEarnings from "@/components/podcast/CreatorEarnings";
 
 interface Podcast {
   id: string;
@@ -23,7 +26,11 @@ interface Podcast {
   plays_count: number;
   likes_count: number;
   created_at: string;
+  is_premium: boolean;
+  unlock_price_cents: number;
+  tips_enabled: boolean;
 }
+
 
 const bucketPathFromUrl = (url: string) => {
   const marker = "/storage/v1/object/public/podcasts/";
@@ -38,7 +45,7 @@ const MyPodcasts = () => {
   const [editing, setEditing] = useState<Podcast | null>(null);
   const [deleting, setDeleting] = useState<Podcast | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", is_premium: false, price: "2.99", tips_enabled: true });
   const [newThumb, setNewThumb] = useState<File | null>(null);
   const [newAudio, setNewAudio] = useState<File | null>(null);
 
@@ -55,7 +62,13 @@ const MyPodcasts = () => {
 
   const openEdit = (p: Podcast) => {
     setEditing(p);
-    setForm({ title: p.title, description: p.description ?? "" });
+    setForm({
+      title: p.title,
+      description: p.description ?? "",
+      is_premium: p.is_premium ?? false,
+      price: ((p.unlock_price_cents ?? 299) / 100).toFixed(2),
+      tips_enabled: p.tips_enabled ?? true,
+    });
     setNewThumb(null);
     setNewAudio(null);
   };
@@ -69,10 +82,30 @@ const MyPodcasts = () => {
     if (newAudio && !newAudio.type.startsWith("audio/")) return toast.error("Invalid audio file");
     if (newAudio && newAudio.size > 100 * 1024 * 1024) return toast.error("Audio must be under 100MB");
     if (newThumb && !newThumb.type.startsWith("image/")) return toast.error("Invalid image file");
+    const priceCents = Math.round(parseFloat(form.price) * 100);
+    if (form.is_premium && (!Number.isFinite(priceCents) || priceCents < 100 || priceCents > 50000)) {
+      return toast.error("Episode price must be between $1 and $500");
+    }
 
     setSaving(true);
     try {
-      const update: { title: string; description: string | null; thumbnail_url?: string; audio_url?: string; duration?: number } = { title, description: form.description || null };
+      const update: {
+        title: string;
+        description: string | null;
+        thumbnail_url?: string;
+        audio_url?: string;
+        duration?: number;
+        is_premium: boolean;
+        unlock_price_cents: number;
+        tips_enabled: boolean;
+      } = {
+        title,
+        description: form.description || null,
+        is_premium: form.is_premium,
+        unlock_price_cents: Number.isFinite(priceCents) ? priceCents : 299,
+        tips_enabled: form.tips_enabled,
+      };
+
 
       if (newThumb) {
         const path = `${user.id}/thumbnails/${Date.now()}-${newThumb.name}`;
@@ -132,7 +165,9 @@ const MyPodcasts = () => {
   if (!user) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-8 space-y-6">
+      <MonetizationSettings />
+      <CreatorEarnings />
       <h2 className="text-xl font-semibold mb-4">Your Podcasts</h2>
       {loading ? (
         <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -148,7 +183,10 @@ const MyPodcasts = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium truncate">{p.title}</h3>
                 {p.description && <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
-                <p className="text-xs text-muted-foreground mt-1">{p.plays_count} plays · {p.likes_count} likes</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {p.plays_count} plays · {p.likes_count} likes
+                  {p.is_premium && <span className="ml-2 inline-flex items-center gap-1 text-primary"><Lock className="h-3 w-3" /> ${(p.unlock_price_cents / 100).toFixed(2)}</span>}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => openEdit(p)} className="gap-1"><Pencil className="h-4 w-4" /> Edit</Button>
@@ -171,8 +209,26 @@ const MyPodcasts = () => {
               <Label htmlFor="edit-desc">Description</Label>
               <Textarea id="edit-desc" rows={3} maxLength={2000} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-premium" className="flex items-center gap-2"><Lock className="h-4 w-4" /> Premium episode</Label>
+                <Switch id="edit-premium" checked={form.is_premium} onCheckedChange={(v) => setForm((f) => ({ ...f, is_premium: v }))} />
+              </div>
+              {form.is_premium && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Unlock price (USD)</Label>
+                  <Input id="edit-price" type="number" min="1" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+                  <p className="text-xs text-muted-foreground">You keep 95% — the platform fee is 5%.</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-tips">Allow tips on this episode</Label>
+                <Switch id="edit-tips" checked={form.tips_enabled} onCheckedChange={(v) => setForm((f) => ({ ...f, tips_enabled: v }))} />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Replace Thumbnail</Label>
+
               <Input type="file" accept="image/*" onChange={(e) => setNewThumb(e.target.files?.[0] ?? null)} />
             </div>
             <div className="space-y-2">
