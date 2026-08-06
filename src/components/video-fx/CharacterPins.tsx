@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
 import { usePremium } from "@/hooks/usePremium";
 import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
+import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
+import { hasSkinTier, skinTierOf } from "@/constants/skinTiers";
+
 import { Crown } from "lucide-react";
 
 const AnimationTutorialLazy = lazy(() =>
@@ -375,7 +378,16 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
   const [howToOpen, setHowToOpen] = useState(false);
-  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
+  const {
+    isPremium,
+    skinTier,
+    upgradeOpen,
+    requestUpgrade,
+    closeUpgrade,
+    skinStoreOpen,
+    requestSkinTier,
+    closeSkinStore,
+  } = usePremium();
 
   const locked = (item: { pro?: boolean } | Record<string, unknown>) =>
     !!(item as { pro?: boolean }).pro && !isPremium;
@@ -386,6 +398,17 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
     }
     action();
   };
+
+  // Skins are sold in tiers (Starter / Pro / Elite) — gate them separately.
+  const skinLocked = (id: string) => !hasSkinTier(skinTier, skinTierOf(id));
+  const skinGuard = (id: string, action: () => void) => {
+    if (skinLocked(id)) {
+      requestSkinTier();
+      return;
+    }
+    action();
+  };
+
 
   return (
     <div className="space-y-4">
@@ -451,9 +474,12 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
               disabled={full && !locked(p)}
               onClick={() =>
                 guard(p, () =>
-                  onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })
+                  skinGuard(p.skin, () =>
+                    onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })
+                  )
                 )
               }
+
               className={cn(
                 "relative rounded-lg border border-border bg-card/60 p-2 text-left transition-colors hover:bg-accent/60",
                 full && !locked(p) && "opacity-50 pointer-events-none",
@@ -523,25 +549,36 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
 
           {/* Characters */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <User className="h-3 w-3" /> Character Skin
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <User className="h-3 w-3" /> Character Skin
+              </p>
+              <button
+                type="button"
+                onClick={requestSkinTier}
+                className="text-[10px] font-medium text-primary hover:underline"
+              >
+                {skinTier === "elite" ? "All skins unlocked" : "Unlock skin packs"}
+              </button>
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {characters.map((s) => (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => guard(s, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary/50",
-                    locked(s) && "opacity-70"
+                    skinLocked(s.id) && "opacity-70"
                   )}
                 >
-                  {locked(s) && (
-                    <Crown className="absolute top-0.5 right-0.5 h-3 w-3 text-primary" />
+                  {skinLocked(s.id) && (
+                    <span className="absolute top-0.5 right-0.5 flex items-center">
+                      <Lock className="h-3 w-3 text-primary" />
+                    </span>
                   )}
                   <span className="text-xl">{s.emoji}</span>
                   <span className="text-[10px] truncate w-full">{s.label}</span>
@@ -560,17 +597,19 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => guard(s, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary/50",
-                    locked(s) && "opacity-70"
+                    skinLocked(s.id) && "opacity-70"
                   )}
                 >
-                  {locked(s) && (
-                    <Crown className="absolute top-0.5 right-0.5 h-3 w-3 text-primary" />
+                  {skinLocked(s.id) && (
+                    <span className="absolute top-0.5 right-0.5 flex items-center">
+                      <Lock className="h-3 w-3 text-primary" />
+                    </span>
                   )}
                   <span className="text-xl">{s.emoji}</span>
                   <span className="text-[10px] truncate w-full">{s.label}</span>
@@ -578,6 +617,7 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
               ))}
             </div>
           </div>
+
 
           {/* Animation */}
           <div>
@@ -611,6 +651,8 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
       ))}
 
       <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
+      <SkinTiersModal open={skinStoreOpen} onClose={closeSkinStore} />
+
     </div>
   );
 };
