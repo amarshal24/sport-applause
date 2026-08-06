@@ -739,7 +739,9 @@ const Trending = () => {
           )}
         </DialogContent>
       </Dialog>
+      <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
     </div>
+
   );
 };
 
