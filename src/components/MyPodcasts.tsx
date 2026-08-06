@@ -45,7 +45,7 @@ const MyPodcasts = () => {
   const [editing, setEditing] = useState<Podcast | null>(null);
   const [deleting, setDeleting] = useState<Podcast | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", is_premium: false, price: "2.99", tips_enabled: true });
   const [newThumb, setNewThumb] = useState<File | null>(null);
   const [newAudio, setNewAudio] = useState<File | null>(null);
 
