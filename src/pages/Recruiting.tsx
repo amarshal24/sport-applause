@@ -112,6 +112,7 @@ const Recruiting = () => {
   const [location, setLocation] = useState("");
   const [school, setSchool] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [renderProgress, setRenderProgress] = useState<number | null>(null);
 
   // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
   const UNDO_TIMEOUT_MS = 5000;
