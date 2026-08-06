@@ -2,6 +2,13 @@ import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getStripeEnvironment } from "@/lib/stripe";
+import {
+  SKIN_TIER_PRICE_IDS,
+  SKIN_TIER_RANK,
+  type SkinTier,
+} from "@/constants/skinTiers";
+
+const PRO_FX_PRICE_IDS = ["fx_pro_pack_onetime"];
 
 /**
  * Premium (PRO FX) access. True when the user bought the one-time
@@ -11,9 +18,12 @@ export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
   const [hasPack, setHasPack] = useState(false);
+  const [skinTier, setSkinTier] = useState<SkinTier>("free");
   const [subStatus, setSubStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [skinStoreOpen, setSkinStoreOpen] = useState(false);
+
 
   const environment = (() => {
     try {
