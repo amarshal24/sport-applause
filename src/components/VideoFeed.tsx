@@ -504,6 +504,11 @@ const VideoFeed = () => {
     };
   }, []);
 
+  const repostCounts = reposts.reduce((map, r) => {
+    map.set(r.post_id, (map.get(r.post_id) || 0) + 1);
+    return map;
+  }, new Map<string, number>());
+
   // Merge original posts and reposts into a single chronological feed
   const feedItems: FeedItem[] = [
     ...posts.map((p) => ({
