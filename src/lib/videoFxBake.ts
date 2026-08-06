@@ -310,6 +310,8 @@ export const bakeVideoFx = (
         ctx.drawImage(video, 0, 0, w, h);
         ctx.restore();
         painter?.(ctx, w, h, video.currentTime);
+        pins.forEach((p) => drawPin(ctx, w, h, video.currentTime, p));
+
         if (duration) onProgress?.(Math.min(99, Math.round((video.currentTime / duration) * 100)));
         raf = requestAnimationFrame(draw);
       };
