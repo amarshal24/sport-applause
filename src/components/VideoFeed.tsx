@@ -1011,6 +1011,14 @@ const VideoFeed = () => {
 
           </div>
         )}
+
+        {!loading && hasMore && filteredPosts.length > 0 && (
+          <div className="flex justify-center py-6">
+            <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? "Loading…" : "Load more"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filters & Animations editor for owner's video posts */}
