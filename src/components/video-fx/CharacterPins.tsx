@@ -651,6 +651,8 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
       ))}
 
       <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
+      <SkinTiersModal open={skinStoreOpen} onClose={closeSkinStore} />
+
     </div>
   );
 };
