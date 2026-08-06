@@ -18,6 +18,7 @@ import {
   Sparkles, HelpCircle, Wand2
 } from "lucide-react";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { useUndoableState } from "@/hooks/useUndoableState";
 import { FilterHelpDialog } from "@/components/recruiting/FilterHelpDialog";
 import {
   DropdownMenu,
