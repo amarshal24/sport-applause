@@ -1134,7 +1134,7 @@ const Recruiting = () => {
                           className={locked ? "opacity-70" : undefined}
                         >
                           {f.label}
-                          {locked && <Lock className="ml-1 h-3 w-3" />}
+                          {locked && <LockIcon className="ml-1 h-3 w-3" />}
                         </Button>
                       );
                     })}
@@ -1157,7 +1157,7 @@ const Recruiting = () => {
                         >
                           <span className="mr-1">{f.icon}</span>
                           {f.label}
-                          {locked && <Lock className="ml-1 h-3 w-3" />}
+                          {locked && <LockIcon className="ml-1 h-3 w-3" />}
                         </Button>
                       );
                     })}
