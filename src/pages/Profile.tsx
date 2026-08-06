@@ -1,6 +1,9 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { ProBadge } from "@/components/ProBadge";
+import { PaymentPastDueBanner } from "@/components/PaymentPastDueBanner";
+import { usePremium } from "@/hooks/usePremium";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
@@ -219,8 +222,9 @@ const Profile = () => {
                 {/* Info Section */}
                 <div className="flex-1 text-center sm:text-left space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <h1 className="text-xl font-display font-bold text-foreground">
+                    <h1 className="text-xl font-display font-bold text-foreground flex items-center justify-center sm:justify-start gap-2">
                       {profile?.username}
+                      {isPremium && <ProBadge />}
                     </h1>
                     <Button 
                       variant="outline" 
