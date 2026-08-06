@@ -69,6 +69,9 @@ interface Post {
 const VideoFeed = () => {
   const { user } = useAuth();
   const [selectedSport, setSelectedSport] = useState("All");
+  const [feedScope, setFeedScope] = useState<"following" | "everyone">("following");
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+
   const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
