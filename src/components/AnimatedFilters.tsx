@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 
-export type FilterType = "none" | "sparkle" | "fire" | "confetti" | "glow" | "victory" | "slowmo" | "replay" | "champion";
-export type ColorFilterType = "none" | "vintage" | "vivid" | "bw" | "sepia" | "cool" | "warm" | "dramatic" | "neon";
+export type FilterType =
+  | "none" | "sparkle" | "fire" | "confetti" | "glow" | "victory" | "slowmo" | "replay" | "champion"
+  // PRO animations (in-app purchase)
+  | "lightning" | "smoke" | "embers" | "snow" | "shockwave" | "spotlight" | "goldrain" | "matrix";
+export type ColorFilterType =
+  | "none" | "vintage" | "vivid" | "bw" | "sepia" | "cool" | "warm" | "dramatic" | "neon"
+  // PRO color looks (in-app purchase)
+  | "cyberpunk" | "gold" | "noir" | "vhs" | "dream" | "thermal" | "midnight" | "comic";
+
 
 interface AnimatedFilterProps {
   type: FilterType;
