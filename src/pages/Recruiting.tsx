@@ -15,9 +15,10 @@ import {
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
   Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User,
-  Sparkles, HelpCircle, Wand2
+  Sparkles, HelpCircle, Wand2, Undo2, Redo2
 } from "lucide-react";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { useUndoableState } from "@/hooks/useUndoableState";
 import { FilterHelpDialog } from "@/components/recruiting/FilterHelpDialog";
 import {
   DropdownMenu,
@@ -110,7 +111,9 @@ const Recruiting = () => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
   const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
-  const [pins, setPins] = useState<CharacterPin[]>([]);
+  const pinHistory = useUndoableState<CharacterPin[]>([]);
+  const pins = pinHistory.value;
+  const setPins = pinHistory.set;
   const [placeMode, setPlaceMode] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -551,7 +554,10 @@ const Recruiting = () => {
     setPins((prev) => prev.filter((p) => p.id !== id));
 
   const handleMovePin = (id: string, x: number, y: number) =>
-    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+    setPins(
+      (prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      { coalesceKey: `move-${id}` }
+    );
 
   const handlePlacePin = (x: number, y: number) => {
     setPins((prev) =>
@@ -562,6 +568,24 @@ const Recruiting = () => {
     setPlaceMode(false);
   };
 
+  // Undo/redo keyboard shortcuts while the upload editor is open
+  useEffect(() => {
+    if (!showUploadModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      e.preventDefault();
+      if (e.shiftKey) pinHistory.redo();
+      else pinHistory.undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showUploadModal, pinHistory.undo, pinHistory.redo]);
+
+
+
   const resetForm = () => {
     setVideoFile(null);
     setVideoPreviewUrl((prev) => {
@@ -570,7 +594,7 @@ const Recruiting = () => {
     });
     setColorFilter("none");
     setAnimatedFilter("none");
-    setPins([]);
+    pinHistory.reset([]);
     setPlaceMode(false);
 
     setTitle("");
@@ -1132,20 +1156,49 @@ const Recruiting = () => {
 
                 {/* Characters & objects */}
                 <div className="pt-2 border-t border-border space-y-3">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="text-xs text-muted-foreground">
                       Place characters & objects on your clip
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={placeMode ? "default" : "outline"}
-                      onClick={() => setPlaceMode((v) => !v)}
-                      disabled={pins.length >= MAX_PINS}
-                    >
-                      {placeMode ? "Tap video…" : "Tap to place"}
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.undo}
+                        disabled={!pinHistory.canUndo}
+                        title="Undo (Ctrl/⌘+Z)"
+                        aria-label="Undo FX pin change"
+                        className="gap-1"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Undo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.redo}
+                        disabled={!pinHistory.canRedo}
+                        title="Redo (Ctrl/⌘+Shift+Z)"
+                        aria-label="Redo FX pin change"
+                        className="gap-1"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                        Redo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={placeMode ? "default" : "outline"}
+                        onClick={() => setPlaceMode((v) => !v)}
+                        disabled={pins.length >= MAX_PINS}
+                      >
+                        {placeMode ? "Tap video…" : "Tap to place"}
+                      </Button>
+                    </div>
                   </div>
+
                   <CharacterPinsPanel
                     pins={pins}
                     onAdd={handleAddPin}
