@@ -81,9 +81,15 @@ const Profile = () => {
   const fetchData = async () => {
     if (!user) return;
     
-    const [profileResult, postsResult] = await Promise.all([
+    const [profileResult, postsResult, storiesResult] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase
+        .from("stories")
+        .select("*")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
     ]);
     
     if (profileResult.data) {
@@ -96,8 +102,19 @@ const Profile = () => {
     }
     
     setPosts(postsResult.data || []);
+    setMyStories(
+      (storiesResult.data || []).map((s: any) => ({
+        ...s,
+        profiles: {
+          username: profileResult.data?.username || "You",
+          avatar_url: profileResult.data?.avatar_url || null,
+          sports: profileResult.data?.sports || null,
+        },
+      }))
+    );
     setLoading(false);
   };
+
 
   const fetchProfile = async () => {
     if (!user) return;
