@@ -69,6 +69,9 @@ interface Post {
 const VideoFeed = () => {
   const { user } = useAuth();
   const [selectedSport, setSelectedSport] = useState("All");
+  const [feedScope, setFeedScope] = useState<"following" | "everyone">("following");
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+
   const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -125,6 +128,26 @@ const VideoFeed = () => {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts, refreshKey]);
+
+  // Load the people this user follows (accepted friendships) for the Following feed
+  useEffect(() => {
+    if (!user) {
+      setFollowingIds(new Set());
+      return;
+    }
+    supabase
+      .from("friendships")
+      .select("user_id, friend_id, status")
+      .eq("status", "accepted")
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+      .then(({ data }) => {
+        const ids = new Set<string>();
+        (data || []).forEach((f: any) => {
+          ids.add(f.user_id === user.id ? f.friend_id : f.user_id);
+        });
+        setFollowingIds(ids);
+      });
+  }, [user, refreshKey]);
 
   // Load this user's saved (watch later) posts
   useEffect(() => {
@@ -353,11 +376,16 @@ const VideoFeed = () => {
     };
   }, []);
 
-  const filteredPosts = selectedSport === "All" 
+  const sportFiltered = selectedSport === "All" 
     ? posts 
     : posts.filter(p => p.profiles?.sports?.some(s => 
         s.toLowerCase().includes(selectedSport.toLowerCase())
       ));
+
+  const filteredPosts = feedScope === "following" && user
+    ? sportFiltered.filter((p) => p.user_id === user.id || followingIds.has(p.user_id))
+    : sportFiltered;
+
 
   return (
     <section ref={containerRef} className="relative">
@@ -389,6 +417,25 @@ const VideoFeed = () => {
         }}
       >
         
+        {user && (
+          <div className="flex gap-2 mb-4">
+            <Button
+              size="sm"
+              variant={feedScope === "following" ? "default" : "outline"}
+              onClick={() => setFeedScope("following")}
+            >
+              Following
+            </Button>
+            <Button
+              size="sm"
+              variant={feedScope === "everyone" ? "default" : "outline"}
+              onClick={() => setFeedScope("everyone")}
+            >
+              Everyone
+            </Button>
+          </div>
+        )}
+
         <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
             {SPORTS_CATEGORIES.map((sport) => (
@@ -410,9 +457,19 @@ const VideoFeed = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No posts yet. Be the first to share!</p>
+          <div className="text-center py-12 text-muted-foreground space-y-3">
+            {feedScope === "following" && user ? (
+              <>
+                <p>Nothing here yet — post something or follow more athletes.</p>
+                <Button size="sm" variant="outline" onClick={() => setFeedScope("everyone")}>
+                  Browse everyone
+                </Button>
+              </>
+            ) : (
+              <p>No posts yet. Be the first to share!</p>
+            )}
           </div>
+
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
             {filteredPosts.map((post) => (

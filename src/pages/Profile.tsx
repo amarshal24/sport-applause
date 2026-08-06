@@ -14,6 +14,7 @@ import AnimatedAvatar from "@/components/AnimatedAvatar";
 import { SportIcon } from "@/components/SportIcon";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 import ApplauseButton from "@/components/ApplauseButton";
+import StoryViewer from "@/components/StoryViewer";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +39,9 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myStories, setMyStories] = useState<any[]>([]);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+
   const { isPremium } = usePremium();
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
@@ -81,9 +85,15 @@ const Profile = () => {
   const fetchData = async () => {
     if (!user) return;
     
-    const [profileResult, postsResult] = await Promise.all([
+    const [profileResult, postsResult, storiesResult] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase
+        .from("stories")
+        .select("*")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
     ]);
     
     if (profileResult.data) {
@@ -96,8 +106,19 @@ const Profile = () => {
     }
     
     setPosts(postsResult.data || []);
+    setMyStories(
+      (storiesResult.data || []).map((s: any) => ({
+        ...s,
+        profiles: {
+          username: profileResult.data?.username || "You",
+          avatar_url: profileResult.data?.avatar_url || null,
+          sports: profileResult.data?.sports || null,
+        },
+      }))
+    );
     setLoading(false);
   };
+
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -197,14 +218,29 @@ const Profile = () => {
                 {/* Avatar Section */}
                 <div className="relative group shrink-0">
                   <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
-                  <AnimatedAvatar
-                    videoUrl={profile?.profile_video_url}
-                    captionVtt={profile?.profile_video_caption_vtt}
-                    imageUrl={profile?.avatar_url}
-                    fallback={profile?.username?.[0]?.toUpperCase() || "U"}
-                    className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
-                    showPlayIcon
-                  />
+                  <div
+                    className={
+                      myStories.length > 0
+                        ? "relative z-10 rounded-full p-[3px] bg-gradient-power animate-pulse-glow cursor-pointer"
+                        : "relative z-10"
+                    }
+                    onClick={() => myStories.length > 0 && setStoryViewerOpen(true)}
+                  >
+                    <AnimatedAvatar
+                      videoUrl={profile?.profile_video_url}
+                      captionVtt={profile?.profile_video_caption_vtt}
+                      imageUrl={profile?.avatar_url}
+                      fallback={profile?.username?.[0]?.toUpperCase() || "U"}
+                      className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
+                      showPlayIcon
+                    />
+                  </div>
+                  {myStories.length > 0 && (
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Story
+                    </span>
+                  )}
+
                   {profile?.sports && profile.sports.length > 0 && (
                     <SportIcon 
                       sportId={profile.sports[0]} 
@@ -525,6 +561,13 @@ const Profile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <StoryViewer
+        stories={myStories}
+        initialIndex={0}
+        open={storyViewerOpen}
+        onOpenChange={setStoryViewerOpen}
+      />
     </div>
 
   );
