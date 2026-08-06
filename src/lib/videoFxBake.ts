@@ -247,6 +247,25 @@ const drawPin = (
     ctx.fillText("⚡", cx, cy - size * 0.9);
     ctx.globalAlpha = 1;
   }
+
+  const PRO_ACCENTS: Record<string, string> = {
+    inferno: "🔥",
+    "neon-trail": "🟢",
+    galaxy: "🌌",
+    matrix: "🟩",
+    "gold-aura": "✨",
+    "toxic-glow": "☢️",
+    "confetti-burst": "🎉",
+  };
+  const accent = PRO_ACCENTS[pin.animation];
+  if (accent) {
+    ctx.font = `${Math.round(size * 0.55)}px serif`;
+    ctx.globalAlpha = pulse;
+    const wobble = Math.sin(t * Math.PI * 2) * size * 0.3;
+    ctx.fillText(accent, cx + size * 0.7, cy - size * 0.7 + wobble);
+    ctx.fillText(accent, cx - size * 0.7, cy + size * 0.5 - wobble);
+    ctx.globalAlpha = 1;
+  }
 };
 
 export const hasBakeableFx = (
