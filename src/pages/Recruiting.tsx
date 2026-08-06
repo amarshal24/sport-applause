@@ -1464,6 +1464,9 @@ const Recruiting = () => {
 
       {/* How-to popup */}
       <FilterHelpDialog open={showFilterHelp} onOpenChange={setShowFilterHelp} />
+      {/* Pro FX upgrade */}
+      <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
+
       {/* Contact Athlete Modal */}
       {contactAthlete && (
         <ContactAthleteModal
