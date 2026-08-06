@@ -38,6 +38,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isPremium } = usePremium();
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -186,6 +187,7 @@ const Profile = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <PaymentPastDueBanner />
         <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto w-full space-y-6">
           
           {/* Profile Header Card */}
