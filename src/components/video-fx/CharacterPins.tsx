@@ -285,6 +285,7 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
+  const [howToOpen, setHowToOpen] = useState(false);
 
   return (
     <div className="space-y-4">
