@@ -335,6 +335,16 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
   const [howToOpen, setHowToOpen] = useState(false);
+  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
+
+  const locked = (item: { pro?: boolean }) => !!item.pro && !isPremium;
+  const guard = (item: { pro?: boolean }, action: () => void) => {
+    if (locked(item)) {
+      requestUpgrade();
+      return;
+    }
+    action();
+  };
 
   return (
     <div className="space-y-4">
