@@ -39,6 +39,16 @@ export const CHARACTER_ANIMATIONS = [
   { id: "frost-nova", label: "Frost Nova", emoji: "🧊", pro: true },
   { id: "sonic-boom", label: "Sonic Boom", emoji: "🔊", pro: true },
   { id: "confetti-burst", label: "Confetti", emoji: "🎉", pro: true },
+  { id: "plasma", label: "Plasma Burn", emoji: "🟣", pro: true },
+  { id: "thunder-crown", label: "Thunder Crown", emoji: "👑", pro: true },
+  { id: "afterimage", label: "Afterimage", emoji: "🎞️", pro: true },
+  { id: "lava-steps", label: "Lava Steps", emoji: "🌋", pro: true },
+  { id: "bubble-trail", label: "Bubble Trail", emoji: "🫧", pro: true },
+  { id: "wind-tunnel", label: "Wind Tunnel", emoji: "🌬️", pro: true },
+  { id: "star-shower", label: "Star Shower", emoji: "🌠", pro: true },
+  { id: "hologram", label: "Hologram", emoji: "🛰️", pro: true },
+  { id: "blood-moon", label: "Blood Moon", emoji: "🌑", pro: true },
+  { id: "diamond-dust", label: "Diamond Dust", emoji: "💎", pro: true },
 ] as const;
 
 // Character skins (persons)
@@ -70,6 +80,14 @@ export const CHARACTER_SKINS = [
   { id: "cheetah", label: "Cheetah", emoji: "🐆", kind: "character", pro: true },
   { id: "eagle", label: "Eagle", emoji: "🦅", kind: "character", pro: true },
   { id: "bull", label: "Bull", emoji: "🐂", kind: "character", pro: true },
+  { id: "shark", label: "Shark", emoji: "🦈", kind: "character", pro: true },
+  { id: "wolf", label: "Wolf", emoji: "🐺", kind: "character", pro: true },
+  { id: "tiger", label: "Tiger", emoji: "🐯", kind: "character", pro: true },
+  { id: "phoenix", label: "Phoenix", emoji: "🔥", kind: "character", pro: true },
+  { id: "samurai", label: "Samurai", emoji: "🗡️", kind: "character", pro: true },
+  { id: "knight", label: "Knight", emoji: "🛡️", kind: "character", pro: true },
+  { id: "pirate", label: "Pirate", emoji: "🏴‍☠️", kind: "character", pro: true },
+  { id: "mecha", label: "Mecha Suit", emoji: "🤖", kind: "character", pro: true },
   // Objects
   { id: "basketball", label: "Basketball", emoji: "🏀", kind: "object" },
   { id: "football", label: "Football", emoji: "🏈", kind: "object" },
@@ -100,6 +118,15 @@ export const CHARACTER_SKINS = [
   { id: "skull", label: "Skull", emoji: "💀", kind: "object", pro: true },
   { id: "guitar", label: "Guitar", emoji: "🎸", kind: "object", pro: true },
   { id: "clock", label: "Time Stop", emoji: "⏱️", kind: "object", pro: true },
+  { id: "cash", label: "Cash Stack", emoji: "💵", kind: "object", pro: true },
+  { id: "ring", label: "Championship Ring", emoji: "💍", kind: "object", pro: true },
+  { id: "jet", label: "Jet Boost", emoji: "✈️", kind: "object", pro: true },
+  { id: "comet-obj", label: "Comet", emoji: "🌠", kind: "object", pro: true },
+  { id: "galaxy-orb", label: "Galaxy Orb", emoji: "🪐", kind: "object", pro: true },
+  { id: "bomb", label: "Bomb Drop", emoji: "💣", kind: "object", pro: true },
+  { id: "wings", label: "Wings", emoji: "🪽", kind: "object", pro: true },
+  { id: "halo", label: "Halo", emoji: "😇", kind: "object", pro: true },
+  { id: "trident", label: "Trident", emoji: "🔱", kind: "object", pro: true },
 ] as const;
 
 // One-tap combos: object/character + animation
@@ -123,6 +150,16 @@ export const FX_PRESETS = [
   { id: "freeze-frame", label: "Freeze Frame", emoji: "🧊", skin: "snowflake", animation: "frost-nova", hint: "Ice-blast the moment", pro: true },
   { id: "matrix-move", label: "Matrix Move", emoji: "🟩", skin: "clock", animation: "matrix", hint: "Bullet-time code rain", pro: true },
   { id: "cash-out", label: "Cash Out", emoji: "💰", skin: "moneybag", animation: "confetti-burst", hint: "Confetti money drop", pro: true },
+  { id: "phoenix-rise", label: "Phoenix Rise", emoji: "🔥", skin: "phoenix", animation: "lava-steps", hint: "Rise in flames", pro: true },
+  { id: "wolf-pack", label: "Wolf Pack", emoji: "🐺", skin: "wolf", animation: "afterimage", hint: "Ghost-trail sprint", pro: true },
+  { id: "shark-attack", label: "Shark Attack", emoji: "🦈", skin: "shark", animation: "bubble-trail", hint: "Bubbles in the lane", pro: true },
+  { id: "jet-speed", label: "Jet Speed", emoji: "✈️", skin: "jet", animation: "wind-tunnel", hint: "Afterburner blast", pro: true },
+  { id: "ring-night", label: "Ring Night", emoji: "💍", skin: "ring", animation: "diamond-dust", hint: "Championship shine", pro: true },
+  { id: "holo-play", label: "Holo Play", emoji: "🛰️", skin: "mecha", animation: "hologram", hint: "Futuristic scan", pro: true },
+  { id: "star-dunk", label: "Star Dunk", emoji: "🌠", skin: "comet-obj", animation: "star-shower", hint: "Falling star slam", pro: true },
+  { id: "plasma-hit", label: "Plasma Hit", emoji: "🟣", skin: "bomb", animation: "plasma", hint: "Plasma impact burn", pro: true },
+  { id: "king-strike", label: "King Strike", emoji: "👑", skin: "crown", animation: "thunder-crown", hint: "Thunder over the king", pro: true },
+  { id: "blood-moon-run", label: "Blood Moon", emoji: "🌑", skin: "tiger", animation: "blood-moon", hint: "Dark red intensity", pro: true },
 ] as const;
 
 

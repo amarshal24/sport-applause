@@ -81,10 +81,12 @@ export const UpgradeProModal = ({ open, onClose }: UpgradeProModalProps) => {
 
             <ul className="space-y-2 py-1">
               {[
-                "40+ premium character & object skins",
-                "Pro animation filters (inferno, neon trails, shadow clone & more)",
-                "Exclusive one-tap FX combos",
+                "60+ premium character & object skins",
+                "8 pro color looks (Cyberpunk, Noir, VHS, Thermal & more)",
+                "8 pro overlay animations (Lightning, Embers, Matrix, Gold Rain…)",
+                "20+ pro pin animations & one-tap FX combos",
                 "Priority access to new effect drops",
+
               ].map((perk) => (
                 <li key={perk} className="flex items-start gap-2 text-sm">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
