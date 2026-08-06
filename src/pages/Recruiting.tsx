@@ -1030,6 +1030,14 @@ const Recruiting = () => {
                       <div className="absolute inset-0 pointer-events-none">
                         <AnimatedFilter type={animatedFilter} />
                       </div>
+                      <CharacterPinsOverlay
+                        pins={pins}
+                        onMove={handleMovePin}
+                        onRemove={handleRemovePin}
+                        placeMode={placeMode}
+                        onPlace={handlePlacePin}
+                      />
+
                     </div>
                     <p className="font-medium truncate">{videoFile.name}</p>
                     <p className="text-sm text-muted-foreground">
