@@ -10,6 +10,8 @@ import { getStripeEnvironment } from "@/lib/stripe";
 export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
+  const [hasPack, setHasPack] = useState(false);
+  const [subStatus, setSubStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -24,6 +26,8 @@ export const usePremium = () => {
   const refresh = useCallback(async () => {
     if (!user) {
       setIsPremium(false);
+      setHasPack(false);
+      setSubStatus(null);
       setLoading(false);
       return;
     }
@@ -53,6 +57,8 @@ export const usePremium = () => {
       ((["active", "trialing", "past_due"].includes(sub.status) && periodOk) ||
         (sub.status === "canceled" && periodOk && !!sub.current_period_end));
 
+    setHasPack(hasPack);
+    setSubStatus(sub?.status ?? null);
     setIsPremium(hasPack || hasSub);
     setLoading(false);
   }, [user, environment]);
@@ -67,5 +73,15 @@ export const usePremium = () => {
     refresh();
   }, [refresh]);
 
-  return { isPremium, loading, upgradeOpen, requestUpgrade, closeUpgrade, refresh };
+  return {
+    isPremium,
+    hasPack,
+    subStatus,
+    isPastDue: subStatus === "past_due",
+    loading,
+    upgradeOpen,
+    requestUpgrade,
+    closeUpgrade,
+    refresh,
+  };
 };
