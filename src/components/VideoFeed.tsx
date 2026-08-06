@@ -417,6 +417,25 @@ const VideoFeed = () => {
         }}
       >
         
+        {user && (
+          <div className="flex gap-2 mb-4">
+            <Button
+              size="sm"
+              variant={feedScope === "following" ? "default" : "outline"}
+              onClick={() => setFeedScope("following")}
+            >
+              Following
+            </Button>
+            <Button
+              size="sm"
+              variant={feedScope === "everyone" ? "default" : "outline"}
+              onClick={() => setFeedScope("everyone")}
+            >
+              Everyone
+            </Button>
+          </div>
+        )}
+
         <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
             {SPORTS_CATEGORIES.map((sport) => (
@@ -438,9 +457,19 @@ const VideoFeed = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No posts yet. Be the first to share!</p>
+          <div className="text-center py-12 text-muted-foreground space-y-3">
+            {feedScope === "following" && user ? (
+              <>
+                <p>Nothing here yet — post something or follow more athletes.</p>
+                <Button size="sm" variant="outline" onClick={() => setFeedScope("everyone")}>
+                  Browse everyone
+                </Button>
+              </>
+            ) : (
+              <p>No posts yet. Be the first to share!</p>
+            )}
           </div>
+
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
             {filteredPosts.map((post) => (
