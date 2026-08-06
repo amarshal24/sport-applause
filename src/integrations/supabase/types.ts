@@ -236,6 +236,8 @@ export type Database = {
           membership_price_cents: number
           payout_country: string | null
           payout_email: string | null
+          payout_email_alerts: boolean
+          payout_schedule: string
           payout_status: string
           tips_enabled: boolean
           updated_at: string
@@ -247,6 +249,8 @@ export type Database = {
           membership_price_cents?: number
           payout_country?: string | null
           payout_email?: string | null
+          payout_email_alerts?: boolean
+          payout_schedule?: string
           payout_status?: string
           tips_enabled?: boolean
           updated_at?: string
@@ -258,6 +262,8 @@ export type Database = {
           membership_price_cents?: number
           payout_country?: string | null
           payout_email?: string | null
+          payout_email_alerts?: boolean
+          payout_schedule?: string
           payout_status?: string
           tips_enabled?: boolean
           updated_at?: string
@@ -632,6 +638,81 @@ export type Database = {
           started_at?: string | null
           status?: string
           winner_id?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          environment: string
+          failure_reason: string | null
+          id: string
+          processed_at: string | null
+          scheduled_for: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import MonetizationSettings from "@/components/podcast/MonetizationSettings";
 import CreatorEarnings from "@/components/podcast/CreatorEarnings";
+import PayoutSchedule from "@/components/podcast/PayoutSchedule";
 import CreatorAnalytics from "@/components/podcast/CreatorAnalytics";
 
 interface Podcast {
@@ -168,6 +169,7 @@ const MyPodcasts = () => {
   return (
     <section className="mt-8 space-y-6">
       <MonetizationSettings />
+      <PayoutSchedule />
       <CreatorAnalytics />
       <CreatorEarnings />
       <h2 className="text-xl font-semibold mb-4">Your Podcasts</h2>

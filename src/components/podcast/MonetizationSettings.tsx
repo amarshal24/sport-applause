@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +26,8 @@ const MonetizationSettings = () => {
     tips_enabled: true,
     membership_enabled: false,
     membership_price: "4.99",
+    payout_email_alerts: true,
+    payout_schedule: "monthly",
   });
 
   useEffect(() => {
@@ -36,6 +45,8 @@ const MonetizationSettings = () => {
           tips_enabled: data.tips_enabled,
           membership_enabled: data.membership_enabled,
           membership_price: (data.membership_price_cents / 100).toFixed(2),
+          payout_email_alerts: data.payout_email_alerts ?? true,
+          payout_schedule: data.payout_schedule ?? "monthly",
         });
       } else {
         setForm((f) => ({ ...f, payout_email: user.email ?? "" }));
@@ -62,6 +73,8 @@ const MonetizationSettings = () => {
         tips_enabled: form.tips_enabled,
         membership_enabled: form.membership_enabled,
         membership_price_cents: Number.isFinite(price) ? price : 499,
+        payout_email_alerts: form.payout_email_alerts,
+        payout_schedule: form.payout_schedule,
       },
       { onConflict: "user_id" },
     );
@@ -144,6 +157,38 @@ const MonetizationSettings = () => {
             maxLength={56}
             onChange={(e) => setForm((f) => ({ ...f, payout_country: e.target.value }))}
             placeholder="United States"
+          />
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="payout-schedule">Payout schedule</Label>
+          <Select
+            value={form.payout_schedule}
+            onValueChange={(v) => setForm((f) => ({ ...f, payout_schedule: v }))}
+          >
+            <SelectTrigger id="payout-schedule">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="biweekly">Every 2 weeks</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between gap-4 sm:pt-7">
+          <div>
+            <Label htmlFor="payout-alerts">Payout email alerts</Label>
+            <p className="text-xs text-muted-foreground">
+              Emails for scheduled, sent and failed payouts.
+            </p>
+          </div>
+          <Switch
+            id="payout-alerts"
+            checked={form.payout_email_alerts}
+            onCheckedChange={(v) => setForm((f) => ({ ...f, payout_email_alerts: v }))}
           />
         </div>
       </div>

@@ -9,6 +9,7 @@ import AnimatedAvatar from "./AnimatedAvatar";
 import { SportIcon } from "./SportIcon";
 import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
+import NotificationBell from "./NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,7 @@ const Navigation = () => {
             <LanguageSwitcher />
             {user ? (
               <>
+                <NotificationBell />
                 <Button variant="ghost" size="sm" className="hidden md:flex border-primary text-foreground">
                   <Upload className="mr-2 h-4 w-4" />
                   {t("nav.upload")}
