@@ -43,6 +43,14 @@ import {
   type ColorFilterType,
 } from "@/components/AnimatedFilters";
 import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
+import {
+  CharacterPinsOverlay,
+  CharacterPinsPanel,
+  CHARACTER_SKINS,
+  MAX_PINS,
+  type CharacterPin,
+} from "@/components/video-fx/CharacterPins";
+
 
 interface RecruitingVideo {
   id: string;
