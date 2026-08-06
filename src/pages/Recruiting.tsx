@@ -1138,20 +1138,49 @@ const Recruiting = () => {
 
                 {/* Characters & objects */}
                 <div className="pt-2 border-t border-border space-y-3">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="text-xs text-muted-foreground">
                       Place characters & objects on your clip
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={placeMode ? "default" : "outline"}
-                      onClick={() => setPlaceMode((v) => !v)}
-                      disabled={pins.length >= MAX_PINS}
-                    >
-                      {placeMode ? "Tap video…" : "Tap to place"}
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.undo}
+                        disabled={!pinHistory.canUndo}
+                        title="Undo (Ctrl/⌘+Z)"
+                        aria-label="Undo FX pin change"
+                        className="gap-1"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Undo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.redo}
+                        disabled={!pinHistory.canRedo}
+                        title="Redo (Ctrl/⌘+Shift+Z)"
+                        aria-label="Redo FX pin change"
+                        className="gap-1"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                        Redo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={placeMode ? "default" : "outline"}
+                        onClick={() => setPlaceMode((v) => !v)}
+                        disabled={pins.length >= MAX_PINS}
+                      >
+                        {placeMode ? "Tap video…" : "Tap to place"}
+                      </Button>
+                    </div>
                   </div>
+
                   <CharacterPinsPanel
                     pins={pins}
                     onAdd={handleAddPin}
