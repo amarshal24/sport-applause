@@ -1129,8 +1129,33 @@ const Recruiting = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Characters & objects */}
+                <div className="pt-2 border-t border-border space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Place characters & objects on your clip
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={placeMode ? "default" : "outline"}
+                      onClick={() => setPlaceMode((v) => !v)}
+                      disabled={pins.length >= MAX_PINS}
+                    >
+                      {placeMode ? "Tap video…" : "Tap to place"}
+                    </Button>
+                  </div>
+                  <CharacterPinsPanel
+                    pins={pins}
+                    onAdd={handleAddPin}
+                    onUpdate={handleUpdatePin}
+                    onRemove={handleRemovePin}
+                  />
+                </div>
               </div>
             )}
+
 
             {/* Title */}
             <div>
