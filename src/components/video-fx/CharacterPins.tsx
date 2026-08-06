@@ -375,7 +375,16 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
   const [howToOpen, setHowToOpen] = useState(false);
-  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
+  const {
+    isPremium,
+    skinTier,
+    upgradeOpen,
+    requestUpgrade,
+    closeUpgrade,
+    skinStoreOpen,
+    requestSkinTier,
+    closeSkinStore,
+  } = usePremium();
 
   const locked = (item: { pro?: boolean } | Record<string, unknown>) =>
     !!(item as { pro?: boolean }).pro && !isPremium;
@@ -386,6 +395,17 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
     }
     action();
   };
+
+  // Skins are sold in tiers (Starter / Pro / Elite) — gate them separately.
+  const skinLocked = (id: string) => !hasSkinTier(skinTier, skinTierOf(id));
+  const skinGuard = (id: string, action: () => void) => {
+    if (skinLocked(id)) {
+      requestSkinTier();
+      return;
+    }
+    action();
+  };
+
 
   return (
     <div className="space-y-4">
