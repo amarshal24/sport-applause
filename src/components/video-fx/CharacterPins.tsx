@@ -340,8 +340,9 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
   const [howToOpen, setHowToOpen] = useState(false);
   const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
 
-  const locked = (item: { pro?: boolean }) => !!item.pro && !isPremium;
-  const guard = (item: { pro?: boolean }, action: () => void) => {
+  const locked = (item: { pro?: boolean } | Record<string, unknown>) =>
+    !!(item as { pro?: boolean }).pro && !isPremium;
+  const guard = (item: { pro?: boolean } | Record<string, unknown>, action: () => void) => {
     if (locked(item)) {
       requestUpgrade();
       return;
