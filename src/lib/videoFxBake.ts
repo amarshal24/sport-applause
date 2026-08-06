@@ -393,6 +393,16 @@ const drawPin = (
     "gold-aura": "✨",
     "toxic-glow": "☢️",
     "confetti-burst": "🎉",
+    plasma: "🟣",
+    "thunder-crown": "⚡",
+    afterimage: "🎞️",
+    "lava-steps": "🌋",
+    "bubble-trail": "🫧",
+    "wind-tunnel": "🌬️",
+    "star-shower": "🌠",
+    hologram: "🛰️",
+    "blood-moon": "🌑",
+    "diamond-dust": "💎",
   };
   const accent = PRO_ACCENTS[pin.animation];
   if (accent) {
