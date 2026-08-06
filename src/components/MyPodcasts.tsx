@@ -210,7 +210,26 @@ const MyPodcasts = () => {
               <Textarea id="edit-desc" rows={3} maxLength={2000} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
             <div className="space-y-2">
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-premium" className="flex items-center gap-2"><Lock className="h-4 w-4" /> Premium episode</Label>
+                <Switch id="edit-premium" checked={form.is_premium} onCheckedChange={(v) => setForm((f) => ({ ...f, is_premium: v }))} />
+              </div>
+              {form.is_premium && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Unlock price (USD)</Label>
+                  <Input id="edit-price" type="number" min="1" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+                  <p className="text-xs text-muted-foreground">You keep 95% — the platform fee is 5%.</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-tips">Allow tips on this episode</Label>
+                <Switch id="edit-tips" checked={form.tips_enabled} onCheckedChange={(v) => setForm((f) => ({ ...f, tips_enabled: v }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Replace Thumbnail</Label>
+
               <Input type="file" accept="image/*" onChange={(e) => setNewThumb(e.target.files?.[0] ?? null)} />
             </div>
             <div className="space-y-2">
