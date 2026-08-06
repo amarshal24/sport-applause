@@ -842,6 +842,23 @@ const VideoFeed = () => {
                       </button>
 
                       <button
+                        onClick={() => handleToggleRepost(post)}
+                        disabled={post.user_id === user?.id}
+                        className={`flex items-center gap-1 transition-colors disabled:opacity-40 ${
+                          myReposts.has(post.id)
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label={myReposts.has(post.id) ? "Undo repost" : "Repost"}
+                        title={post.user_id === user?.id ? "This is your post" : "Repost"}
+                      >
+                        <Repeat2 className="h-5 w-5" />
+                        <span className="text-sm">
+                          {repostCounts.get(post.id) || ""}
+                        </span>
+                      </button>
+
+                      <button
                         onClick={() => handleToggleSave(post.id)}
                         className={`flex items-center gap-1 transition-colors ml-auto ${
                           savedPosts.has(post.id)
@@ -863,7 +880,9 @@ const VideoFeed = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
       </div>
