@@ -256,15 +256,27 @@ const Recruiting = () => {
         let fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
 
         // Burn the selected filters into the clip so the saved video keeps them
-        if (hasBakeableFx(colorFilter, animatedFilter)) {
+        const bakePins = pins.map((p) => {
+          const skin = CHARACTER_SKINS.find((s) => s.id === p.skin) ?? CHARACTER_SKINS[0];
+          return {
+            x: p.x,
+            y: p.y,
+            emoji: skin.emoji,
+            animation: p.animation as string,
+            isObject: skin.kind === "object",
+          };
+        });
+        if (hasBakeableFx(colorFilter, animatedFilter, bakePins)) {
           try {
             setRenderProgress(0);
             toast.info("Applying filters to your video...");
             uploadBody = await bakeVideoFx(videoFile, {
               colorFilter,
               animatedFilter,
+              pins: bakePins,
               onProgress: setRenderProgress,
             });
+
             fileName = `${user.id}/${Date.now()}-fx-${videoFile.name.replace(/\.[^.]+$/, "")}.webm`;
           } catch (fxError) {
             console.error("Filter render failed", fxError);
