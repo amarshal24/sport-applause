@@ -209,7 +209,6 @@ const MyPodcasts = () => {
               <Label htmlFor="edit-desc">Description</Label>
               <Textarea id="edit-desc" rows={3} maxLength={2000} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
-            <div className="space-y-2">
             <div className="space-y-3 rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="edit-premium" className="flex items-center gap-2"><Lock className="h-4 w-4" /> Premium episode</Label>
