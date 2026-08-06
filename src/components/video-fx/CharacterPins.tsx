@@ -474,9 +474,12 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
               disabled={full && !locked(p)}
               onClick={() =>
                 guard(p, () =>
-                  onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })
+                  skinGuard(p.skin, () =>
+                    onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })
+                  )
                 )
               }
+
               className={cn(
                 "relative rounded-lg border border-border bg-card/60 p-2 text-left transition-colors hover:bg-accent/60",
                 full && !locked(p) && "opacity-50 pointer-events-none",
