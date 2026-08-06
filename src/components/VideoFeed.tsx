@@ -504,15 +504,36 @@ const VideoFeed = () => {
     };
   }, []);
 
-  const sportFiltered = selectedSport === "All" 
-    ? posts 
-    : posts.filter(p => p.profiles?.sports?.some(s => 
+  // Merge original posts and reposts into a single chronological feed
+  const feedItems: FeedItem[] = [
+    ...posts.map((p) => ({
+      key: `post-${p.id}`,
+      post: p,
+      activityAt: p.created_at,
+      actorId: p.user_id,
+    })),
+    ...reposts
+      .filter((r) => !!r.post)
+      .map((r) => ({
+        key: `repost-${r.id}`,
+        post: r.post as Post,
+        activityAt: r.created_at,
+        actorId: r.user_id,
+        repost: r,
+      })),
+  ].sort((a, b) => +new Date(b.activityAt) - +new Date(a.activityAt));
+
+  const sportFiltered = selectedSport === "All"
+    ? feedItems
+    : feedItems.filter(i => i.post.profiles?.sports?.some(s =>
         s.toLowerCase().includes(selectedSport.toLowerCase())
       ));
 
   const filteredPosts = feedScope === "following" && user
-    ? sportFiltered.filter((p) => p.user_id === user.id || followingIds.has(p.user_id))
+    ? sportFiltered.filter((i) => i.actorId === user.id || followingIds.has(i.actorId))
     : sportFiltered;
+
+
 
 
   return (
