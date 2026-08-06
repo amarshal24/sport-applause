@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2, Sparkles, Trophy } from "lucide-react";
+import { Lock as LockIcon, Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2, Sparkles, Trophy } from "lucide-react";
+import { usePremium } from "@/hooks/usePremium";
+import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
 import { AnimatedFilter, colorFilters, animatedFilters, getColorFilterStyle, type FilterType, type ColorFilterType } from "@/components/AnimatedFilters";
 
 const trendingVideos = [
@@ -104,6 +106,7 @@ const playbackSpeeds = [0.5, 1, 1.5, 2];
 
 const Trending = () => {
   const { t } = useTranslation();
+  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
   const [activeTab, setActiveTab] = useState<"trending" | "top-plays">(initialTab);
@@ -602,34 +605,45 @@ const Trending = () => {
                             {/* Color Filters */}
                             <p className="text-white text-xs font-semibold mb-2">Color Filters</p>
                             <div className="flex flex-wrap gap-2 mb-3">
-                              {colorFilters.map((filter) => (
-                                <button
-                                  key={filter.type}
-                                  className={`w-10 h-10 rounded-lg ${filter.preview} ${
-                                    activeColorFilter === filter.type ? "ring-2 ring-primary ring-offset-1 ring-offset-black" : ""
-                                  }`}
-                                  onClick={() => setActiveColorFilter(filter.type)}
-                                  title={filter.label}
-                                />
-                              ))}
+                              {colorFilters.map((filter) => {
+                                const locked = !!filter.pro && !isPremium;
+                                return (
+                                  <button
+                                    key={filter.type}
+                                    className={`relative w-10 h-10 rounded-lg ${filter.preview} ${
+                                      activeColorFilter === filter.type ? "ring-2 ring-primary ring-offset-1 ring-offset-black" : ""
+                                    } ${locked ? "opacity-60" : ""}`}
+                                    onClick={() => (locked ? requestUpgrade() : setActiveColorFilter(filter.type))}
+                                    title={locked ? `${filter.label} (PRO)` : filter.label}
+                                  >
+                                    {locked && (
+                                      <LockIcon className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow" />
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                             
                             {/* Animated Filters */}
                             <p className="text-white text-xs font-semibold mb-2">Effects</p>
                             <div className="flex flex-wrap gap-2">
-                              {animatedFilters.map((filter) => (
-                                <button
-                                  key={filter.type}
-                                  className={`px-2 py-1 rounded text-sm ${
-                                    activeAnimatedFilter === filter.type 
-                                      ? "bg-primary text-primary-foreground" 
-                                      : "bg-white/10 text-white hover:bg-white/20"
-                                  }`}
-                                  onClick={() => setActiveAnimatedFilter(filter.type)}
-                                >
-                                  {filter.icon} {filter.label}
-                                </button>
-                              ))}
+                              {animatedFilters.map((filter) => {
+                                const locked = !!filter.pro && !isPremium;
+                                return (
+                                  <button
+                                    key={filter.type}
+                                    className={`px-2 py-1 rounded text-sm inline-flex items-center gap-1 ${
+                                      activeAnimatedFilter === filter.type
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-white/10 text-white hover:bg-white/20"
+                                    } ${locked ? "opacity-70" : ""}`}
+                                    onClick={() => (locked ? requestUpgrade() : setActiveAnimatedFilter(filter.type))}
+                                  >
+                                    {filter.icon} {filter.label}
+                                    {locked && <LockIcon className="h-3 w-3" />}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
