@@ -32,10 +32,31 @@ const ApplauseButton = ({ postId, className }: ApplauseButtonProps) => {
     };
 
     load();
+
+    const channel = supabase
+      .channel(`applause-${postId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "post_reactions",
+          filter: `post_id=eq.${postId}`,
+        },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { emoji?: string } | null;
+          if (row?.emoji !== APPLAUSE) return;
+          load();
+        }
+      )
+      .subscribe();
+
     return () => {
       active = false;
+      supabase.removeChannel(channel);
     };
   }, [postId]);
+
 
   const toggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
