@@ -66,6 +66,29 @@ interface Post {
   };
 }
 
+interface Repost {
+  id: string;
+  caption: string | null;
+  created_at: string;
+  user_id: string;
+  post_id: string;
+  reposter?: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  post?: Post | null;
+}
+
+interface FeedItem {
+  key: string;
+  post: Post;
+  activityAt: string;
+  /** actor = who put this in the feed (author, or the reposter) */
+  actorId: string;
+  repost?: Repost;
+}
+
 const VideoFeed = () => {
   const { user } = useAuth();
   const [selectedSport, setSelectedSport] = useState("All");
