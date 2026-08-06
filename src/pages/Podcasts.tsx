@@ -34,6 +34,7 @@ const Podcasts = () => {
         
         <PodcastUploader onUploadComplete={() => setRefreshKey((k) => k + 1)} />
         <MyPodcasts key={refreshKey} />
+        <PodcastDiscover />
       </main>
       <MobileNav />
     </div>
