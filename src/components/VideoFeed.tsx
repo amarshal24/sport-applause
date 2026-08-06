@@ -104,48 +104,70 @@ const VideoFeed = () => {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
+  const [reposts, setReposts] = useState<Repost[]>([]);
+  const [myReposts, setMyReposts] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const fadeIntervalRef = useRef<number | null>(null);
 
+  const POST_FIELDS = `
+    id,
+    content,
+    image_url,
+    video_url,
+    music_url,
+    music_title,
+    music_start_time,
+    music_end_time,
+    music_fade_in,
+    music_fade_out,
+    likes_count,
+    comments_count,
+    created_at,
+    user_id,
+    profiles:user_id (
+      username,
+      full_name,
+      avatar_url,
+      sports
+    )
+  `;
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          content,
-          image_url,
-          video_url,
-          music_url,
-          music_title,
-          music_start_time,
-          music_end_time,
-          music_fade_in,
-          music_fade_out,
-          likes_count,
-          comments_count,
-          created_at,
-          user_id,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url,
-            sports
+      const [postsRes, repostsRes] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POST_FIELDS)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("post_reposts")
+          .select(
+            `id, caption, created_at, user_id, post_id,
+             reposter:user_id ( username, full_name, avatar_url ),
+             post:post_id ( ${POST_FIELDS} )`
           )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(20);
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (postsRes.error) throw postsRes.error;
+      setPosts((postsRes.data as any) || []);
+      if (repostsRes.error) {
+        console.error("Error fetching reposts:", repostsRes.error);
+        setReposts([]);
+      } else {
+        setReposts((repostsRes.data as any) || []);
+      }
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
