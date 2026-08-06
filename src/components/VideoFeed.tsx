@@ -129,6 +129,26 @@ const VideoFeed = () => {
     fetchPosts();
   }, [fetchPosts, refreshKey]);
 
+  // Load the people this user follows (accepted friendships) for the Following feed
+  useEffect(() => {
+    if (!user) {
+      setFollowingIds(new Set());
+      return;
+    }
+    supabase
+      .from("friendships")
+      .select("user_id, friend_id, status")
+      .eq("status", "accepted")
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+      .then(({ data }) => {
+        const ids = new Set<string>();
+        (data || []).forEach((f: any) => {
+          ids.add(f.user_id === user.id ? f.friend_id : f.user_id);
+        });
+        setFollowingIds(ids);
+      });
+  }, [user, refreshKey]);
+
   // Load this user's saved (watch later) posts
   useEffect(() => {
     if (!user) {
