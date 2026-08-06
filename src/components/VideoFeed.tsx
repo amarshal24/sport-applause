@@ -621,11 +621,36 @@ const VideoFeed = () => {
 
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
-            {filteredPosts.map((post) => (
+            {filteredPosts.map((item) => {
+              const post = item.post;
+              return (
               <div
-                key={post.id}
+                key={item.key}
                 className="group bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:shadow-glow"
               >
+                {/* Repost banner */}
+                {item.repost && (
+                  <div className="flex items-center gap-2 px-4 pt-3 text-xs text-muted-foreground">
+                    <Repeat2 className="h-4 w-4 text-primary" />
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={item.repost.reposter?.avatar_url || undefined} />
+                      <AvatarFallback className="text-[9px]">
+                        {item.repost.reposter?.username?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">
+                      <span className="font-medium text-foreground">
+                        {item.repost.user_id === user?.id
+                          ? "You"
+                          : item.repost.reposter?.full_name ||
+                            item.repost.reposter?.username ||
+                            "Someone"}
+                      </span>{" "}
+                      reposted
+                    </span>
+                  </div>
+                )}
+
                 {/* Video or Image */}
                 {(post.video_url || post.image_url) && (
                   <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
