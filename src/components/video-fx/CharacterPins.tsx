@@ -49,7 +49,26 @@ export const CHARACTER_SKINS = [
   { id: "trophy", label: "Trophy", emoji: "🏆", kind: "object" },
   { id: "medal", label: "Medal", emoji: "🥇", kind: "object" },
   { id: "flag", label: "Flag", emoji: "🏁", kind: "object" },
+  { id: "sharkfin", label: "Shark Fin", emoji: "🦈", kind: "object" },
+  { id: "flame", label: "Flame", emoji: "🔥", kind: "object" },
+  { id: "smokepuff", label: "Smoke Puff", emoji: "💨", kind: "object" },
+  { id: "bolt", label: "Lightning Bolt", emoji: "⚡", kind: "object" },
+  { id: "wave", label: "Wave", emoji: "🌊", kind: "object" },
+  { id: "rocket", label: "Rocket", emoji: "🚀", kind: "object" },
 ] as const;
+
+// One-tap combos: object/character + animation
+export const FX_PRESETS = [
+  { id: "ball-on-fire", label: "Ball On Fire", emoji: "🔥", skin: "basketball", animation: "fire-aura", hint: "Basketball lit on fire" },
+  { id: "flaming-hoop", label: "Flaming Hoop", emoji: "🏀", skin: "hoop", animation: "hoop-fire", hint: "Fire through the net" },
+  { id: "smoke-trail", label: "Smoke Trail", emoji: "💨", skin: "smokepuff", animation: "smoke", hint: "Smoke behind a runner" },
+  { id: "shark-swim", label: "Shark Fin", emoji: "🦈", skin: "sharkfin", animation: "wave" in {} ? "smoke" : "speed-lines", hint: "Fin follows the swimmer" },
+  { id: "speed-demon", label: "Speed Demon", emoji: "🏃", skin: "athlete", animation: "speed-lines", hint: "Blur lines on a sprinter" },
+  { id: "electric-play", label: "Electric", emoji: "⚡", skin: "bolt", animation: "electric", hint: "Electric field burst" },
+  { id: "comet-ball", label: "Comet Ball", emoji: "☄️", skin: "football", animation: "comet", hint: "Trail behind the ball" },
+  { id: "ice-cold", label: "Ice Cold", emoji: "❄️", skin: "champ", animation: "ice", hint: "Freeze the moment" },
+] as const;
+
 
 export type CharacterAnimationId = (typeof CHARACTER_ANIMATIONS)[number]["id"];
 export type CharacterSkinId = (typeof CHARACTER_SKINS)[number]["id"];
