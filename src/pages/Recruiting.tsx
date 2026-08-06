@@ -568,6 +568,24 @@ const Recruiting = () => {
     setPlaceMode(false);
   };
 
+  // Undo/redo keyboard shortcuts while the upload editor is open
+  useEffect(() => {
+    if (!showUploadModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      e.preventDefault();
+      if (e.shiftKey) pinHistory.redo();
+      else pinHistory.undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showUploadModal, pinHistory.undo, pinHistory.redo]);
+
+
+
   const resetForm = () => {
     setVideoFile(null);
     setVideoPreviewUrl((prev) => {
