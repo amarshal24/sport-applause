@@ -150,6 +150,16 @@ export const FX_PRESETS = [
   { id: "freeze-frame", label: "Freeze Frame", emoji: "🧊", skin: "snowflake", animation: "frost-nova", hint: "Ice-blast the moment", pro: true },
   { id: "matrix-move", label: "Matrix Move", emoji: "🟩", skin: "clock", animation: "matrix", hint: "Bullet-time code rain", pro: true },
   { id: "cash-out", label: "Cash Out", emoji: "💰", skin: "moneybag", animation: "confetti-burst", hint: "Confetti money drop", pro: true },
+  { id: "phoenix-rise", label: "Phoenix Rise", emoji: "🔥", skin: "phoenix", animation: "lava-steps", hint: "Rise in flames", pro: true },
+  { id: "wolf-pack", label: "Wolf Pack", emoji: "🐺", skin: "wolf", animation: "afterimage", hint: "Ghost-trail sprint", pro: true },
+  { id: "shark-attack", label: "Shark Attack", emoji: "🦈", skin: "shark", animation: "bubble-trail", hint: "Bubbles in the lane", pro: true },
+  { id: "jet-speed", label: "Jet Speed", emoji: "✈️", skin: "jet", animation: "wind-tunnel", hint: "Afterburner blast", pro: true },
+  { id: "ring-night", label: "Ring Night", emoji: "💍", skin: "ring", animation: "diamond-dust", hint: "Championship shine", pro: true },
+  { id: "holo-play", label: "Holo Play", emoji: "🛰️", skin: "mecha", animation: "hologram", hint: "Futuristic scan", pro: true },
+  { id: "star-dunk", label: "Star Dunk", emoji: "🌠", skin: "comet-obj", animation: "star-shower", hint: "Falling star slam", pro: true },
+  { id: "plasma-hit", label: "Plasma Hit", emoji: "🟣", skin: "bomb", animation: "plasma", hint: "Plasma impact burn", pro: true },
+  { id: "king-strike", label: "King Strike", emoji: "👑", skin: "crown", animation: "thunder-crown", hint: "Thunder over the king", pro: true },
+  { id: "blood-moon-run", label: "Blood Moon", emoji: "🌑", skin: "tiger", animation: "blood-moon", hint: "Dark red intensity", pro: true },
 ] as const;
 
 
