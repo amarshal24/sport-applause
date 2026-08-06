@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 
 const POSITIVE_EMOJIS = ["❤️", "🔥", "👏", "💪", "🙌", "⚡"];
 
