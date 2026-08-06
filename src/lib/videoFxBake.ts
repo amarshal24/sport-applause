@@ -151,20 +151,101 @@ function drawBadge(
   ctx.fillText(text, x + padding, y + padding / 2);
 }
 
-export const hasBakeableFx = (color: ColorFilterType, animated: FilterType) =>
-  color !== "none" || (animated !== "none" && !!painters[animated]);
+export interface BakePin {
+  x: number; // 0-100 %
+  y: number; // 0-100 %
+  emoji: string;
+  animation: string;
+  isObject?: boolean;
+}
+
+const PIN_AURA_COLORS: Record<string, string> = {
+  "fire-aura": "249,115,22",
+  glow: "139,92,246",
+  ice: "103,232,249",
+  smoke: "156,163,175",
+  rainbow: "236,72,153",
+  portal: "168,85,247",
+  electric: "34,211,238",
+  lightning: "250,204,21",
+  shockwave: "59,130,246",
+  "speed-lines": "255,255,255",
+  comet: "251,191,36",
+  "hoop-fire": "239,68,68",
+  sparkle: "245,158,11",
+};
+
+const drawPin = (
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  t: number,
+  pin: BakePin
+) => {
+  const cx = (pin.x / 100) * w;
+  const cy = (pin.y / 100) * h;
+  const size = Math.max(28, h * (pin.isObject ? 0.12 : 0.1));
+  const pulse = 0.6 + 0.4 * Math.abs(Math.sin(t * Math.PI));
+  const color = PIN_AURA_COLORS[pin.animation];
+
+  if (color && pin.animation !== "none") {
+    const r = size * 1.4 * pulse;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, `rgba(${color},0.65)`);
+    g.addColorStop(1, `rgba(${color},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (pin.animation === "shockwave" || pin.animation === "electric") {
+    ctx.strokeStyle = `rgba(${color ?? "255,255,255"},${1 - (t % 1)})`;
+    ctx.lineWidth = Math.max(2, w / 250);
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * (0.8 + (t % 1) * 1.2), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.font = `${Math.round(size)}px serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(pin.emoji, cx, cy);
+
+  if (pin.animation === "sparkle") {
+    ctx.font = `${Math.round(size * 0.5)}px serif`;
+    ctx.globalAlpha = pulse;
+    ctx.fillText("✨", cx + size * 0.6, cy - size * 0.6);
+    ctx.fillText("✨", cx - size * 0.6, cy + size * 0.6);
+    ctx.globalAlpha = 1;
+  }
+  if (pin.animation === "lightning") {
+    ctx.font = `${Math.round(size * 0.7)}px serif`;
+    ctx.globalAlpha = pulse;
+    ctx.fillText("⚡", cx, cy - size * 0.9);
+    ctx.globalAlpha = 1;
+  }
+};
+
+export const hasBakeableFx = (
+  color: ColorFilterType,
+  animated: FilterType,
+  pins: BakePin[] = []
+) => color !== "none" || (animated !== "none" && !!painters[animated]) || pins.length > 0;
 
 export interface BakeOptions {
   colorFilter: ColorFilterType;
   animatedFilter: FilterType;
+  pins?: BakePin[];
   onProgress?: (pct: number) => void;
 }
 
 /** Re-encodes the video with the color look + animated overlay burned in. */
 export const bakeVideoFx = (
   file: File | Blob,
-  { colorFilter, animatedFilter, onProgress }: BakeOptions
+  { colorFilter, animatedFilter, pins = [], onProgress }: BakeOptions
 ): Promise<Blob> =>
+
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const video = document.createElement("video");
@@ -229,6 +310,8 @@ export const bakeVideoFx = (
         ctx.drawImage(video, 0, 0, w, h);
         ctx.restore();
         painter?.(ctx, w, h, video.currentTime);
+        pins.forEach((p) => drawPin(ctx, w, h, video.currentTime, p));
+
         if (duration) onProgress?.(Math.min(99, Math.round((video.currentTime / duration) * 100)));
         raf = requestAnimationFrame(draw);
       };

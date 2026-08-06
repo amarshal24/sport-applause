@@ -43,6 +43,14 @@ import {
   type ColorFilterType,
 } from "@/components/AnimatedFilters";
 import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
+import {
+  CharacterPinsOverlay,
+  CharacterPinsPanel,
+  CHARACTER_SKINS,
+  MAX_PINS,
+  type CharacterPin,
+} from "@/components/video-fx/CharacterPins";
+
 
 interface RecruitingVideo {
   id: string;
@@ -102,6 +110,9 @@ const Recruiting = () => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
   const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
+  const [pins, setPins] = useState<CharacterPin[]>([]);
+  const [placeMode, setPlaceMode] = useState(false);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sport, setSport] = useState("");
@@ -245,15 +256,27 @@ const Recruiting = () => {
         let fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
 
         // Burn the selected filters into the clip so the saved video keeps them
-        if (hasBakeableFx(colorFilter, animatedFilter)) {
+        const bakePins = pins.map((p) => {
+          const skin = CHARACTER_SKINS.find((s) => s.id === p.skin) ?? CHARACTER_SKINS[0];
+          return {
+            x: p.x,
+            y: p.y,
+            emoji: skin.emoji,
+            animation: p.animation as string,
+            isObject: skin.kind === "object",
+          };
+        });
+        if (hasBakeableFx(colorFilter, animatedFilter, bakePins)) {
           try {
             setRenderProgress(0);
             toast.info("Applying filters to your video...");
             uploadBody = await bakeVideoFx(videoFile, {
               colorFilter,
               animatedFilter,
+              pins: bakePins,
               onProgress: setRenderProgress,
             });
+
             fileName = `${user.id}/${Date.now()}-fx-${videoFile.name.replace(/\.[^.]+$/, "")}.webm`;
           } catch (fxError) {
             console.error("Filter render failed", fxError);
@@ -506,6 +529,39 @@ const Recruiting = () => {
     setShowContactModal(true);
   };
 
+  const handleAddPin = () => {
+    if (pins.length >= MAX_PINS) return;
+    setPins((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        x: 50,
+        y: 50,
+        skin: "athlete",
+        animation: "glow",
+      },
+    ]);
+    setPlaceMode(false);
+  };
+
+  const handleUpdatePin = (id: string, patch: Partial<CharacterPin>) =>
+    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  const handleRemovePin = (id: string) =>
+    setPins((prev) => prev.filter((p) => p.id !== id));
+
+  const handleMovePin = (id: string, x: number, y: number) =>
+    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+
+  const handlePlacePin = (x: number, y: number) => {
+    setPins((prev) =>
+      prev.length >= MAX_PINS
+        ? prev
+        : [...prev, { id: crypto.randomUUID(), x, y, skin: "athlete", animation: "glow" }]
+    );
+    setPlaceMode(false);
+  };
+
   const resetForm = () => {
     setVideoFile(null);
     setVideoPreviewUrl((prev) => {
@@ -514,6 +570,9 @@ const Recruiting = () => {
     });
     setColorFilter("none");
     setAnimatedFilter("none");
+    setPins([]);
+    setPlaceMode(false);
+
     setTitle("");
     setDescription("");
     setSport("");
@@ -971,6 +1030,14 @@ const Recruiting = () => {
                       <div className="absolute inset-0 pointer-events-none">
                         <AnimatedFilter type={animatedFilter} />
                       </div>
+                      <CharacterPinsOverlay
+                        pins={pins}
+                        onMove={handleMovePin}
+                        onRemove={handleRemovePin}
+                        placeMode={placeMode}
+                        onPlace={handlePlacePin}
+                      />
+
                     </div>
                     <p className="font-medium truncate">{videoFile.name}</p>
                     <p className="text-sm text-muted-foreground">
@@ -1062,8 +1129,33 @@ const Recruiting = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Characters & objects */}
+                <div className="pt-2 border-t border-border space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Place characters & objects on your clip
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={placeMode ? "default" : "outline"}
+                      onClick={() => setPlaceMode((v) => !v)}
+                      disabled={pins.length >= MAX_PINS}
+                    >
+                      {placeMode ? "Tap video…" : "Tap to place"}
+                    </Button>
+                  </div>
+                  <CharacterPinsPanel
+                    pins={pins}
+                    onAdd={handleAddPin}
+                    onUpdate={handleUpdatePin}
+                    onRemove={handleRemovePin}
+                  />
+                </div>
               </div>
             )}
+
 
             {/* Title */}
             <div>
