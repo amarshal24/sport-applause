@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { SportIcon } from "./SportIcon";
+import { SportIcon, InlineSportIcon } from "./SportIcon";
 import StoryViewer from "./StoryViewer";
 
 interface Story {

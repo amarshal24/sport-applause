@@ -1,3 +1,4 @@
+import { InlineSportIcon } from "@/components/SportIcon";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

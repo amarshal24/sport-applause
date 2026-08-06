@@ -11,7 +11,7 @@ import FavoriteVideos from "@/components/FavoriteVideos";
 import TopFiveVideos from "@/components/TopFiveVideos";
 import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
-import { SportIcon } from "@/components/SportIcon";
+import { SportIcon, InlineSportIcon } from "@/components/SportIcon";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
 import ApplauseButton from "@/components/ApplauseButton";
 import StoryViewer from "@/components/StoryViewer";
