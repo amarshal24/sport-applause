@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Check, Zap, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
@@ -33,6 +34,9 @@ const PLANS = [
 
 export const UpgradeProModal = ({ open, onClose }: UpgradeProModalProps) => {
   const { user } = useAuth();
+  const { hasPack } = usePremium();
+  // Owning the one-time pack is permanent access — never upsell the membership to them.
+  const plans = hasPack ? PLANS.filter((p) => p.id !== "fx_pro_monthly") : PLANS;
   const [selected, setSelected] = useState<string>(PLANS[0].id);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -90,7 +94,7 @@ export const UpgradeProModal = ({ open, onClose }: UpgradeProModalProps) => {
             </ul>
 
             <div className="grid gap-2">
-              {PLANS.map((p) => {
+              {plans.map((p) => {
                 const Icon = p.icon;
                 const active = selected === p.id;
                 return (
