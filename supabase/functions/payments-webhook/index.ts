@@ -124,15 +124,22 @@ async function handleWebhook(req: Request, env: StripeEnv) {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await upsertSubscription(event.data.object, env);
+      if (!(await upsertCreatorMembership(event.data.object, env))) {
+        await upsertSubscription(event.data.object, env);
+      }
       break;
-    case "customer.subscription.deleted":
-      await getSupabase()
-        .from("subscriptions")
-        .update({ status: "canceled", updated_at: new Date().toISOString() })
-        .eq("stripe_subscription_id", event.data.object.id)
-        .eq("environment", env);
+    case "customer.subscription.deleted": {
+      const sub = event.data.object;
+      if (!(await upsertCreatorMembership({ ...sub, status: "canceled" }, env))) {
+        await getSupabase()
+          .from("subscriptions")
+          .update({ status: "canceled", updated_at: new Date().toISOString() })
+          .eq("stripe_subscription_id", sub.id)
+          .eq("environment", env);
+      }
       break;
+    }
+
     case "checkout.session.completed": {
       const session = event.data.object;
       if (session.payment_status !== "unpaid") {
