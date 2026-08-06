@@ -62,7 +62,7 @@ export const FX_PRESETS = [
   { id: "ball-on-fire", label: "Ball On Fire", emoji: "🔥", skin: "basketball", animation: "fire-aura", hint: "Basketball lit on fire" },
   { id: "flaming-hoop", label: "Flaming Hoop", emoji: "🏀", skin: "hoop", animation: "hoop-fire", hint: "Fire through the net" },
   { id: "smoke-trail", label: "Smoke Trail", emoji: "💨", skin: "smokepuff", animation: "smoke", hint: "Smoke behind a runner" },
-  { id: "shark-swim", label: "Shark Fin", emoji: "🦈", skin: "sharkfin", animation: "wave" in {} ? "smoke" : "speed-lines", hint: "Fin follows the swimmer" },
+  { id: "shark-swim", label: "Shark Fin", emoji: "🦈", skin: "sharkfin", animation: "speed-lines", hint: "Fin follows the swimmer" },
   { id: "speed-demon", label: "Speed Demon", emoji: "🏃", skin: "athlete", animation: "speed-lines", hint: "Blur lines on a sprinter" },
   { id: "electric-play", label: "Electric", emoji: "⚡", skin: "bolt", animation: "electric", hint: "Electric field burst" },
   { id: "comet-ball", label: "Comet Ball", emoji: "☄️", skin: "football", animation: "comet", hint: "Trail behind the ball" },
