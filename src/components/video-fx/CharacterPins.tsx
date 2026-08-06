@@ -39,6 +39,16 @@ export const CHARACTER_ANIMATIONS = [
   { id: "frost-nova", label: "Frost Nova", emoji: "🧊", pro: true },
   { id: "sonic-boom", label: "Sonic Boom", emoji: "🔊", pro: true },
   { id: "confetti-burst", label: "Confetti", emoji: "🎉", pro: true },
+  { id: "plasma", label: "Plasma Burn", emoji: "🟣", pro: true },
+  { id: "thunder-crown", label: "Thunder Crown", emoji: "👑", pro: true },
+  { id: "afterimage", label: "Afterimage", emoji: "🎞️", pro: true },
+  { id: "lava-steps", label: "Lava Steps", emoji: "🌋", pro: true },
+  { id: "bubble-trail", label: "Bubble Trail", emoji: "🫧", pro: true },
+  { id: "wind-tunnel", label: "Wind Tunnel", emoji: "🌬️", pro: true },
+  { id: "star-shower", label: "Star Shower", emoji: "🌠", pro: true },
+  { id: "hologram", label: "Hologram", emoji: "🛰️", pro: true },
+  { id: "blood-moon", label: "Blood Moon", emoji: "🌑", pro: true },
+  { id: "diamond-dust", label: "Diamond Dust", emoji: "💎", pro: true },
 ] as const;
 
 // Character skins (persons)
