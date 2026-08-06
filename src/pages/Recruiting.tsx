@@ -1193,7 +1193,13 @@ const Recruiting = () => {
               className="w-full"
               size="lg"
             >
-              {uploading ? "Saving..." : editingVideo ? "Save Changes" : "Upload Highlight Reel"}
+              {renderProgress !== null
+                ? `Rendering filters... ${renderProgress}%`
+                : uploading
+                  ? "Saving..."
+                  : editingVideo
+                    ? "Save Changes"
+                    : "Upload Highlight Reel"}
             </Button>
           </div>
         </DialogContent>
