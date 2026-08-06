@@ -353,11 +353,16 @@ const VideoFeed = () => {
     };
   }, []);
 
-  const filteredPosts = selectedSport === "All" 
+  const sportFiltered = selectedSport === "All" 
     ? posts 
     : posts.filter(p => p.profiles?.sports?.some(s => 
         s.toLowerCase().includes(selectedSport.toLowerCase())
       ));
+
+  const filteredPosts = feedScope === "following" && user
+    ? sportFiltered.filter((p) => p.user_id === user.id || followingIds.has(p.user_id))
+    : sportFiltered;
+
 
   return (
     <section ref={containerRef} className="relative">
