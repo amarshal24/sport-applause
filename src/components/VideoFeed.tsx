@@ -188,6 +188,11 @@ const VideoFeed = () => {
         { event: "DELETE", schema: "public", table: "posts" },
         () => fetchPosts()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_reposts" },
+        () => fetchPosts()
+      )
       .subscribe();
 
     return () => {
