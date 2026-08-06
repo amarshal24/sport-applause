@@ -24,6 +24,7 @@ import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
 import PostComments from "@/components/PostComments";
+import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
 
 const SPORTS_CATEGORIES = [
   "All",
@@ -69,6 +70,7 @@ interface Post {
 
 const VideoFeed = () => {
   const { user } = useAuth();
+  const { preferCaptions } = useDeafAccessibility();
   const [selectedSport, setSelectedSport] = useState("All");
   const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -445,6 +447,7 @@ const VideoFeed = () => {
                   <AutoPlayVideo
                     src={post.video_url}
                     postId={post.id}
+                    caption={post.content || undefined}
                     fill
                     onDoubleTap={() => handleApplause(post.id)}
                   />
@@ -566,7 +569,19 @@ const VideoFeed = () => {
                 </div>
 
                 {post.content && (
-                  <p className="text-sm text-white/95 line-clamp-3 drop-shadow">{post.content}</p>
+                  preferCaptions ? (
+                    <div
+                      className="rounded-md bg-black/85 border border-white/30 px-3 py-2 max-h-40 overflow-y-auto"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <p className="text-base font-medium text-white leading-snug whitespace-pre-wrap">
+                        {post.content}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-white/95 line-clamp-3 drop-shadow">{post.content}</p>
+                  )
                 )}
 
                 {post.music_url && (
@@ -697,11 +712,13 @@ const VideoFeed = () => {
 const AutoPlayVideo = ({
   src,
   postId,
+  caption,
   onDoubleTap,
   fill = false,
 }: {
   src: string;
   postId: string;
+  caption?: string;
   onDoubleTap?: () => void;
   fill?: boolean;
 }) => {
@@ -1043,6 +1060,7 @@ const AutoPlayVideo = ({
       {!fill && (
         <FullScreenVideoModal
           src={resolvedSrc || src}
+          caption={caption}
           open={fullscreenOpen}
           onClose={() => setFullscreenOpen(false)}
         />

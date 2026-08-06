@@ -125,6 +125,45 @@ All colors MUST be HSL.
   }
 }
 
+/* Deaf accessibility — visual alert flash for toast notifications */
+@keyframes visual-alert-flash {
+  0%,
+  100% {
+    outline-color: transparent;
+    background-color: transparent;
+  }
+  20%,
+  60% {
+    outline-color: hsl(60 100% 50%);
+    background-color: hsl(60 100% 50% / 0.12);
+  }
+  40%,
+  80% {
+    outline-color: transparent;
+    background-color: transparent;
+  }
+}
+
+html.visual-alert-flash::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  outline: 4px solid transparent;
+  outline-offset: -4px;
+  animation: visual-alert-flash 0.6s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.visual-alert-flash::before {
+    animation: none;
+    outline-color: hsl(60 100% 50%);
+    background-color: hsl(60 100% 50% / 0.18);
+    transition: opacity 0.2s ease-out;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

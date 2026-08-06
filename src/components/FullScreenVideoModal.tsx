@@ -4,11 +4,13 @@ import { Play, Pause, Volume2, VolumeX, X, Maximize2, Minimize2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toSignedUrl } from "@/lib/signedMedia";
+import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
 
 interface FullScreenVideoModalProps {
   src: string;
   open: boolean;
   onClose: () => void;
+  caption?: string;
 }
 
 const formatTime = (s: number) => {
@@ -18,10 +20,11 @@ const formatTime = (s: number) => {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 };
 
-const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps) => {
+const FullScreenVideoModal = ({ src, open, onClose, caption }: FullScreenVideoModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { preferCaptions } = useDeafAccessibility();
 
   const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -198,6 +201,21 @@ const FullScreenVideoModal = ({ src, open, onClose }: FullScreenVideoModalProps)
             <Play className="h-10 w-10 text-white ml-1" />
           </div>
         </button>
+      )}
+
+      {/* Caption overlay for deaf accessibility */}
+      {preferCaptions && caption && (
+        <div
+          className="absolute left-4 right-4 bottom-24 z-[101] pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="mx-auto max-w-2xl rounded-md bg-black/90 border border-white/40 px-4 py-2.5 max-h-32 overflow-y-auto pointer-events-auto">
+            <p className="text-base font-medium text-white text-center leading-snug whitespace-pre-wrap">
+              {caption}
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Bottom controls */}

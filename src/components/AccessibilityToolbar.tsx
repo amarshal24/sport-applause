@@ -11,7 +11,10 @@ import {
   Minus,
   Plus,
   Keyboard,
-  Contrast
+  Contrast,
+  Captions,
+  Vibrate,
+  Flashlight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -34,6 +37,7 @@ import {
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { useAccessibilityShortcuts } from '@/hooks/useAccessibilityShortcuts';
 import { useHighContrast } from '@/hooks/useHighContrast';
+import { useDeafAccessibility } from '@/hooks/useDeafAccessibility';
 import { toast } from 'sonner';
 
 const AccessibilityToolbar = () => {
@@ -56,6 +60,14 @@ const AccessibilityToolbar = () => {
   } = useAccessibility();
 
   const { isHighContrast, toggleHighContrast } = useHighContrast();
+  const {
+    preferCaptions,
+    visualAlerts,
+    hapticFeedback,
+    setPreferCaptions,
+    setVisualAlerts,
+    setHapticFeedback,
+  } = useDeafAccessibility();
 
   // Enable keyboard shortcuts
   const { handleShowShortcuts } = useAccessibilityShortcuts({
@@ -149,6 +161,61 @@ const AccessibilityToolbar = () => {
                     checked={isHighContrast}
                     onCheckedChange={toggleHighContrast}
                     aria-label={t('accessibility.highContrast')}
+                  />
+                </div>
+              </div>
+
+              {/* Hearing & Captions */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Captions className="h-4 w-4" />
+                  {t('accessibility.hearingSettings')}
+                </h3>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5 min-w-0">
+                    <label className="text-sm font-medium">
+                      {t('accessibility.preferCaptions')}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t('accessibility.preferCaptionsDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preferCaptions}
+                    onCheckedChange={setPreferCaptions}
+                    aria-label={t('accessibility.preferCaptions')}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5 min-w-0">
+                    <label className="text-sm font-medium flex items-center gap-1.5">
+                      <Flashlight className="h-3.5 w-3.5 shrink-0" />
+                      {t('accessibility.visualAlerts')}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t('accessibility.visualAlertsDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={visualAlerts}
+                    onCheckedChange={setVisualAlerts}
+                    aria-label={t('accessibility.visualAlerts')}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5 min-w-0">
+                    <label className="text-sm font-medium flex items-center gap-1.5">
+                      <Vibrate className="h-3.5 w-3.5 shrink-0" />
+                      {t('accessibility.hapticFeedback')}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t('accessibility.hapticFeedbackDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={hapticFeedback}
+                    onCheckedChange={setHapticFeedback}
+                    aria-label={t('accessibility.hapticFeedback')}
                   />
                 </div>
               </div>

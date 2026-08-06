@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toSignedUrl } from "@/lib/signedMedia";
+import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
 
 interface Stream {
   id: string;
@@ -72,6 +73,7 @@ const StreamReplay = () => {
   const { streamId } = useParams<{ streamId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { preferCaptions } = useDeafAccessibility();
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -89,7 +91,11 @@ const StreamReplay = () => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
-  const [captionsOn, setCaptionsOn] = useState(true);
+  const [captionsOn, setCaptionsOn] = useState(preferCaptions);
+
+  useEffect(() => {
+    setCaptionsOn(preferCaptions);
+  }, [preferCaptions]);
 
   // Highlight composer
   const [newHighlightLabel, setNewHighlightLabel] = useState("");

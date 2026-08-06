@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Clock, Headphones, Loader2, Mic, Pause, Play, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
+import { cn } from "@/lib/utils";
 
 export interface CommunityPodcast {
   id: string;
@@ -48,6 +50,7 @@ interface PodcastBrowserProps {
 
 const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
   const navigate = useNavigate();
+  const { preferCaptions } = useDeafAccessibility();
   const [items, setItems] = useState<CommunityPodcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -289,7 +292,12 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
                       </Button>
                     </div>
                     {p.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      <p
+                        className={cn(
+                          "text-sm text-muted-foreground mt-1",
+                          !(preferCaptions && isActive) && "line-clamp-2",
+                        )}
+                      >
                         {p.description}
                       </p>
                     )}
@@ -307,7 +315,28 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
                 </div>
 
                 {isActive && (
-                  <div className="mt-3 pt-3 border-t">
+                  <div className="mt-3 pt-3 border-t space-y-3">
+                    {preferCaptions && (
+                      <div
+                        className="rounded-lg border bg-muted/60 p-3 space-y-1"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Text alternative
+                        </p>
+                        <p className="text-sm font-medium text-foreground">{p.title}</p>
+                        {p.description ? (
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {p.description}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">
+                            No description available for this podcast.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <SecureAudio
                       id="podcast-now-playing"
                       key={p.id}

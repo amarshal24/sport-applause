@@ -41,6 +41,7 @@ const TopPlays = () => {
   const [plays, setPlays] = useState<TopPlay[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const [activeCaption, setActiveCaption] = useState<string | undefined>(undefined);
 
   const fetchTopPlays = useCallback(async () => {
     setLoading(true);
@@ -141,6 +142,7 @@ const TopPlays = () => {
   const handlePlay = async (play: TopPlay) => {
     const signed = await toSignedUrl(play.video_url);
     setActiveVideo(signed || play.video_url);
+    setActiveCaption(play.title || undefined);
 
     if (play.source === "highlight") {
       const realId = play.id.replace("highlight-", "");
@@ -278,8 +280,12 @@ const TopPlays = () => {
 
       <FullScreenVideoModal
         src={activeVideo || ""}
+        caption={activeCaption}
         open={!!activeVideo}
-        onClose={() => setActiveVideo(null)}
+        onClose={() => {
+          setActiveVideo(null);
+          setActiveCaption(undefined);
+        }}
       />
     </div>
   );

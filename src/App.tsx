@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import AccessibilityToolbar from "@/components/AccessibilityToolbar";
+import DeafAccessibilityBridge from "@/components/DeafAccessibilityBridge";
 import QuickNavMenu from "@/components/QuickNavMenu";
+import { DeafAccessibilityProvider } from "@/hooks/useDeafAccessibility";
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
@@ -53,39 +55,42 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/motivation" element={<MotivationQuotes />} />
-              <Route path="/editor" element={<VideoEditor />} />
-              <Route path="/animation-center" element={<VideoEditor />} />
-              <Route path="/recruiting" element={<Recruiting />} />
-              <Route path="/podcasts" element={<Podcasts />} />
-              <Route path="/live" element={<LiveStreams />} />
-              <Route path="/live/replay/:streamId" element={<StreamReplay />} />
-              <Route path="/trending" element={<Trending />} />
-              <Route path="/fans" element={<Fans />} />
-              <Route path="/top-plays" element={<TopPlays />} />
-              <Route path="/watch-later" element={<WatchLater />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/athlete/:userId" element={<AthleteProfile />} />
-              <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
-              <Route path="/search" element={<Search />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <QuickNavMenu />
-          <AccessibilityToolbar />
-        </BrowserRouter>
+        <DeafAccessibilityProvider>
+          <Toaster />
+          <Sonner />
+          <DeafAccessibilityBridge />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/games" element={<Games />} />
+                <Route path="/motivation" element={<MotivationQuotes />} />
+                <Route path="/editor" element={<VideoEditor />} />
+                <Route path="/animation-center" element={<VideoEditor />} />
+                <Route path="/recruiting" element={<Recruiting />} />
+                <Route path="/podcasts" element={<Podcasts />} />
+                <Route path="/live" element={<LiveStreams />} />
+                <Route path="/live/replay/:streamId" element={<StreamReplay />} />
+                <Route path="/trending" element={<Trending />} />
+                <Route path="/fans" element={<Fans />} />
+                <Route path="/top-plays" element={<TopPlays />} />
+                <Route path="/watch-later" element={<WatchLater />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/athlete/:userId" element={<AthleteProfile />} />
+                <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
+                <Route path="/search" element={<Search />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <QuickNavMenu />
+            <AccessibilityToolbar />
+          </BrowserRouter>
+        </DeafAccessibilityProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
