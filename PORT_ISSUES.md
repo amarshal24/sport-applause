@@ -21,7 +21,7 @@
 **Commits on branch:**
 - `d74ca42` — snap feed, stories, comments, invites, Top Plays, editor bake, podcasts, EN/ES, signed media, package name
 - `4510346` — deaf accessibility prefs + Capacitor production bundling
-- (latest) — AthleteMatch wired into Games hub (ISSUE-032)
+- `7b0bc21` — AthleteMatch wired into Games hub (ISSUE-032)
 
 ---
 
