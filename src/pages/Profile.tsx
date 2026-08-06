@@ -217,14 +217,29 @@ const Profile = () => {
                 {/* Avatar Section */}
                 <div className="relative group shrink-0">
                   <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
-                  <AnimatedAvatar
-                    videoUrl={profile?.profile_video_url}
-                    captionVtt={profile?.profile_video_caption_vtt}
-                    imageUrl={profile?.avatar_url}
-                    fallback={profile?.username?.[0]?.toUpperCase() || "U"}
-                    className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
-                    showPlayIcon
-                  />
+                  <div
+                    className={
+                      myStories.length > 0
+                        ? "relative z-10 rounded-full p-[3px] bg-gradient-power animate-pulse-glow cursor-pointer"
+                        : "relative z-10"
+                    }
+                    onClick={() => myStories.length > 0 && setStoryViewerOpen(true)}
+                  >
+                    <AnimatedAvatar
+                      videoUrl={profile?.profile_video_url}
+                      captionVtt={profile?.profile_video_caption_vtt}
+                      imageUrl={profile?.avatar_url}
+                      fallback={profile?.username?.[0]?.toUpperCase() || "U"}
+                      className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
+                      showPlayIcon
+                    />
+                  </div>
+                  {myStories.length > 0 && (
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Story
+                    </span>
+                  )}
+
                   {profile?.sports && profile.sports.length > 0 && (
                     <SportIcon 
                       sportId={profile.sports[0]} 
