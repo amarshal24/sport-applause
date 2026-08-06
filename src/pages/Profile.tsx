@@ -38,6 +38,9 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myStories, setMyStories] = useState<any[]>([]);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+
   const { isPremium } = usePremium();
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
