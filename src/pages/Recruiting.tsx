@@ -1122,37 +1122,48 @@ const Recruiting = () => {
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Color look</p>
                   <div className="flex flex-wrap gap-2">
-                    {colorFilters.map((f) => (
-                      <Button
-                        key={f.type}
-                        type="button"
-                        size="sm"
-                        variant={colorFilter === f.type ? "default" : "outline"}
-                        onClick={() => setColorFilter(f.type)}
-                      >
-                        {f.label}
-                      </Button>
-                    ))}
+                    {colorFilters.map((f) => {
+                      const locked = !!f.pro && !isPremium;
+                      return (
+                        <Button
+                          key={f.type}
+                          type="button"
+                          size="sm"
+                          variant={colorFilter === f.type ? "default" : "outline"}
+                          onClick={() => (locked ? requestUpgrade() : setColorFilter(f.type))}
+                          className={locked ? "opacity-70" : undefined}
+                        >
+                          {f.label}
+                          {locked && <Lock className="ml-1 h-3 w-3" />}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Animation overlay</p>
                   <div className="flex flex-wrap gap-2">
-                    {animatedFilters.map((f) => (
-                      <Button
-                        key={f.type}
-                        type="button"
-                        size="sm"
-                        variant={animatedFilter === f.type ? "default" : "outline"}
-                        onClick={() => setAnimatedFilter(f.type)}
-                      >
-                        <span className="mr-1">{f.icon}</span>
-                        {f.label}
-                      </Button>
-                    ))}
+                    {animatedFilters.map((f) => {
+                      const locked = !!f.pro && !isPremium;
+                      return (
+                        <Button
+                          key={f.type}
+                          type="button"
+                          size="sm"
+                          variant={animatedFilter === f.type ? "default" : "outline"}
+                          onClick={() => (locked ? requestUpgrade() : setAnimatedFilter(f.type))}
+                          className={locked ? "opacity-70" : undefined}
+                        >
+                          <span className="mr-1">{f.icon}</span>
+                          {f.label}
+                          {locked && <Lock className="ml-1 h-3 w-3" />}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
+
 
                 {/* Characters & objects */}
                 <div className="pt-2 border-t border-border space-y-3">
