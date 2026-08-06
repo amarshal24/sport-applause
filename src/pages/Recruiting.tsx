@@ -15,7 +15,7 @@ import {
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
   Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User,
-  Sparkles, HelpCircle, Wand2
+  Sparkles, HelpCircle, Wand2, Undo2, Redo2
 } from "lucide-react";
 import VideoTrimModal from "@/components/VideoTrimModal";
 import { useUndoableState } from "@/hooks/useUndoableState";
