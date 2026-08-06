@@ -734,8 +734,13 @@ const VideoFeed = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {post.profiles?.full_name || post.profiles?.username || "Anonymous"}
+                      <p className="font-medium text-sm truncate flex items-center gap-1.5">
+                        <span className="truncate">
+                          {post.profiles?.full_name || post.profiles?.username || "Anonymous"}
+                        </span>
+                        {post.profiles?.sports?.[0] && (
+                          <InlineSportIcon sportId={post.profiles.sports[0]} />
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
