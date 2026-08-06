@@ -165,7 +165,9 @@ const MyPodcasts = () => {
   if (!user) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-8 space-y-6">
+      <MonetizationSettings />
+      <CreatorEarnings />
       <h2 className="text-xl font-semibold mb-4">Your Podcasts</h2>
       {loading ? (
         <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
