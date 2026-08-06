@@ -311,6 +311,16 @@ const PIN_AURA_COLORS: Record<string, string> = {
   "frost-nova": "56,189,248",
   "sonic-boom": "244,114,182",
   "confetti-burst": "251,146,60",
+  plasma: "168,85,247",
+  "thunder-crown": "250,204,21",
+  afterimage: "148,163,184",
+  "lava-steps": "234,88,12",
+  "bubble-trail": "56,189,248",
+  "wind-tunnel": "203,213,225",
+  "star-shower": "250,232,255",
+  hologram: "34,211,238",
+  "blood-moon": "185,28,28",
+  "diamond-dust": "191,219,254",
 };
 
 const drawPin = (
