@@ -110,6 +110,9 @@ const Recruiting = () => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
   const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
+  const [pins, setPins] = useState<CharacterPin[]>([]);
+  const [placeMode, setPlaceMode] = useState(false);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sport, setSport] = useState("");
