@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark, Trash2, FileText } from "lucide-react";
+import { Share2, MessageSquare, RefreshCw, Play, Music, Pause, Volume2, VolumeX, Volume1, Heart, Maximize, Minimize, Wand2, Bookmark, Trash2, FileText, Repeat2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +66,29 @@ interface Post {
   };
 }
 
+interface Repost {
+  id: string;
+  caption: string | null;
+  created_at: string;
+  user_id: string;
+  post_id: string;
+  reposter?: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  post?: Post | null;
+}
+
+interface FeedItem {
+  key: string;
+  post: Post;
+  activityAt: string;
+  /** actor = who put this in the feed (author, or the reposter) */
+  actorId: string;
+  repost?: Repost;
+}
+
 const VideoFeed = () => {
   const { user } = useAuth();
   const [selectedSport, setSelectedSport] = useState("All");
@@ -81,48 +104,70 @@ const VideoFeed = () => {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
+  const [reposts, setReposts] = useState<Repost[]>([]);
+  const [myReposts, setMyReposts] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const fadeIntervalRef = useRef<number | null>(null);
 
+  const POST_FIELDS = `
+    id,
+    content,
+    image_url,
+    video_url,
+    music_url,
+    music_title,
+    music_start_time,
+    music_end_time,
+    music_fade_in,
+    music_fade_out,
+    likes_count,
+    comments_count,
+    created_at,
+    user_id,
+    profiles:user_id (
+      username,
+      full_name,
+      avatar_url,
+      sports
+    )
+  `;
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          content,
-          image_url,
-          video_url,
-          music_url,
-          music_title,
-          music_start_time,
-          music_end_time,
-          music_fade_in,
-          music_fade_out,
-          likes_count,
-          comments_count,
-          created_at,
-          user_id,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url,
-            sports
+      const [postsRes, repostsRes] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POST_FIELDS)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("post_reposts")
+          .select(
+            `id, caption, created_at, user_id, post_id,
+             reposter:user_id ( username, full_name, avatar_url ),
+             post:post_id ( ${POST_FIELDS} )`
           )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(20);
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (postsRes.error) throw postsRes.error;
+      setPosts((postsRes.data as any) || []);
+      if (repostsRes.error) {
+        console.error("Error fetching reposts:", repostsRes.error);
+        setReposts([]);
+      } else {
+        setReposts((repostsRes.data as any) || []);
+      }
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -141,6 +186,11 @@ const VideoFeed = () => {
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "posts" },
+        () => fetchPosts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_reposts" },
         () => fetchPosts()
       )
       .subscribe();
@@ -185,6 +235,62 @@ const VideoFeed = () => {
         if (data) setSavedPosts(new Set(data.map((r: any) => r.post_id)));
       });
   }, [user, refreshKey]);
+
+  // Track which posts the current user has reposted
+  useEffect(() => {
+    if (!user) {
+      setMyReposts(new Set());
+      return;
+    }
+    setMyReposts(
+      new Set(reposts.filter((r) => r.user_id === user.id).map((r) => r.post_id))
+    );
+  }, [user, reposts]);
+
+  const handleToggleRepost = async (post: Post) => {
+    if (!user) {
+      toast.error("Sign in to repost");
+      return;
+    }
+    if (post.user_id === user.id) {
+      toast.info("This is already your post");
+      return;
+    }
+
+    if (myReposts.has(post.id)) {
+      const { error } = await supabase
+        .from("post_reposts")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("post_id", post.id);
+      if (error) {
+        toast.error("Failed to undo repost");
+        return;
+      }
+      setMyReposts((prev) => {
+        const next = new Set(prev);
+        next.delete(post.id);
+        return next;
+      });
+      setReposts((prev) =>
+        prev.filter((r) => !(r.user_id === user.id && r.post_id === post.id))
+      );
+      toast.success("Repost removed");
+    } else {
+      const { error } = await supabase
+        .from("post_reposts")
+        .insert({ user_id: user.id, post_id: post.id });
+      if (error && !error.message?.toLowerCase().includes("duplicate")) {
+        toast.error("Failed to repost");
+        return;
+      }
+      setMyReposts((prev) => new Set(prev).add(post.id));
+      toast.success("Reposted to your feed");
+      fetchPosts();
+    }
+  };
+
+
 
   const handleToggleSave = async (postId: string) => {
     if (!user) {
@@ -398,15 +504,41 @@ const VideoFeed = () => {
     };
   }, []);
 
-  const sportFiltered = selectedSport === "All" 
-    ? posts 
-    : posts.filter(p => p.profiles?.sports?.some(s => 
+  const repostCounts = reposts.reduce((map, r) => {
+    map.set(r.post_id, (map.get(r.post_id) || 0) + 1);
+    return map;
+  }, new Map<string, number>());
+
+  // Merge original posts and reposts into a single chronological feed
+  const feedItems: FeedItem[] = [
+    ...posts.map((p) => ({
+      key: `post-${p.id}`,
+      post: p,
+      activityAt: p.created_at,
+      actorId: p.user_id,
+    })),
+    ...reposts
+      .filter((r) => !!r.post)
+      .map((r) => ({
+        key: `repost-${r.id}`,
+        post: r.post as Post,
+        activityAt: r.created_at,
+        actorId: r.user_id,
+        repost: r,
+      })),
+  ].sort((a, b) => +new Date(b.activityAt) - +new Date(a.activityAt));
+
+  const sportFiltered = selectedSport === "All"
+    ? feedItems
+    : feedItems.filter(i => i.post.profiles?.sports?.some(s =>
         s.toLowerCase().includes(selectedSport.toLowerCase())
       ));
 
   const filteredPosts = feedScope === "following" && user
-    ? sportFiltered.filter((p) => p.user_id === user.id || followingIds.has(p.user_id))
+    ? sportFiltered.filter((i) => i.actorId === user.id || followingIds.has(i.actorId))
     : sportFiltered;
+
+
 
 
   return (
@@ -494,11 +626,36 @@ const VideoFeed = () => {
 
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" key={refreshKey}>
-            {filteredPosts.map((post) => (
+            {filteredPosts.map((item) => {
+              const post = item.post;
+              return (
               <div
-                key={post.id}
+                key={item.key}
                 className="group bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:shadow-glow"
               >
+                {/* Repost banner */}
+                {item.repost && (
+                  <div className="flex items-center gap-2 px-4 pt-3 text-xs text-muted-foreground">
+                    <Repeat2 className="h-4 w-4 text-primary" />
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={item.repost.reposter?.avatar_url || undefined} />
+                      <AvatarFallback className="text-[9px]">
+                        {item.repost.reposter?.username?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">
+                      <span className="font-medium text-foreground">
+                        {item.repost.user_id === user?.id
+                          ? "You"
+                          : item.repost.reposter?.full_name ||
+                            item.repost.reposter?.username ||
+                            "Someone"}
+                      </span>{" "}
+                      reposted
+                    </span>
+                  </div>
+                )}
+
                 {/* Video or Image */}
                 {(post.video_url || post.image_url) && (
                   <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "9 / 16" }}>
@@ -690,6 +847,23 @@ const VideoFeed = () => {
                       </button>
 
                       <button
+                        onClick={() => handleToggleRepost(post)}
+                        disabled={post.user_id === user?.id}
+                        className={`flex items-center gap-1 transition-colors disabled:opacity-40 ${
+                          myReposts.has(post.id)
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label={myReposts.has(post.id) ? "Undo repost" : "Repost"}
+                        title={post.user_id === user?.id ? "This is your post" : "Repost"}
+                      >
+                        <Repeat2 className="h-5 w-5" />
+                        <span className="text-sm">
+                          {repostCounts.get(post.id) || ""}
+                        </span>
+                      </button>
+
+                      <button
                         onClick={() => handleToggleSave(post.id)}
                         className={`flex items-center gap-1 transition-colors ml-auto ${
                           savedPosts.has(post.id)
@@ -711,7 +885,9 @@ const VideoFeed = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
       </div>
