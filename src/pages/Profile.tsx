@@ -1,6 +1,9 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { ProBadge } from "@/components/ProBadge";
+import { PaymentPastDueBanner } from "@/components/PaymentPastDueBanner";
+import { usePremium } from "@/hooks/usePremium";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
@@ -35,6 +38,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isPremium } = usePremium();
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -183,6 +187,7 @@ const Profile = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <PaymentPastDueBanner />
         <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto w-full space-y-6">
           
           {/* Profile Header Card */}
@@ -219,8 +224,9 @@ const Profile = () => {
                 {/* Info Section */}
                 <div className="flex-1 text-center sm:text-left space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <h1 className="text-xl font-display font-bold text-foreground">
+                    <h1 className="text-xl font-display font-bold text-foreground flex items-center justify-center sm:justify-start gap-2">
                       {profile?.username}
+                      {isPremium && <ProBadge />}
                     </h1>
                     <Button 
                       variant="outline" 
