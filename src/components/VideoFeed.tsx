@@ -236,6 +236,62 @@ const VideoFeed = () => {
       });
   }, [user, refreshKey]);
 
+  // Track which posts the current user has reposted
+  useEffect(() => {
+    if (!user) {
+      setMyReposts(new Set());
+      return;
+    }
+    setMyReposts(
+      new Set(reposts.filter((r) => r.user_id === user.id).map((r) => r.post_id))
+    );
+  }, [user, reposts]);
+
+  const handleToggleRepost = async (post: Post) => {
+    if (!user) {
+      toast.error("Sign in to repost");
+      return;
+    }
+    if (post.user_id === user.id) {
+      toast.info("This is already your post");
+      return;
+    }
+
+    if (myReposts.has(post.id)) {
+      const { error } = await supabase
+        .from("post_reposts")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("post_id", post.id);
+      if (error) {
+        toast.error("Failed to undo repost");
+        return;
+      }
+      setMyReposts((prev) => {
+        const next = new Set(prev);
+        next.delete(post.id);
+        return next;
+      });
+      setReposts((prev) =>
+        prev.filter((r) => !(r.user_id === user.id && r.post_id === post.id))
+      );
+      toast.success("Repost removed");
+    } else {
+      const { error } = await supabase
+        .from("post_reposts")
+        .insert({ user_id: user.id, post_id: post.id });
+      if (error && !error.message?.toLowerCase().includes("duplicate")) {
+        toast.error("Failed to repost");
+        return;
+      }
+      setMyReposts((prev) => new Set(prev).add(post.id));
+      toast.success("Reposted to your feed");
+      fetchPosts();
+    }
+  };
+
+
+
   const handleToggleSave = async (postId: string) => {
     if (!user) {
       toast.error("Sign in to save videos");
