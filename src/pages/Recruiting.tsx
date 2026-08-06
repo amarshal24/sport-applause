@@ -42,6 +42,7 @@ import {
   type FilterType,
   type ColorFilterType,
 } from "@/components/AnimatedFilters";
+import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
 
 interface RecruitingVideo {
   id: string;
@@ -111,6 +112,7 @@ const Recruiting = () => {
   const [location, setLocation] = useState("");
   const [school, setSchool] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [renderProgress, setRenderProgress] = useState<number | null>(null);
 
   // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
   const UNDO_TIMEOUT_MS = 5000;
@@ -239,10 +241,32 @@ const Recruiting = () => {
 
       // Upload new video if provided
       if (videoFile) {
-        const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+        let uploadBody: Blob = videoFile;
+        let fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+
+        // Burn the selected filters into the clip so the saved video keeps them
+        if (hasBakeableFx(colorFilter, animatedFilter)) {
+          try {
+            setRenderProgress(0);
+            toast.info("Applying filters to your video...");
+            uploadBody = await bakeVideoFx(videoFile, {
+              colorFilter,
+              animatedFilter,
+              onProgress: setRenderProgress,
+            });
+            fileName = `${user.id}/${Date.now()}-fx-${videoFile.name.replace(/\.[^.]+$/, "")}.webm`;
+          } catch (fxError) {
+            console.error("Filter render failed", fxError);
+            toast.error("Could not render the filters — uploading the original clip.");
+            uploadBody = videoFile;
+          } finally {
+            setRenderProgress(null);
+          }
+        }
+
         const { error: uploadError } = await supabase.storage
           .from("recruiting-videos")
-          .upload(fileName, videoFile);
+          .upload(fileName, uploadBody, { contentType: uploadBody.type || "video/webm" });
 
         if (uploadError) throw uploadError;
 
@@ -1169,7 +1193,13 @@ const Recruiting = () => {
               className="w-full"
               size="lg"
             >
-              {uploading ? "Saving..." : editingVideo ? "Save Changes" : "Upload Highlight Reel"}
+              {renderProgress !== null
+                ? `Rendering filters... ${renderProgress}%`
+                : uploading
+                  ? "Saving..."
+                  : editingVideo
+                    ? "Save Changes"
+                    : "Upload Highlight Reel"}
             </Button>
           </div>
         </DialogContent>
