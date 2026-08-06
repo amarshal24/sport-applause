@@ -1,8 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
+
+const AnimationTutorialLazy = lazy(() =>
+  import("@/components/video-fx/AnimationTutorial").then((m) => ({ default: m.AnimationTutorial }))
+);
 
 // ===== Catalogs =====
 export const CHARACTER_ANIMATIONS = [
