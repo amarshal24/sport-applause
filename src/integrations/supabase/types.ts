@@ -1566,7 +1566,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      creator_pricing_public: {
+        Row: {
+          membership_enabled: boolean | null
+          membership_price_cents: number | null
+          tips_enabled: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          membership_enabled?: boolean | null
+          membership_price_cents?: number | null
+          tips_enabled?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          membership_enabled?: boolean | null
+          membership_price_cents?: number | null
+          tips_enabled?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_invite_by_code: {
