@@ -272,6 +272,7 @@ const Recruiting = () => {
             emoji: skin.emoji,
             animation: p.animation as string,
             isObject: skin.kind === "object",
+            track: p.track,
           };
         });
         if (hasBakeableFx(colorFilter, animatedFilter, bakePins)) {
@@ -1051,6 +1052,7 @@ const Recruiting = () => {
                     <div className="relative rounded-lg overflow-hidden bg-black">
                       <video
                         src={videoPreviewUrl}
+                        data-fx-preview
                         controls
                         playsInline
                         className="w-full max-h-[320px] object-contain"
@@ -1220,6 +1222,10 @@ const Recruiting = () => {
                     onAdd={handleAddPin}
                     onUpdate={handleUpdatePin}
                     onRemove={handleRemovePin}
+                    videoSource={videoFile}
+                    getCurrentTime={() =>
+                      document.querySelector<HTMLVideoElement>("video[data-fx-preview]")?.currentTime ?? 0
+                    }
                   />
                 </div>
               </div>

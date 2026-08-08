@@ -1,6 +1,13 @@
-import { useState, useRef, Suspense, lazy } from "react";
+import { useState, useRef, useEffect, Suspense, lazy } from "react";
+import {
+  trackObject,
+  sampleTrack,
+  shiftTrack,
+  type TrackPoint,
+} from "@/lib/objectTracker";
+
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -176,7 +183,10 @@ export interface CharacterPin {
   y: number;
   skin: CharacterSkinId;
   animation: CharacterAnimationId;
+  /** Motion path when the pin is locked onto a real object in the clip. */
+  track?: TrackPoint[];
 }
+
 
 export const MAX_PINS = 6;
 
@@ -192,6 +202,34 @@ interface OverlayProps {
   onPlace?: (x: number, y: number) => void;
 }
 
+/** Follows the playback time of the <video> rendered next to the overlay. */
+const useNeighbourVideoTime = (containerRef: React.RefObject<HTMLDivElement>) => {
+  const [time, setTime] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const findVideo = (): HTMLVideoElement | null => {
+      let node: HTMLElement | null = containerRef.current?.parentElement ?? null;
+      for (let i = 0; i < 3 && node; i++) {
+        const v = node.querySelector("video");
+        if (v) return v;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const loop = () => {
+      const v = findVideo();
+      if (v) setTime(v.currentTime);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [containerRef]);
+
+  return time;
+};
+
 export const CharacterPinsOverlay = ({
   pins,
   onMove,
@@ -201,6 +239,7 @@ export const CharacterPinsOverlay = ({
 }: OverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const videoTime = useNeighbourVideoTime(containerRef);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
@@ -245,24 +284,29 @@ export const CharacterPinsOverlay = ({
     >
       {placeMode && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg pointer-events-none animate-pulse">
-          Tap the video to place ({pins.length}/{MAX_PINS})
+          Tap the object in the video ({pins.length}/{MAX_PINS})
         </div>
       )}
       {pins.map((pin) => {
         const skin = getSkin(pin.skin);
         const isObject = skin.kind === "object";
+        // When the pin is locked onto an object, follow the tracked path.
+        const tracked = dragId === pin.id ? null : sampleTrack(pin.track, videoTime);
+        const px = tracked?.x ?? pin.x;
+        const py = tracked?.y ?? pin.y;
         return (
           <div
             key={pin.id}
             className="absolute pointer-events-auto select-none group cursor-grab active:cursor-grabbing"
             style={{
-              left: `${pin.x}%`,
-              top: `${pin.y}%`,
+              left: `${px}%`,
+              top: `${py}%`,
               transform: "translate(-50%, -50%)",
             }}
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
             onClick={(e) => e.stopPropagation()}
           >
+
             {/* Auras */}
             {pin.animation === "speed-lines" && (
               <div className="absolute inset-0 -z-10 flex items-center justify-center">
@@ -371,13 +415,52 @@ interface PanelProps {
   onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
+  /** Clip being edited — enables "lock onto object" tracking. */
+  videoSource?: File | Blob | string | null;
+  /** Current playhead position of the preview, in seconds. */
+  getCurrentTime?: () => number;
 }
 
-export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelProps) => {
+export const CharacterPinsPanel = ({
+  pins,
+  onAdd,
+  onUpdate,
+  onRemove,
+  videoSource,
+  getCurrentTime,
+}: PanelProps) => {
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
   const [howToOpen, setHowToOpen] = useState(false);
+  const [trackingId, setTrackingId] = useState<string | null>(null);
+  const [trackPct, setTrackPct] = useState(0);
+
+  const runTracking = async (pin: CharacterPin) => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the object.");
+      return;
+    }
+    setTrackingId(pin.id);
+    setTrackPct(0);
+    try {
+      const track = await trackObject(videoSource, {
+        startTime: getCurrentTime?.() ?? 0,
+        x: pin.x,
+        y: pin.y,
+        onProgress: setTrackPct,
+      });
+      onUpdate(pin.id, { track });
+      toast.success("Locked on! The effect now follows the object.");
+    } catch (err) {
+      console.error("Object tracking failed", err);
+      toast.error("Couldn't track that object — try a clearer spot on it.");
+    } finally {
+      setTrackingId(null);
+      setTrackPct(0);
+    }
+  };
+
   const {
     isPremium,
     skinTier,
@@ -547,6 +630,64 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
             </Button>
           </div>
 
+          {/* Lock onto the real object in the video */}
+          <div className="rounded-md border border-border bg-card/60 p-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-medium flex items-center gap-1.5">
+                  <Crosshair className="h-3.5 w-3.5 text-primary" />
+                  {pin.track?.length ? "Locked to object" : "Lock onto object"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {pin.track?.length
+                    ? "The effect follows this object through the clip."
+                    : "Drag the FX onto the ball or player, then lock it on."}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {pin.track?.length ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => onUpdate(pin.id, { track: undefined })}
+                  >
+                    Unlock
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant={pin.track?.length ? "outline" : "secondary"}
+                  className="h-7 text-xs gap-1"
+                  disabled={trackingId !== null}
+                  onClick={() => runTracking(pin)}
+                >
+                  {trackingId === pin.id ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {trackPct}%
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="h-3.5 w-3.5" />
+                      {pin.track?.length ? "Re-track" : "Track"}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            {trackingId === pin.id && (
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${trackPct}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+
+
           {/* Characters */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -693,7 +834,20 @@ export const useCharacterPins = () => {
   const remove = (id: string) => setPins((prev) => prev.filter((p) => p.id !== id));
 
   const move = (id: string, x: number, y: number) =>
-    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+    setPins((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              x,
+              y,
+              // Keep the locked path aligned when the pin is nudged by hand
+              track: p.track ? shiftTrack(p.track, x - p.x, y - p.y) : undefined,
+            }
+          : p
+      )
+    );
+
 
   return { pins, add, addAt, update, remove, move };
 };

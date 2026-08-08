@@ -1,5 +1,6 @@
 // Bakes the selected color-look + animated overlay filters directly into a
 // re-encoded video file so the saved/uploaded clip contains the effect.
+import { sampleTrack, type TrackPoint } from "@/lib/objectTracker";
 import { getColorFilterStyle, type ColorFilterType, type FilterType } from "@/components/AnimatedFilters";
 
 const cssFilterFor = (type: ColorFilterType): string => {
@@ -284,6 +285,8 @@ export interface BakePin {
   emoji: string;
   animation: string;
   isObject?: boolean;
+  /** Optional motion path so the FX follows the tracked object. */
+  track?: TrackPoint[];
 }
 
 const PIN_AURA_COLORS: Record<string, string> = {
@@ -330,8 +333,9 @@ const drawPin = (
   t: number,
   pin: BakePin
 ) => {
-  const cx = (pin.x / 100) * w;
-  const cy = (pin.y / 100) * h;
+  const tracked = sampleTrack(pin.track, t);
+  const cx = ((tracked?.x ?? pin.x) / 100) * w;
+  const cy = ((tracked?.y ?? pin.y) / 100) * h;
   const size = Math.max(28, h * (pin.isObject ? 0.12 : 0.1));
   const pulse = 0.6 + 0.4 * Math.abs(Math.sin(t * Math.PI));
   const color = PIN_AURA_COLORS[pin.animation];
