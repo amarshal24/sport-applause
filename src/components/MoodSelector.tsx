@@ -64,7 +64,8 @@ const moods: Mood[] = [
 const MoodSelector = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
-  const { fetchRecommendations, loading } = useMusicRecommendations();
+  const { fetchRecommendations, loading, recommendations } = useMusicRecommendations();
+
   const { user } = useAuth();
 
   useEffect(() => {
