@@ -978,13 +978,48 @@ export const CharacterPinsPanel = ({
               );
             })() : null}
 
-            {/* Failure state */}
+            {/* Failure state + restart choice */}
             {trackingId !== pin.id && failedIds[pin.id] && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                <p className="text-[11px] text-destructive">{failedIds[pin.id]}</p>
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-destructive">{failedIds[pin.id].message}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {failedIds[pin.id].lastGood && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 text-xs gap-1"
+                      disabled={trackingId !== null}
+                      onClick={() => runTracking(pin, "from-last-good")}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Restart at {failedIds[pin.id].lastGood!.t.toFixed(1)}s
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    disabled={trackingId !== null}
+                    onClick={() => runTracking(pin, "fresh")}
+                  >
+                    <Crosshair className="h-3.5 w-3.5" />
+                    Restart from beginning
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => clearFailure(pin.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               </div>
             )}
+
           </div>
 
 
