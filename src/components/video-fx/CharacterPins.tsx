@@ -463,6 +463,33 @@ export const CharacterPinsPanel = ({
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
 
+  // ===== Saved tracking data (path + scores) reusable across re-edits =====
+  const { tracks: savedTracks, saveTrack, deleteTrack } = useSavedTracks();
+  const clipKey = clipKeyOf(videoSource);
+
+  const handleSaveTrack = async (pin: CharacterPin, idx: number) => {
+    if (!pin.track?.length) return;
+    const q = trackQuality(pin.track);
+    const saved = await saveTrack({
+      label: `${getSkin(pin.skin).label} · Object ${idx + 1}`,
+      clipKey: clipKey ?? `session:${Date.now()}`,
+      clipDuration: pin.track[pin.track.length - 1]?.t ?? null,
+      path: pin.track,
+      avgConfidence: q?.average ?? null,
+      worstConfidence: q?.worst ?? null,
+      health: q?.health ?? null,
+    });
+    if (saved) toast.success("Track saved — reuse it on any effect later.");
+    else toast.error("Couldn't save this track. Try again.");
+  };
+
+  const applySavedTrack = (pin: CharacterPin, path: TrackPoint[]) => {
+    clearFailure(pin.id);
+    onUpdate(pin.id, { track: path });
+    toast.success("Saved track applied — pick any animation filter to re-render.");
+  };
+
+
   const clearFailure = (id: string) =>
     setFailedIds((f) => {
       const { [id]: _drop, ...rest } = f;
