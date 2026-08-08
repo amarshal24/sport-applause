@@ -81,14 +81,19 @@ const Navigation = () => {
           </div>
 
           <div className="flex items-center gap-1">
+            <div className="hidden md:block w-64">
+              <AthleteSearchAutocomplete placeholder="Search athletes..." />
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => navigate("/search")}
               aria-label="Search"
+              className="md:hidden"
             >
               <Search className="h-5 w-5" />
             </Button>
+
             <LanguageSwitcher />
             {user ? (
               <>
