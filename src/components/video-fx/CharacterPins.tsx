@@ -183,7 +183,10 @@ export interface CharacterPin {
   y: number;
   skin: CharacterSkinId;
   animation: CharacterAnimationId;
+  /** Motion path when the pin is locked onto a real object in the clip. */
+  track?: TrackPoint[];
 }
+
 
 export const MAX_PINS = 6;
 
