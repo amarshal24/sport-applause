@@ -450,34 +450,107 @@ export const CharacterPinsPanel = ({
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
   const [liveConf, setLiveConf] = useState<number | null>(null);
-  const [failedIds, setFailedIds] = useState<Record<string, string>>({});
+  const [autoRetry, setAutoRetry] = useState(false);
+  const [failedIds, setFailedIds] = useState<
+    Record<string, { message: string; lastGood: TrackPoint | null; partial?: TrackPoint[] }>
+  >({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
 
-  const trackPin = async (pin: CharacterPin) => {
+  const clearFailure = (id: string) =>
+    setFailedIds((f) => {
+      const { [id]: _drop, ...rest } = f;
+      return rest;
+    });
+
+  /** Runs the tracker once and returns the raw path (no state writes on the pin). */
+  const rawTrack = async (opts: {
+    startTime: number;
+    x: number;
+    y: number;
+    forwardOnly?: boolean;
+  }) =>
+    trackObject(videoSource!, {
+      ...opts,
+      onProgress: (pct, conf) => {
+        setTrackPct(pct);
+        if (typeof conf === "number") setLiveConf(conf);
+      },
+    });
+
+  /**
+   * Tracks a pin. When the lock is lost it automatically re-tracks once from
+   * the last good frame and merges the recovered segment in.
+   */
+  const trackPin = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
     setTrackingId(pin.id);
     setTrackPct(0);
     setLiveConf(null);
-    setFailedIds((f) => {
-      const { [pin.id]: _drop, ...rest } = f;
-      return rest;
-    });
+    clearFailure(pin.id);
     try {
-      const track = await trackObject(videoSource!, {
-        startTime: getCurrentTime?.() ?? 0,
-        x: pin.x,
-        y: pin.y,
-        onProgress: (pct, conf) => {
-          setTrackPct(pct);
-          if (typeof conf === "number") setLiveConf(conf);
-        },
-      });
-      const q = trackQuality(track);
+      const failure = failedIds[pin.id];
+      const seed =
+        mode === "from-last-good" && failure?.lastGood
+          ? failure.lastGood
+          : null;
+
+      let track = seed
+        ? mergeTracks(
+            failure?.partial,
+            await rawTrack({
+              startTime: seed.t,
+              x: seed.x,
+              y: seed.y,
+              forwardOnly: true,
+            }),
+            seed.t
+          )
+        : await rawTrack({
+            startTime: getCurrentTime?.() ?? 0,
+            x: pin.x,
+            y: pin.y,
+          });
+
+      let q = trackQuality(track);
+
+      // Auto re-track: recover from the last frame the tracker was confident on.
+      if (q && q.health !== "strong") {
+        const good = lastGoodPoint(track);
+        if (good && good.t > (track[0]?.t ?? 0)) {
+          setAutoRetry(true);
+          setTrackPct(0);
+          const recovered = mergeTracks(
+            track,
+            await rawTrack({
+              startTime: good.t,
+              x: good.x,
+              y: good.y,
+              forwardOnly: true,
+            }),
+            good.t
+          );
+          const rq = trackQuality(recovered);
+          if (rq && rq.average >= q.average) {
+            track = recovered;
+            q = rq;
+          }
+          setAutoRetry(false);
+        }
+      }
+
       if (!q || q.health === "lost") {
         setFailedIds((f) => ({
           ...f,
-          [pin.id]: "Lost the object — reset the tracker and pick a clearer, high-contrast spot.",
+          [pin.id]: {
+            message:
+              "Lost the object even after an auto re-track. Restart the tracker below.",
+            lastGood: lastGoodPoint(track),
+            partial: track,
+          },
         }));
         onUpdate(pin.id, { track: undefined });
         return false;
@@ -488,24 +561,31 @@ export const CharacterPinsPanel = ({
       console.error("Object tracking failed", err);
       setFailedIds((f) => ({
         ...f,
-        [pin.id]: err instanceof Error ? err.message : "Tracking failed on this clip.",
+        [pin.id]: {
+          message: err instanceof Error ? err.message : "Tracking failed on this clip.",
+          lastGood: null,
+        },
       }));
       return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
       setLiveConf(null);
+      setAutoRetry(false);
     }
   };
 
-  const runTracking = async (pin: CharacterPin) => {
+  const runTracking = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
     if (!videoSource) {
       toast.error("Load a clip first, then place the FX on the object.");
       return;
     }
-    const ok = await trackPin(pin);
+    const ok = await trackPin(pin, mode);
     if (ok) toast.success("Locked on! The effect now follows the object.");
-    else toast.error("Tracker lost the object — reset it and try a clearer spot.");
+    else toast.error("Still losing the object — try restarting from a clearer frame.");
   };
 
   const runTrackAll = async () => {
@@ -526,8 +606,9 @@ export const CharacterPinsPanel = ({
     }
     setBatch(null);
     if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
-    else toast.warning(`Locked ${ok}/${targets.length}. Reset the failed ones and re-place them.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Restart the failed ones below.`);
   };
+
 
 
 
