@@ -405,6 +405,15 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
 
           {/* Blocked & restricted */}
           <TabsContent value="blocked" className="space-y-3">
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.location.assign('/blocked')}
+              >
+                Open block manager
+              </Button>
+            </div>
             {blocksLoading ? (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
