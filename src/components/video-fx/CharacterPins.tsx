@@ -695,7 +695,15 @@ export const CharacterPinsPanel = ({
       {pins.map((pin, idx) => (
         <div key={pin.id} className="rounded-lg border border-border p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">FX {idx + 1}</p>
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              Object {idx + 1}
+              <span className="text-[10px] text-muted-foreground">{getSkin(pin.skin).label}</span>
+              {pin.track?.length ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
+                  Tracked
+                </span>
+              ) : null}
+            </p>
             <Button
               size="sm"
               variant="ghost"
