@@ -11,7 +11,7 @@ import {
 } from "@/lib/objectTracker";
 
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -901,7 +901,9 @@ export const CharacterPinsPanel = ({
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Match confidence</span>
+                  <span className="text-muted-foreground">
+                    {autoRetry ? "Auto re-tracking from last good frame…" : "Match confidence"}
+                  </span>
                   <span
                     className={cn(
                       "font-medium",
