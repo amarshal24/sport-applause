@@ -134,18 +134,16 @@ const Trending = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const tab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
-    setActiveTab(tab);
+    setActiveTab(tabFromParams(searchParams.get("tab")));
   }, [searchParams]);
 
   const handleTabChange = (val: string) => {
-    setActiveTab(val as "trending" | "top-plays");
-    if (val === "top-plays") {
-      setSearchParams({ tab: "top-plays" });
-    } else {
-      setSearchParams({});
-    }
+    const tab = tabFromParams(val);
+    setActiveTab(tab);
+    if (tab === "trending") setSearchParams({});
+    else setSearchParams({ tab });
   };
+
 
   const parseCount = (s: string) => {
     const n = parseFloat(s);
