@@ -202,8 +202,11 @@ const AthleteProfile = () => {
                 </Avatar>
                 
                 <div className="flex-1">
-                  <h1 className="text-3xl font-display font-bold">
-                    {profile.full_name || profile.username}
+                  <h1 className="text-3xl font-display font-bold flex items-center gap-2">
+                    <span>{profile.full_name || profile.username}</span>
+                    {profile.sports?.[0] && (
+                      <InlineSportIcon sportId={profile.sports[0]} />
+                    )}
                   </h1>
                   <p className="text-muted-foreground">@{profile.username}</p>
                   
