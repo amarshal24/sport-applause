@@ -109,8 +109,11 @@ const Trending = () => {
   const { t } = useTranslation();
   const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
-  const [activeTab, setActiveTab] = useState<"trending" | "top-plays">(initialTab);
+  const tabFromParams = (v: string | null): TrendingTab =>
+    v === "top-plays" || v === "by-sport" ? v : "trending";
+  const initialTab = tabFromParams(searchParams.get("tab"));
+  const [activeTab, setActiveTab] = useState<TrendingTab>(initialTab);
+
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
   const [savedVideos, setSavedVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<typeof trendingVideos[0] | null>(null);
