@@ -128,7 +128,8 @@ const MusicRecommendations = ({ recommendations, loading }: MusicRecommendations
         
         <div className="mt-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground text-center">
           <Music className="w-4 h-4 inline mr-1" />
-          Click the buttons to open these tracks in Spotify or Apple Music
+          "Use in clip" sends a licensed, vibe-matched track to your post editor. Spotify/Apple links open the original song.
+
         </div>
       </CardContent>
     </Card>
