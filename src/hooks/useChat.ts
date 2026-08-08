@@ -36,6 +36,7 @@ export interface ChatConversation {
 
 export const useChat = (recipientId?: string) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
