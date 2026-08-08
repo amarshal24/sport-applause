@@ -834,7 +834,20 @@ export const useCharacterPins = () => {
   const remove = (id: string) => setPins((prev) => prev.filter((p) => p.id !== id));
 
   const move = (id: string, x: number, y: number) =>
-    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+    setPins((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              x,
+              y,
+              // Keep the locked path aligned when the pin is nudged by hand
+              track: p.track ? shiftTrack(p.track, x - p.x, y - p.y) : undefined,
+            }
+          : p
+      )
+    );
+
 
   return { pins, add, addAt, update, remove, move };
 };
