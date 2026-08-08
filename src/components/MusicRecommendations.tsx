@@ -93,7 +93,16 @@ const MusicRecommendations = ({ recommendations, loading }: MusicRecommendations
                 {song.description}
               </p>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => handleUseInClip(song)}
+                >
+                  <Scissors className="w-3 h-3" />
+                  Use in clip
+                </Button>
+
                 <Button
                   size="sm"
                   variant="outline"
