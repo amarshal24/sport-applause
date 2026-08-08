@@ -427,10 +427,23 @@ const Profile = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      {post.music_url && (
+                        <PostMusicPlayer
+                          compact
+                          musicUrl={post.music_url}
+                          title={post.music_title}
+                          startTime={post.music_start_time}
+                          endTime={post.music_end_time}
+                          fadeIn={post.music_fade_in}
+                          fadeOut={post.music_fade_out}
+                          className="absolute top-1 left-1 z-10"
+                        />
+                      )}
                       <ApplauseButton
                         postId={post.id}
                         className="absolute bottom-1 left-1 sm:hidden backdrop-blur"
                       />
+
 
                       <Button
                         type="button"
