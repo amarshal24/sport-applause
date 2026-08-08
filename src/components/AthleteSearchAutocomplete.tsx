@@ -205,7 +205,7 @@ const AthleteSearchAutocomplete = ({
                     {item.type === "sport" ? (
                       <>
                         <span className="p-2 rounded-lg bg-primary/10">
-                          <InlineSportIcon sport={item.sport.id} />
+                          <InlineSportIcon sportId={item.sport.id} />
                         </span>
                         <span className="text-sm">
                           Browse{" "}
@@ -224,7 +224,7 @@ const AthleteSearchAutocomplete = ({
                           <span className="flex items-center gap-1 text-sm font-medium truncate">
                             {item.athlete.full_name || item.athlete.username}
                             {item.athlete.sports?.[0] && (
-                              <InlineSportIcon sport={item.athlete.sports[0]} />
+                              <InlineSportIcon sportId={item.athlete.sports[0]} />
                             )}
                           </span>
                           <span className="block text-xs text-muted-foreground truncate">
