@@ -19,6 +19,9 @@ import { usePremium } from "@/hooks/usePremium";
 import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
 import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
 import { hasSkinTier, skinTierOf } from "@/constants/skinTiers";
+import { useSavedTracks, clipKeyOf } from "@/hooks/useSavedTracks";
+import { SavedTrackControls } from "@/components/video-fx/SavedTrackControls";
+
 
 import { Crown } from "lucide-react";
 
