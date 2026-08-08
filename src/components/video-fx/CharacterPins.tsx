@@ -533,7 +533,7 @@ export const CharacterPinsPanel = ({
             Character & Object FX
           </p>
           <p className="text-xs text-muted-foreground">
-            Add up to {MAX_PINS}. Drag on the video to reposition.
+            Add up to {MAX_PINS}. Track each object separately — every FX keeps its own skin & animation.
           </p>
         </div>
         <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
@@ -541,6 +541,52 @@ export const CharacterPinsPanel = ({
           Add ({pins.length}/{MAX_PINS})
         </Button>
       </div>
+
+      {/* Multi-object tracking */}
+      {pins.length > 1 && (
+        <div className="rounded-lg border border-border bg-card/60 p-2.5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-medium flex items-center gap-1.5">
+                <Crosshair className="h-3.5 w-3.5 text-primary" />
+                Multi-object tracking
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {trackedCount}/{pins.length} effects locked onto an object.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 text-xs gap-1 shrink-0"
+              disabled={trackingId !== null}
+              onClick={runTrackAll}
+            >
+              {batch ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {batch.done + 1}/{batch.total}
+                </>
+              ) : (
+                <>
+                  <Crosshair className="h-3.5 w-3.5" />
+                  Track all
+                </>
+              )}
+            </Button>
+          </div>
+          {batch && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${Math.round(((batch.done + trackPct / 100) / batch.total) * 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+
 
       {/* Video preview: how to customize your video */}
       <button
