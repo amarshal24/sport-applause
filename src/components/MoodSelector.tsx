@@ -152,9 +152,16 @@ const MoodSelector = () => {
             </Button>
           </div>
         )}
+
+        {(loading || recommendations.length > 0) && (
+          <div className="mt-4">
+            <MusicRecommendations recommendations={recommendations} loading={loading} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
+
 
 export default MoodSelector;
