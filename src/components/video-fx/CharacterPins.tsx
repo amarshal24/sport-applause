@@ -296,6 +296,7 @@ export const CharacterPinsOverlay = ({
         const tracked = dragId === pin.id ? null : sampleTrack(pin.track, videoTime);
         const px = tracked?.x ?? pin.x;
         const py = tracked?.y ?? pin.y;
+        const weak = tracked ? (tracked.c ?? 1) < WEAK_CONFIDENCE : false;
         return (
           <div
             key={pin.id}
@@ -308,6 +309,17 @@ export const CharacterPinsOverlay = ({
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Tracker lost the object at this moment */}
+            {weak && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded-full border border-destructive bg-destructive/85 px-2 py-0.5 text-[10px] font-medium text-destructive-foreground pointer-events-none">
+                Tracking lost
+              </div>
+            )}
+            {weak && (
+              <div className="absolute -inset-4 -z-10 rounded-full border-2 border-dashed border-destructive/80 animate-pulse pointer-events-none" />
+            )}
+
+
 
             {/* Auras */}
             {pin.animation === "speed-lines" && (
