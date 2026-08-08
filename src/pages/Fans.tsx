@@ -142,16 +142,18 @@ const Fans = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or username..."
-              className="pl-10"
-            />
-          </div>
+          {/* Search with autocomplete */}
+          <AthleteSearchAutocomplete
+            value={query}
+            onValueChange={setQuery}
+            onSelectSport={(sportId) => {
+              setSelectedSport(sportId);
+              setQuery("");
+            }}
+            onSelectAthlete={(a) => navigate(`/athlete/${a.id}`)}
+            placeholder="Search athletes by name or sport..."
+          />
+
 
           {/* Role filter */}
           <div className="space-y-2">
