@@ -24,6 +24,7 @@ const Trending = lazy(() => import("./pages/Trending"));
 const Fans = lazy(() => import("./pages/Fans"));
 const TopPlays = lazy(() => import("./pages/TopPlays"));
 const WatchLater = lazy(() => import("./pages/WatchLater"));
+const BlockedUsers = lazy(() => import("./pages/BlockedUsers"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Messages = lazy(() => import("./pages/Messages"));
