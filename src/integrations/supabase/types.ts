@@ -397,6 +397,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_tracks: {
+        Row: {
+          avg_confidence: number | null
+          clip_duration: number | null
+          clip_key: string
+          created_at: string
+          health: string | null
+          id: string
+          label: string
+          path: Json
+          updated_at: string
+          user_id: string
+          worst_confidence: number | null
+        }
+        Insert: {
+          avg_confidence?: number | null
+          clip_duration?: number | null
+          clip_key: string
+          created_at?: string
+          health?: string | null
+          id?: string
+          label: string
+          path: Json
+          updated_at?: string
+          user_id: string
+          worst_confidence?: number | null
+        }
+        Update: {
+          avg_confidence?: number | null
+          clip_duration?: number | null
+          clip_key?: string
+          created_at?: string
+          health?: string | null
+          id?: string
+          label?: string
+          path?: Json
+          updated_at?: string
+          user_id?: string
+          worst_confidence?: number | null
+        }
+        Relationships: []
+      }
       game_scores: {
         Row: {
           created_at: string
