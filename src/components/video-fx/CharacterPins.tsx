@@ -921,6 +921,19 @@ export const CharacterPinsPanel = ({
               </div>
             </div>
 
+            {/* Save / reuse tracking data */}
+            <SavedTrackControls
+              tracks={savedTracks}
+              clipKey={clipKey}
+              canSave={!!pin.track?.length}
+              disabled={trackingId !== null}
+              onSave={() => handleSaveTrack(pin, idx)}
+              onApply={(path) => applySavedTrack(pin, path)}
+              onDelete={deleteTrack}
+            />
+
+
+
             {/* Live progress + confidence while tracking */}
             {trackingId === pin.id && (
               <div className="space-y-1.5">
