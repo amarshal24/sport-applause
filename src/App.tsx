@@ -24,6 +24,7 @@ const Trending = lazy(() => import("./pages/Trending"));
 const Fans = lazy(() => import("./pages/Fans"));
 const TopPlays = lazy(() => import("./pages/TopPlays"));
 const WatchLater = lazy(() => import("./pages/WatchLater"));
+const BlockedUsers = lazy(() => import("./pages/BlockedUsers"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -77,7 +78,8 @@ const App = () => (
               <Route path="/trending" element={<Trending />} />
               <Route path="/fans" element={<Fans />} />
               <Route path="/top-plays" element={<TopPlays />} />
-              <Route path="/watch-later" element={<WatchLater />} />
+             <Route path="/watch-later" element={<WatchLater />} />
+             <Route path="/blocked" element={<BlockedUsers />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/messages" element={<Messages />} />
