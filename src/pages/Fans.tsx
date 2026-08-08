@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
+import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
+
 
 type Role = "all" | "athlete" | "commentator" | "media";
 
