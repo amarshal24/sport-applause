@@ -94,13 +94,32 @@ const AthleteSearchAutocomplete = ({
       .map((s) => ({ kind: "sport" as const, id: s.id, name: s.name }));
   }, [debounced]);
 
-  const items = useMemo(
-    () => [
-      ...sportMatches.map((s) => ({ type: "sport" as const, sport: s })),
-      ...people.map((p) => ({ type: "athlete" as const, athlete: p })),
-    ],
-    [sportMatches, people]
-  );
+  const hasQuery = debounced.length > 0;
+
+  const items = useMemo(() => {
+    if (!hasQuery) {
+      return recents.map((r) =>
+        r.type === "sport"
+          ? { type: "sport" as const, sport: { kind: "sport" as const, id: r.id, name: r.label }, recent: true }
+          : {
+              type: "athlete" as const,
+              athlete: {
+                id: r.id,
+                username: r.sublabel || r.label,
+                full_name: r.label,
+                avatar_url: r.avatar_url ?? null,
+                sports: r.sportId ? [r.sportId] : null,
+                role: null,
+              } as AthleteSuggestion,
+              recent: true,
+            }
+      );
+    }
+    return [
+      ...sportMatches.map((s) => ({ type: "sport" as const, sport: s, recent: false })),
+      ...people.map((p) => ({ type: "athlete" as const, athlete: p, recent: false })),
+    ];
+  }, [hasQuery, recents, sportMatches, people]);
 
   useEffect(() => setActive(0), [items.length]);
 
@@ -118,10 +137,19 @@ const AthleteSearchAutocomplete = ({
     if (!item) return;
     setOpen(false);
     if (item.type === "sport") {
+      addRecent({ type: "sport", id: item.sport.id, label: item.sport.name });
       if (onSelectSport) onSelectSport(item.sport.id);
       else navigate("/fans");
       setQuery("");
     } else {
+      addRecent({
+        type: "athlete",
+        id: item.athlete.id,
+        label: item.athlete.full_name || item.athlete.username,
+        sublabel: item.athlete.username,
+        avatar_url: item.athlete.avatar_url,
+        sportId: item.athlete.sports?.[0] ?? null,
+      });
       if (onSelectAthlete) onSelectAthlete(item.athlete);
       else navigate(`/athlete/${item.athlete.id}`);
     }
@@ -143,7 +171,8 @@ const AthleteSearchAutocomplete = ({
     }
   };
 
-  const showPanel = open && debounced.length > 0;
+  const showPanel = open && (hasQuery || items.length > 0);
+
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
