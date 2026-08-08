@@ -1,4 +1,11 @@
-import { useState, useRef, Suspense, lazy } from "react";
+import { useState, useRef, useEffect, Suspense, lazy } from "react";
+import {
+  trackObject,
+  sampleTrack,
+  shiftTrack,
+  type TrackPoint,
+} from "@/lib/objectTracker";
+
 import { Button } from "@/components/ui/button";
 import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
