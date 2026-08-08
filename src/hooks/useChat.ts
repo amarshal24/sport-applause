@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export interface ChatMessage {
   id: string;
@@ -35,6 +36,7 @@ export interface ChatConversation {
 
 export const useChat = (recipientId?: string) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -243,6 +245,26 @@ export const useChat = (recipientId?: string) => {
   const sendMessage = useCallback(async (content: string, imageUrl?: string) => {
     if (!user || !recipientId || (!content.trim() && !imageUrl)) return false;
 
+    // Block check: neither side may message the other if a block exists
+    const { data: isBlocked, error: blockError } = await supabase.rpc('is_blocked_between', {
+      _a: user.id,
+      _b: recipientId,
+    });
+
+    if (blockError) {
+      console.error('Error checking block status:', blockError);
+      return false;
+    }
+
+    if (isBlocked) {
+      toast({
+        title: 'Message not sent',
+        description: 'You can no longer message this user.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     const { error } = await supabase
       .from('chat_messages')
       .insert({
@@ -254,11 +276,17 @@ export const useChat = (recipientId?: string) => {
 
     if (error) {
       console.error('Error sending message:', error);
+      toast({
+        title: 'Message not sent',
+        description: 'This message could not be delivered.',
+        variant: 'destructive',
+      });
       return false;
     }
 
     return true;
-  }, [user, recipientId]);
+  }, [user, recipientId, toast]);
+
 
   // Upload image
   const uploadImage = useCallback(async (file: File) => {
