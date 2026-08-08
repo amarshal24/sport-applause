@@ -415,13 +415,52 @@ interface PanelProps {
   onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
+  /** Clip being edited — enables "lock onto object" tracking. */
+  videoSource?: File | Blob | string | null;
+  /** Current playhead position of the preview, in seconds. */
+  getCurrentTime?: () => number;
 }
 
-export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelProps) => {
+export const CharacterPinsPanel = ({
+  pins,
+  onAdd,
+  onUpdate,
+  onRemove,
+  videoSource,
+  getCurrentTime,
+}: PanelProps) => {
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
   const [howToOpen, setHowToOpen] = useState(false);
+  const [trackingId, setTrackingId] = useState<string | null>(null);
+  const [trackPct, setTrackPct] = useState(0);
+
+  const runTracking = async (pin: CharacterPin) => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the object.");
+      return;
+    }
+    setTrackingId(pin.id);
+    setTrackPct(0);
+    try {
+      const track = await trackObject(videoSource, {
+        startTime: getCurrentTime?.() ?? 0,
+        x: pin.x,
+        y: pin.y,
+        onProgress: setTrackPct,
+      });
+      onUpdate(pin.id, { track });
+      toast.success("Locked on! The effect now follows the object.");
+    } catch (err) {
+      console.error("Object tracking failed", err);
+      toast.error("Couldn't track that object — try a clearer spot on it.");
+    } finally {
+      setTrackingId(null);
+      setTrackPct(0);
+    }
+  };
+
   const {
     isPremium,
     skinTier,
