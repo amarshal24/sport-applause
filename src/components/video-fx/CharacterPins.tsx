@@ -192,6 +192,34 @@ interface OverlayProps {
   onPlace?: (x: number, y: number) => void;
 }
 
+/** Follows the playback time of the <video> rendered next to the overlay. */
+const useNeighbourVideoTime = (containerRef: React.RefObject<HTMLDivElement>) => {
+  const [time, setTime] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const findVideo = (): HTMLVideoElement | null => {
+      let node: HTMLElement | null = containerRef.current?.parentElement ?? null;
+      for (let i = 0; i < 3 && node; i++) {
+        const v = node.querySelector("video");
+        if (v) return v;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const loop = () => {
+      const v = findVideo();
+      if (v) setTime(v.currentTime);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [containerRef]);
+
+  return time;
+};
+
 export const CharacterPinsOverlay = ({
   pins,
   onMove,
@@ -201,6 +229,7 @@ export const CharacterPinsOverlay = ({
 }: OverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const videoTime = useNeighbourVideoTime(containerRef);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
@@ -245,24 +274,29 @@ export const CharacterPinsOverlay = ({
     >
       {placeMode && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg pointer-events-none animate-pulse">
-          Tap the video to place ({pins.length}/{MAX_PINS})
+          Tap the object in the video ({pins.length}/{MAX_PINS})
         </div>
       )}
       {pins.map((pin) => {
         const skin = getSkin(pin.skin);
         const isObject = skin.kind === "object";
+        // When the pin is locked onto an object, follow the tracked path.
+        const tracked = dragId === pin.id ? null : sampleTrack(pin.track, videoTime);
+        const px = tracked?.x ?? pin.x;
+        const py = tracked?.y ?? pin.y;
         return (
           <div
             key={pin.id}
             className="absolute pointer-events-auto select-none group cursor-grab active:cursor-grabbing"
             style={{
-              left: `${pin.x}%`,
-              top: `${pin.y}%`,
+              left: `${px}%`,
+              top: `${py}%`,
               transform: "translate(-50%, -50%)",
             }}
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
             onClick={(e) => e.stopPropagation()}
           >
+
             {/* Auras */}
             {pin.animation === "speed-lines" && (
               <div className="absolute inset-0 -z-10 flex items-center justify-center">
