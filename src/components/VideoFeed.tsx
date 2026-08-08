@@ -24,25 +24,8 @@ import FullScreenVideoModal from "@/components/FullScreenVideoModal";
 import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { SPORTS } from "@/constants/sports";
 
-const SPORTS_CATEGORIES = [
-  "All",
-  "Basketball",
-  "Football",
-  "Soccer",
-  "Baseball",
-  "Hockey",
-  "Tennis",
-  "Boxing",
-  "MMA",
-  "Golf",
-  "Cricket",
-  "Rugby",
-  "Volleyball",
-  "Track & Field",
-  "Swimming",
-  "Fitness",
-];
 
 interface Post {
   id: string;
