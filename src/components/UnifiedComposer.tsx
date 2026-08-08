@@ -34,6 +34,8 @@ interface Mood {
 }
 
 import { musicLibrary, type MusicTrack } from "@/constants/musicLibrary";
+import { useEditorTrack } from "@/hooks/useEditorTrack";
+
 
 
 const moods: Mood[] = [
@@ -113,6 +115,19 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
+  const { editorTrack, clearEditorTrack } = useEditorTrack();
+
+  // A track picked from mood recommendations lands here: open the trimmer for it.
+  useEffect(() => {
+    if (!editorTrack) return;
+    if (audioRef.current) audioRef.current.pause();
+    setPreviewingTrack(null);
+    setMusicDialogOpen(false);
+    setPendingTrimTrack(editorTrack);
+    setShowTrimmer(true);
+    clearEditorTrack();
+  }, [editorTrack, clearEditorTrack]);
+
 
   useEffect(() => {
     const fetchUserSport = async () => {
