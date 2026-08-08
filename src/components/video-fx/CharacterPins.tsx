@@ -435,31 +435,62 @@ export const CharacterPinsPanel = ({
   const [howToOpen, setHowToOpen] = useState(false);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
-  const runTracking = async (pin: CharacterPin) => {
-    if (!videoSource) {
-      toast.error("Load a clip first, then place the FX on the object.");
-      return;
-    }
+  const trackedCount = pins.filter((p) => p.track?.length).length;
+
+  const trackPin = async (pin: CharacterPin) => {
     setTrackingId(pin.id);
     setTrackPct(0);
     try {
-      const track = await trackObject(videoSource, {
+      const track = await trackObject(videoSource!, {
         startTime: getCurrentTime?.() ?? 0,
         x: pin.x,
         y: pin.y,
         onProgress: setTrackPct,
       });
       onUpdate(pin.id, { track });
-      toast.success("Locked on! The effect now follows the object.");
+      return true;
     } catch (err) {
       console.error("Object tracking failed", err);
-      toast.error("Couldn't track that object — try a clearer spot on it.");
+      return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
     }
   };
+
+  const runTracking = async (pin: CharacterPin) => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the object.");
+      return;
+    }
+    const ok = await trackPin(pin);
+    if (ok) toast.success("Locked on! The effect now follows the object.");
+    else toast.error("Couldn't track that object — try a clearer spot on it.");
+  };
+
+  const runTrackAll = async () => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the objects.");
+      return;
+    }
+    const targets = pins.filter((p) => !p.track?.length);
+    if (targets.length === 0) {
+      toast.info("Every effect is already locked onto an object.");
+      return;
+    }
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      setBatch({ done: i, total: targets.length });
+      // eslint-disable-next-line no-await-in-loop
+      if (await trackPin(targets[i])) ok++;
+    }
+    setBatch(null);
+    if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Re-place the missed ones on a clearer spot.`);
+  };
+
 
   const {
     isPremium,
@@ -502,7 +533,7 @@ export const CharacterPinsPanel = ({
             Character & Object FX
           </p>
           <p className="text-xs text-muted-foreground">
-            Add up to {MAX_PINS}. Drag on the video to reposition.
+            Add up to {MAX_PINS}. Track each object separately — every FX keeps its own skin & animation.
           </p>
         </div>
         <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
@@ -510,6 +541,52 @@ export const CharacterPinsPanel = ({
           Add ({pins.length}/{MAX_PINS})
         </Button>
       </div>
+
+      {/* Multi-object tracking */}
+      {pins.length > 1 && (
+        <div className="rounded-lg border border-border bg-card/60 p-2.5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-medium flex items-center gap-1.5">
+                <Crosshair className="h-3.5 w-3.5 text-primary" />
+                Multi-object tracking
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {trackedCount}/{pins.length} effects locked onto an object.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 text-xs gap-1 shrink-0"
+              disabled={trackingId !== null}
+              onClick={runTrackAll}
+            >
+              {batch ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {batch.done + 1}/{batch.total}
+                </>
+              ) : (
+                <>
+                  <Crosshair className="h-3.5 w-3.5" />
+                  Track all
+                </>
+              )}
+            </Button>
+          </div>
+          {batch && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${Math.round(((batch.done + trackPct / 100) / batch.total) * 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+
 
       {/* Video preview: how to customize your video */}
       <button
@@ -618,7 +695,15 @@ export const CharacterPinsPanel = ({
       {pins.map((pin, idx) => (
         <div key={pin.id} className="rounded-lg border border-border p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">FX {idx + 1}</p>
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              Object {idx + 1}
+              <span className="text-[10px] text-muted-foreground">{getSkin(pin.skin).label}</span>
+              {pin.track?.length ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
+                  Tracked
+                </span>
+              ) : null}
+            </p>
             <Button
               size="sm"
               variant="ghost"
