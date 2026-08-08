@@ -78,10 +78,10 @@ const PodcastDiscover = () => {
 
       const creatorIds = [...new Set(list.map((p) => p.user_id))];
       if (creatorIds.length) {
-        const { data: settings } = await supabase
-          .from("creator_payouts")
-          .select("user_id, membership_enabled, membership_price_cents, tips_enabled")
-          .in("user_id", creatorIds);
+        const { data: settings } = await supabase.rpc("get_creator_pricing", {
+          _creator_ids: creatorIds,
+        });
+
         const map: Record<string, any> = {};
         (settings ?? []).forEach((s: any) => { map[s.user_id] = s; });
         setCreatorSettings(map);
