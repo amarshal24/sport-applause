@@ -707,7 +707,9 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
             {/* Selected Music Preview */}
             {selectedMusic && !showTrimmer && (
-              <div className="mb-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between animate-fade-in">
+              <div className="mb-3 space-y-3 animate-fade-in">
+              <div className="p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                     <Music className="h-5 w-5 text-primary" />
