@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
+import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 
 type Role = "all" | "athlete" | "commentator" | "media";
@@ -240,6 +241,9 @@ const Fans = () => {
                       <p className="font-semibold text-foreground truncate">
                         {profile.full_name || profile.username}
                       </p>
+                      {profile.sports?.[0] && (
+                        <InlineSportIcon sportId={profile.sports[0]} />
+                      )}
                       {roleBadge(profile.role)}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
