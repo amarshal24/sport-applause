@@ -757,14 +757,21 @@ export const CharacterPinsPanel = ({
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {pin.track?.length ? (
+                {pin.track?.length || failedIds[pin.id] ? (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 text-xs"
-                    onClick={() => onUpdate(pin.id, { track: undefined })}
+                    disabled={trackingId !== null}
+                    onClick={() => {
+                      onUpdate(pin.id, { track: undefined });
+                      setFailedIds((f) => {
+                        const { [pin.id]: _drop, ...rest } = f;
+                        return rest;
+                      });
+                    }}
                   >
-                    Unlock
+                    Reset
                   </Button>
                 ) : null}
                 <Button
@@ -788,15 +795,103 @@ export const CharacterPinsPanel = ({
                 </Button>
               </div>
             </div>
+
+            {/* Live progress + confidence while tracking */}
             {trackingId === pin.id && (
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${trackPct}%` }}
-                />
+              <div className="space-y-1.5">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${trackPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Match confidence</span>
+                  <span
+                    className={cn(
+                      "font-medium",
+                      liveConf === null
+                        ? "text-muted-foreground"
+                        : liveConf < WEAK_CONFIDENCE
+                          ? "text-destructive"
+                          : liveConf < 0.7
+                            ? "text-amber-500"
+                            : "text-emerald-500"
+                    )}
+                  >
+                    {liveConf === null ? "measuring…" : `${Math.round(liveConf * 100)}%`}
+                  </span>
+                </div>
+                {liveConf !== null && liveConf < WEAK_CONFIDENCE && (
+                  <p className="text-[11px] text-destructive">
+                    Losing the object — you'll likely need to reset and re-pick.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Result quality once tracked */}
+            {trackingId !== pin.id && pin.track?.length ? (() => {
+              const q = trackQuality(pin.track);
+              if (!q) return null;
+              const tone =
+                q.health === "strong"
+                  ? "text-emerald-500"
+                  : q.health === "shaky"
+                    ? "text-amber-500"
+                    : "text-destructive";
+              return (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={cn("font-medium flex items-center gap-1", tone)}>
+                      {q.health === "strong" ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      ) : (
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                      )}
+                      {q.health === "strong"
+                        ? "Strong lock"
+                        : q.health === "shaky"
+                          ? "Shaky lock"
+                          : "Lost lock"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      avg {Math.round(q.average * 100)}% · low {Math.round(q.worst * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full",
+                        q.health === "strong"
+                          ? "bg-emerald-500"
+                          : q.health === "shaky"
+                            ? "bg-amber-500"
+                            : "bg-destructive"
+                      )}
+                      style={{ width: `${Math.round(q.average * 100)}%` }}
+                    />
+                  </div>
+                  {q.health !== "strong" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {q.lostAt !== null
+                        ? `Drifts around ${q.lostAt.toFixed(1)}s — reset and re-pick there for a cleaner lock.`
+                        : "Re-track from a frame where the object is bigger and sharper."}
+                    </p>
+                  )}
+                </div>
+              );
+            })() : null}
+
+            {/* Failure state */}
+            {trackingId !== pin.id && failedIds[pin.id] && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                <p className="text-[11px] text-destructive">{failedIds[pin.id]}</p>
               </div>
             )}
           </div>
+
 
 
 
