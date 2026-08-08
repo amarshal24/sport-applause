@@ -24,25 +24,8 @@ import FullScreenVideoModal from "@/components/FullScreenVideoModal";
 import { SecureImage } from "@/components/SecureMedia";
 import PostReactions from "@/components/PostReactions";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { SPORTS } from "@/constants/sports";
 
-const SPORTS_CATEGORIES = [
-  "All",
-  "Basketball",
-  "Football",
-  "Soccer",
-  "Baseball",
-  "Hockey",
-  "Tennis",
-  "Boxing",
-  "MMA",
-  "Golf",
-  "Cricket",
-  "Rugby",
-  "Volleyball",
-  "Track & Field",
-  "Swimming",
-  "Fitness",
-];
 
 interface Post {
   id: string;
@@ -92,7 +75,7 @@ interface FeedItem {
 
 const VideoFeed = () => {
   const { user } = useAuth();
-  const [selectedSport, setSelectedSport] = useState("All");
+  const [selectedSport, setSelectedSport] = useState("all");
   const [feedScope, setFeedScope] = useState<"following" | "everyone">("following");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
@@ -644,11 +627,11 @@ const VideoFeed = () => {
       })),
   ].sort((a, b) => +new Date(b.activityAt) - +new Date(a.activityAt));
 
-  const sportFiltered = selectedSport === "All"
+  const sportFiltered = selectedSport === "all"
     ? feedItems
-    : feedItems.filter(i => i.post.profiles?.sports?.some(s =>
-        s.toLowerCase().includes(selectedSport.toLowerCase())
-      ));
+    : feedItems.filter(i =>
+        i.post.profiles?.sports?.some(s => s.toLowerCase() === selectedSport.toLowerCase())
+      );
 
   const filteredPosts = feedScope === "following" && user
     ? sportFiltered.filter((i) => i.actorId === user.id || followingIds.has(i.actorId))
@@ -708,19 +691,36 @@ const VideoFeed = () => {
 
         <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-            {SPORTS_CATEGORIES.map((sport) => (
-              <Button
-                key={sport}
-                onClick={() => setSelectedSport(sport)}
-                size="sm"
-                variant={selectedSport === sport ? "default" : "outline"}
-                className={selectedSport === sport ? "bg-primary text-primary-foreground" : ""}
-              >
-                {sport}
-              </Button>
-            ))}
+            <Button
+              onClick={() => setSelectedSport("all")}
+              size="sm"
+              variant={selectedSport === "all" ? "default" : "outline"}
+              className="shrink-0"
+            >
+              All Sports
+            </Button>
+            {SPORTS.map((sport) => {
+              const Icon = sport.icon;
+              const active = selectedSport === sport.id;
+              return (
+                <Button
+                  key={sport.id}
+                  onClick={() => setSelectedSport(active ? "all" : sport.id)}
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  className="shrink-0 gap-2"
+                  title={sport.name}
+                  aria-label={sport.name}
+                  aria-pressed={active}
+                >
+                  <Icon className="h-4 w-4" />
+                  {sport.name}
+                </Button>
+              );
+            })}
           </div>
         </div>
+
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
