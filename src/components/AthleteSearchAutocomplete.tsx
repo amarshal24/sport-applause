@@ -58,6 +58,8 @@ const AthleteSearchAutocomplete = ({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { recents, addRecent, clearRecents } = useRecentSearches();
+
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), 300);
