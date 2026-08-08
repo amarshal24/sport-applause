@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { InlineSportIcon } from "@/components/SportIcon";
 
 interface Profile {
   id: string;
