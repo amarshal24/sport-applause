@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
+
 
 export interface AthleteSuggestion {
   id: string;
