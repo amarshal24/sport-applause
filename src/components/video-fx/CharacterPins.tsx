@@ -435,31 +435,62 @@ export const CharacterPinsPanel = ({
   const [howToOpen, setHowToOpen] = useState(false);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
-  const runTracking = async (pin: CharacterPin) => {
-    if (!videoSource) {
-      toast.error("Load a clip first, then place the FX on the object.");
-      return;
-    }
+  const trackedCount = pins.filter((p) => p.track?.length).length;
+
+  const trackPin = async (pin: CharacterPin) => {
     setTrackingId(pin.id);
     setTrackPct(0);
     try {
-      const track = await trackObject(videoSource, {
+      const track = await trackObject(videoSource!, {
         startTime: getCurrentTime?.() ?? 0,
         x: pin.x,
         y: pin.y,
         onProgress: setTrackPct,
       });
       onUpdate(pin.id, { track });
-      toast.success("Locked on! The effect now follows the object.");
+      return true;
     } catch (err) {
       console.error("Object tracking failed", err);
-      toast.error("Couldn't track that object — try a clearer spot on it.");
+      return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
     }
   };
+
+  const runTracking = async (pin: CharacterPin) => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the object.");
+      return;
+    }
+    const ok = await trackPin(pin);
+    if (ok) toast.success("Locked on! The effect now follows the object.");
+    else toast.error("Couldn't track that object — try a clearer spot on it.");
+  };
+
+  const runTrackAll = async () => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the objects.");
+      return;
+    }
+    const targets = pins.filter((p) => !p.track?.length);
+    if (targets.length === 0) {
+      toast.info("Every effect is already locked onto an object.");
+      return;
+    }
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      setBatch({ done: i, total: targets.length });
+      // eslint-disable-next-line no-await-in-loop
+      if (await trackPin(targets[i])) ok++;
+    }
+    setBatch(null);
+    if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Re-place the missed ones on a clearer spot.`);
+  };
+
 
   const {
     isPremium,
