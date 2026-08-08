@@ -156,6 +156,47 @@ const Fans = () => {
             placeholder="Search athletes by name or sport..."
           />
 
+          {/* Recent searches & filters */}
+          {recents.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Recent</p>
+                <button
+                  type="button"
+                  onClick={clearRecents}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recents.map((r) => (
+                  <Button
+                    key={`${r.type}-${r.id}`}
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => {
+                      if (r.type === "sport") {
+                        setSelectedSport(r.id);
+                        addRecent({ type: "sport", id: r.id, label: r.label });
+                      } else {
+                        navigate(`/athlete/${r.id}`);
+                      }
+                    }}
+                  >
+                    {r.type === "sport" ? (
+                      <InlineSportIcon sportId={r.id} />
+                    ) : (
+                      <History className="h-3.5 w-3.5" />
+                    )}
+                    {r.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* Role filter */}
           <div className="space-y-2">
