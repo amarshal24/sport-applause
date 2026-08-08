@@ -224,11 +224,11 @@ export const trackObject = async (
 export const sampleTrack = (
   track: TrackPoint[] | undefined,
   t: number
-): { x: number; y: number } | null => {
+): { x: number; y: number; c?: number } | null => {
   if (!track || track.length === 0) return null;
-  if (t <= track[0].t) return { x: track[0].x, y: track[0].y };
+  if (t <= track[0].t) return { x: track[0].x, y: track[0].y, c: track[0].c };
   const last = track[track.length - 1];
-  if (t >= last.t) return { x: last.x, y: last.y };
+  if (t >= last.t) return { x: last.x, y: last.y, c: last.c };
 
   let lo = 0;
   let hi = track.length - 1;

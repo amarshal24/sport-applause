@@ -3,6 +3,8 @@ import {
   trackObject,
   sampleTrack,
   shiftTrack,
+  trackQuality,
+  WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
 
