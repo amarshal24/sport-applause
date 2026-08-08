@@ -82,6 +82,8 @@ export interface TrackOptions {
   y: number;
   onProgress?: (pct: number, confidence?: number) => void;
   signal?: AbortSignal;
+  /** Only track forward from `startTime` (used when re-tracking after a loss). */
+  forwardOnly?: boolean;
 }
 
 /**
@@ -90,7 +92,7 @@ export interface TrackOptions {
  */
 export const trackObject = async (
   source: string | File | Blob,
-  { startTime, x, y, onProgress, signal }: TrackOptions
+  { startTime, x, y, onProgress, signal, forwardOnly }: TrackOptions
 ): Promise<TrackPoint[]> => {
   const objectUrl = typeof source === "string" ? null : URL.createObjectURL(source);
   const src = typeof source === "string" ? source : (objectUrl as string);
@@ -210,7 +212,7 @@ export const trackObject = async (
     };
 
     await run(1);
-    await run(-1);
+    if (!forwardOnly) await run(-1);
 
     points.sort((a, b) => a.t - b.t);
     onProgress?.(100);
@@ -285,3 +287,29 @@ export const shiftTrack = (track: TrackPoint[], dx: number, dy: number): TrackPo
     y: Math.max(0, Math.min(100, p.y + dy)),
     c: p.c,
   }));
+
+
+/**
+ * Merges a re-tracked segment into an existing track, keeping every sample
+ * before `fromTime` from the original path.
+ */
+export const mergeTracks = (
+  original: TrackPoint[] | undefined,
+  segment: TrackPoint[],
+  fromTime: number
+): TrackPoint[] => {
+  const head = (original ?? []).filter((p) => p.t < fromTime);
+  const tail = segment.filter((p) => p.t >= fromTime);
+  return [...head, ...tail].sort((a, b) => a.t - b.t);
+};
+
+/** Last sample before the tracker started losing the object. */
+export const lastGoodPoint = (track: TrackPoint[] | undefined): TrackPoint | null => {
+  if (!track?.length) return null;
+  let best: TrackPoint | null = null;
+  for (const p of track) {
+    if ((p.c ?? 1) < WEAK_CONFIDENCE) break;
+    best = p;
+  }
+  return best;
+};
