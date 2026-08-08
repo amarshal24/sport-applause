@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ export interface AppInvite {
 
 export const useFriends = () => {
   const { user } = useAuth();
+  const instanceId = useId();
   const { toast } = useToast();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Friend[]>([]);
@@ -337,7 +338,7 @@ export const useFriends = () => {
     if (!user) return;
 
     const channel = supabase
-      .channel('friendships-updates')
+      .channel(`friendships-updates-${instanceId}`)
       .on(
         'postgres_changes',
         {
@@ -354,7 +355,7 @@ export const useFriends = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchFriends]);
+  }, [user, fetchFriends, instanceId]);
 
   return {
     friends,

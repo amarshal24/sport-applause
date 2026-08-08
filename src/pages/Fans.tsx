@@ -17,6 +17,10 @@ import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FriendsPanel from "@/components/friends/FriendsPanel";
+import FriendChat from "@/components/friends/FriendChat";
+import UserActionsMenu from "@/components/friends/UserActionsMenu";
 
 
 type Role = "all" | "athlete" | "commentator" | "media";
@@ -50,6 +54,13 @@ const Fans = () => {
   const [results, setResults] = useState<FanProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const { recents, addRecent, clearRecents } = useRecentSearches();
+  const [tab, setTab] = useState<"discover" | "friends" | "messages">("discover");
+  const [chatWith, setChatWith] = useState<string | undefined>(undefined);
+
+  const openChat = (id: string) => {
+    setChatWith(id);
+    setTab("messages");
+  };
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -146,6 +157,22 @@ const Fans = () => {
             </div>
           </div>
 
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="discover">Discover</TabsTrigger>
+              <TabsTrigger value="friends">Friends</TabsTrigger>
+              <TabsTrigger value="messages">Messages</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="friends">
+              <FriendsPanel />
+            </TabsContent>
+
+            <TabsContent value="messages">
+              <FriendChat initialRecipientId={chatWith} />
+            </TabsContent>
+
+            <TabsContent value="discover" className="space-y-6">
           {/* Search with autocomplete */}
           <AthleteSearchAutocomplete
             value={query}
@@ -314,14 +341,17 @@ const Fans = () => {
                     )}
                   </div>
 
-                  <Button size="sm" variant="secondary" className="gap-1 shrink-0">
-                    <Heart className="h-4 w-4" />
-                    View
-                  </Button>
+                  <UserActionsMenu
+                    targetId={profile.id}
+                    targetName={profile.full_name || profile.username}
+                    onMessage={openChat}
+                  />
                 </Card>
               ))
             )}
           </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
