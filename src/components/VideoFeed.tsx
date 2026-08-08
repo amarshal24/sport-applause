@@ -1176,7 +1176,7 @@ const AutoPlayVideo = ({
 
     observer.observe(video);
     return () => observer.disconnect();
-  }, []);
+  }, [postId]);
 
   useEffect(() => {
     const video = videoRef.current;
