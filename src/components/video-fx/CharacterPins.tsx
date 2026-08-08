@@ -4,12 +4,14 @@ import {
   sampleTrack,
   shiftTrack,
   trackQuality,
+  mergeTracks,
+  lastGoodPoint,
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
 
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -450,34 +452,107 @@ export const CharacterPinsPanel = ({
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
   const [liveConf, setLiveConf] = useState<number | null>(null);
-  const [failedIds, setFailedIds] = useState<Record<string, string>>({});
+  const [autoRetry, setAutoRetry] = useState(false);
+  const [failedIds, setFailedIds] = useState<
+    Record<string, { message: string; lastGood: TrackPoint | null; partial?: TrackPoint[] }>
+  >({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
 
-  const trackPin = async (pin: CharacterPin) => {
+  const clearFailure = (id: string) =>
+    setFailedIds((f) => {
+      const { [id]: _drop, ...rest } = f;
+      return rest;
+    });
+
+  /** Runs the tracker once and returns the raw path (no state writes on the pin). */
+  const rawTrack = async (opts: {
+    startTime: number;
+    x: number;
+    y: number;
+    forwardOnly?: boolean;
+  }) =>
+    trackObject(videoSource!, {
+      ...opts,
+      onProgress: (pct, conf) => {
+        setTrackPct(pct);
+        if (typeof conf === "number") setLiveConf(conf);
+      },
+    });
+
+  /**
+   * Tracks a pin. When the lock is lost it automatically re-tracks once from
+   * the last good frame and merges the recovered segment in.
+   */
+  const trackPin = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
     setTrackingId(pin.id);
     setTrackPct(0);
     setLiveConf(null);
-    setFailedIds((f) => {
-      const { [pin.id]: _drop, ...rest } = f;
-      return rest;
-    });
+    clearFailure(pin.id);
     try {
-      const track = await trackObject(videoSource!, {
-        startTime: getCurrentTime?.() ?? 0,
-        x: pin.x,
-        y: pin.y,
-        onProgress: (pct, conf) => {
-          setTrackPct(pct);
-          if (typeof conf === "number") setLiveConf(conf);
-        },
-      });
-      const q = trackQuality(track);
+      const failure = failedIds[pin.id];
+      const seed =
+        mode === "from-last-good" && failure?.lastGood
+          ? failure.lastGood
+          : null;
+
+      let track = seed
+        ? mergeTracks(
+            failure?.partial,
+            await rawTrack({
+              startTime: seed.t,
+              x: seed.x,
+              y: seed.y,
+              forwardOnly: true,
+            }),
+            seed.t
+          )
+        : await rawTrack({
+            startTime: getCurrentTime?.() ?? 0,
+            x: pin.x,
+            y: pin.y,
+          });
+
+      let q = trackQuality(track);
+
+      // Auto re-track: recover from the last frame the tracker was confident on.
+      if (q && q.health !== "strong") {
+        const good = lastGoodPoint(track);
+        if (good && good.t > (track[0]?.t ?? 0)) {
+          setAutoRetry(true);
+          setTrackPct(0);
+          const recovered = mergeTracks(
+            track,
+            await rawTrack({
+              startTime: good.t,
+              x: good.x,
+              y: good.y,
+              forwardOnly: true,
+            }),
+            good.t
+          );
+          const rq = trackQuality(recovered);
+          if (rq && rq.average >= q.average) {
+            track = recovered;
+            q = rq;
+          }
+          setAutoRetry(false);
+        }
+      }
+
       if (!q || q.health === "lost") {
         setFailedIds((f) => ({
           ...f,
-          [pin.id]: "Lost the object — reset the tracker and pick a clearer, high-contrast spot.",
+          [pin.id]: {
+            message:
+              "Lost the object even after an auto re-track. Restart the tracker below.",
+            lastGood: lastGoodPoint(track),
+            partial: track,
+          },
         }));
         onUpdate(pin.id, { track: undefined });
         return false;
@@ -488,24 +563,31 @@ export const CharacterPinsPanel = ({
       console.error("Object tracking failed", err);
       setFailedIds((f) => ({
         ...f,
-        [pin.id]: err instanceof Error ? err.message : "Tracking failed on this clip.",
+        [pin.id]: {
+          message: err instanceof Error ? err.message : "Tracking failed on this clip.",
+          lastGood: null,
+        },
       }));
       return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
       setLiveConf(null);
+      setAutoRetry(false);
     }
   };
 
-  const runTracking = async (pin: CharacterPin) => {
+  const runTracking = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
     if (!videoSource) {
       toast.error("Load a clip first, then place the FX on the object.");
       return;
     }
-    const ok = await trackPin(pin);
+    const ok = await trackPin(pin, mode);
     if (ok) toast.success("Locked on! The effect now follows the object.");
-    else toast.error("Tracker lost the object — reset it and try a clearer spot.");
+    else toast.error("Still losing the object — try restarting from a clearer frame.");
   };
 
   const runTrackAll = async () => {
@@ -526,8 +608,9 @@ export const CharacterPinsPanel = ({
     }
     setBatch(null);
     if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
-    else toast.warning(`Locked ${ok}/${targets.length}. Reset the failed ones and re-place them.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Restart the failed ones below.`);
   };
+
 
 
 
@@ -818,7 +901,9 @@ export const CharacterPinsPanel = ({
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Match confidence</span>
+                  <span className="text-muted-foreground">
+                    {autoRetry ? "Auto re-tracking from last good frame…" : "Match confidence"}
+                  </span>
                   <span
                     className={cn(
                       "font-medium",
@@ -895,13 +980,48 @@ export const CharacterPinsPanel = ({
               );
             })() : null}
 
-            {/* Failure state */}
+            {/* Failure state + restart choice */}
             {trackingId !== pin.id && failedIds[pin.id] && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                <p className="text-[11px] text-destructive">{failedIds[pin.id]}</p>
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-destructive">{failedIds[pin.id].message}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {failedIds[pin.id].lastGood && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 text-xs gap-1"
+                      disabled={trackingId !== null}
+                      onClick={() => runTracking(pin, "from-last-good")}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Restart at {failedIds[pin.id].lastGood!.t.toFixed(1)}s
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    disabled={trackingId !== null}
+                    onClick={() => runTracking(pin, "fresh")}
+                  >
+                    <Crosshair className="h-3.5 w-3.5" />
+                    Restart from beginning
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => clearFailure(pin.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               </div>
             )}
+
           </div>
 
 
