@@ -3,11 +3,13 @@ import {
   trackObject,
   sampleTrack,
   shiftTrack,
+  trackQuality,
+  WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
 
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2 } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -294,6 +296,7 @@ export const CharacterPinsOverlay = ({
         const tracked = dragId === pin.id ? null : sampleTrack(pin.track, videoTime);
         const px = tracked?.x ?? pin.x;
         const py = tracked?.y ?? pin.y;
+        const weak = tracked ? (tracked.c ?? 1) < WEAK_CONFIDENCE : false;
         return (
           <div
             key={pin.id}
@@ -306,6 +309,17 @@ export const CharacterPinsOverlay = ({
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Tracker lost the object at this moment */}
+            {weak && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded-full border border-destructive bg-destructive/85 px-2 py-0.5 text-[10px] font-medium text-destructive-foreground pointer-events-none">
+                Tracking lost
+              </div>
+            )}
+            {weak && (
+              <div className="absolute -inset-4 -z-10 rounded-full border-2 border-dashed border-destructive/80 animate-pulse pointer-events-none" />
+            )}
+
+
 
             {/* Auras */}
             {pin.animation === "speed-lines" && (
@@ -435,6 +449,8 @@ export const CharacterPinsPanel = ({
   const [howToOpen, setHowToOpen] = useState(false);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
+  const [liveConf, setLiveConf] = useState<number | null>(null);
+  const [failedIds, setFailedIds] = useState<Record<string, string>>({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
@@ -442,21 +458,43 @@ export const CharacterPinsPanel = ({
   const trackPin = async (pin: CharacterPin) => {
     setTrackingId(pin.id);
     setTrackPct(0);
+    setLiveConf(null);
+    setFailedIds((f) => {
+      const { [pin.id]: _drop, ...rest } = f;
+      return rest;
+    });
     try {
       const track = await trackObject(videoSource!, {
         startTime: getCurrentTime?.() ?? 0,
         x: pin.x,
         y: pin.y,
-        onProgress: setTrackPct,
+        onProgress: (pct, conf) => {
+          setTrackPct(pct);
+          if (typeof conf === "number") setLiveConf(conf);
+        },
       });
+      const q = trackQuality(track);
+      if (!q || q.health === "lost") {
+        setFailedIds((f) => ({
+          ...f,
+          [pin.id]: "Lost the object — reset the tracker and pick a clearer, high-contrast spot.",
+        }));
+        onUpdate(pin.id, { track: undefined });
+        return false;
+      }
       onUpdate(pin.id, { track });
       return true;
     } catch (err) {
       console.error("Object tracking failed", err);
+      setFailedIds((f) => ({
+        ...f,
+        [pin.id]: err instanceof Error ? err.message : "Tracking failed on this clip.",
+      }));
       return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
+      setLiveConf(null);
     }
   };
 
@@ -467,7 +505,7 @@ export const CharacterPinsPanel = ({
     }
     const ok = await trackPin(pin);
     if (ok) toast.success("Locked on! The effect now follows the object.");
-    else toast.error("Couldn't track that object — try a clearer spot on it.");
+    else toast.error("Tracker lost the object — reset it and try a clearer spot.");
   };
 
   const runTrackAll = async () => {
@@ -488,8 +526,9 @@ export const CharacterPinsPanel = ({
     }
     setBatch(null);
     if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
-    else toast.warning(`Locked ${ok}/${targets.length}. Re-place the missed ones on a clearer spot.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Reset the failed ones and re-place them.`);
   };
+
 
 
   const {
@@ -730,14 +769,21 @@ export const CharacterPinsPanel = ({
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {pin.track?.length ? (
+                {pin.track?.length || failedIds[pin.id] ? (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 text-xs"
-                    onClick={() => onUpdate(pin.id, { track: undefined })}
+                    disabled={trackingId !== null}
+                    onClick={() => {
+                      onUpdate(pin.id, { track: undefined });
+                      setFailedIds((f) => {
+                        const { [pin.id]: _drop, ...rest } = f;
+                        return rest;
+                      });
+                    }}
                   >
-                    Unlock
+                    Reset
                   </Button>
                 ) : null}
                 <Button
@@ -761,15 +807,103 @@ export const CharacterPinsPanel = ({
                 </Button>
               </div>
             </div>
+
+            {/* Live progress + confidence while tracking */}
             {trackingId === pin.id && (
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{ width: `${trackPct}%` }}
-                />
+              <div className="space-y-1.5">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${trackPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Match confidence</span>
+                  <span
+                    className={cn(
+                      "font-medium",
+                      liveConf === null
+                        ? "text-muted-foreground"
+                        : liveConf < WEAK_CONFIDENCE
+                          ? "text-destructive"
+                          : liveConf < 0.7
+                            ? "text-amber-500"
+                            : "text-emerald-500"
+                    )}
+                  >
+                    {liveConf === null ? "measuring…" : `${Math.round(liveConf * 100)}%`}
+                  </span>
+                </div>
+                {liveConf !== null && liveConf < WEAK_CONFIDENCE && (
+                  <p className="text-[11px] text-destructive">
+                    Losing the object — you'll likely need to reset and re-pick.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Result quality once tracked */}
+            {trackingId !== pin.id && pin.track?.length ? (() => {
+              const q = trackQuality(pin.track);
+              if (!q) return null;
+              const tone =
+                q.health === "strong"
+                  ? "text-emerald-500"
+                  : q.health === "shaky"
+                    ? "text-amber-500"
+                    : "text-destructive";
+              return (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={cn("font-medium flex items-center gap-1", tone)}>
+                      {q.health === "strong" ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      ) : (
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                      )}
+                      {q.health === "strong"
+                        ? "Strong lock"
+                        : q.health === "shaky"
+                          ? "Shaky lock"
+                          : "Lost lock"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      avg {Math.round(q.average * 100)}% · low {Math.round(q.worst * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full",
+                        q.health === "strong"
+                          ? "bg-emerald-500"
+                          : q.health === "shaky"
+                            ? "bg-amber-500"
+                            : "bg-destructive"
+                      )}
+                      style={{ width: `${Math.round(q.average * 100)}%` }}
+                    />
+                  </div>
+                  {q.health !== "strong" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {q.lostAt !== null
+                        ? `Drifts around ${q.lostAt.toFixed(1)}s — reset and re-pick there for a cleaner lock.`
+                        : "Re-track from a frame where the object is bigger and sharper."}
+                    </p>
+                  )}
+                </div>
+              );
+            })() : null}
+
+            {/* Failure state */}
+            {trackingId !== pin.id && failedIds[pin.id] && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                <p className="text-[11px] text-destructive">{failedIds[pin.id]}</p>
               </div>
             )}
           </div>
+
 
 
 

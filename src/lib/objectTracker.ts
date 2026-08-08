@@ -10,6 +10,7 @@ export interface TrackPoint {
   t: number; // seconds
   x: number; // 0-100 %
   y: number; // 0-100 %
+  c?: number; // match confidence 0-1 (1 = perfect lock)
 }
 
 const SAMPLE_FPS = 10; // tracked samples per second
@@ -79,7 +80,7 @@ export interface TrackOptions {
   /** Picked point, 0-100 % of the frame. */
   x: number;
   y: number;
-  onProgress?: (pct: number) => void;
+  onProgress?: (pct: number, confidence?: number) => void;
   signal?: AbortSignal;
 }
 
@@ -145,8 +146,12 @@ export const trackObject = async (
     let tpl = patchAt(first, w, h, cx, cy);
 
     const points: TrackPoint[] = [
-      { t: anchor, x: (cx / w) * 100, y: (cy / h) * 100 },
+      { t: anchor, x: (cx / w) * 100, y: (cy / h) * 100, c: 1 },
     ];
+    const N = (PATCH * 2 + 1) ** 2;
+    // Root-mean-square pixel difference -> 0-1 confidence.
+    const toConfidence = (ssd: number) =>
+      Math.max(0, Math.min(1, 1 - Math.sqrt(ssd / N) / 45));
 
     const run = async (dir: 1 | -1) => {
       let px = Math.round((x / 100) * w);
@@ -190,7 +195,8 @@ export const trackObject = async (
 
         px = bx;
         py = by;
-        points.push({ t, x: (px / w) * 100, y: (py / h) * 100 });
+        const conf = toConfidence(best);
+        points.push({ t, x: (px / w) * 100, y: (py / h) * 100, c: conf });
 
         // Slowly adapt the template so lighting / rotation drift is tolerated
         const fresh = patchAt(g, w, h, px, py);
@@ -199,7 +205,7 @@ export const trackObject = async (
         }
 
         processed++;
-        onProgress?.(Math.min(99, Math.round((processed / total) * 100)));
+        onProgress?.(Math.min(99, Math.round((processed / total) * 100)), conf);
       }
     };
 
@@ -218,11 +224,11 @@ export const trackObject = async (
 export const sampleTrack = (
   track: TrackPoint[] | undefined,
   t: number
-): { x: number; y: number } | null => {
+): { x: number; y: number; c?: number } | null => {
   if (!track || track.length === 0) return null;
-  if (t <= track[0].t) return { x: track[0].x, y: track[0].y };
+  if (t <= track[0].t) return { x: track[0].x, y: track[0].y, c: track[0].c };
   const last = track[track.length - 1];
-  if (t >= last.t) return { x: last.x, y: last.y };
+  if (t >= last.t) return { x: last.x, y: last.y, c: last.c };
 
   let lo = 0;
   let hi = track.length - 1;
@@ -235,7 +241,40 @@ export const sampleTrack = (
   const b = track[hi];
   const span = b.t - a.t || 1;
   const k = (t - a.t) / span;
-  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+  return {
+    x: a.x + (b.x - a.x) * k,
+    y: a.y + (b.y - a.y) * k,
+    c: Math.min(a.c ?? 1, b.c ?? 1),
+  };
+};
+
+export type TrackHealth = "strong" | "shaky" | "lost";
+
+export interface TrackQuality {
+  /** Average confidence 0-1 across the clip. */
+  average: number;
+  /** Lowest confidence sample. */
+  worst: number;
+  /** Share of samples below the usable threshold (0-1). */
+  weakRatio: number;
+  health: TrackHealth;
+  /** Time (s) of the first sample where the tracker lost the object. */
+  lostAt: number | null;
+}
+
+export const WEAK_CONFIDENCE = 0.45;
+
+/** Summarises how well a track held onto its object. */
+export const trackQuality = (track: TrackPoint[] | undefined): TrackQuality | null => {
+  if (!track || track.length === 0) return null;
+  const cs = track.map((p) => p.c ?? 1);
+  const average = cs.reduce((a, b) => a + b, 0) / cs.length;
+  const worst = Math.min(...cs);
+  const weak = track.filter((p) => (p.c ?? 1) < WEAK_CONFIDENCE);
+  const weakRatio = weak.length / track.length;
+  const health: TrackHealth =
+    weakRatio > 0.3 || average < 0.4 ? "lost" : weakRatio > 0.08 || average < 0.62 ? "shaky" : "strong";
+  return { average, worst, weakRatio, health, lostAt: weak.length ? weak[0].t : null };
 };
 
 /** Shift a whole track by a delta (used when the user drags a locked pin). */
@@ -244,4 +283,5 @@ export const shiftTrack = (track: TrackPoint[], dx: number, dy: number): TrackPo
     t: p.t,
     x: Math.max(0, Math.min(100, p.x + dx)),
     y: Math.max(0, Math.min(100, p.y + dy)),
+    c: p.c,
   }));
