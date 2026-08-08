@@ -866,6 +866,8 @@ const VideoEditor = () => {
                         pins={characterPins.pins}
                         onMove={characterPins.move}
                         onRemove={characterPins.remove}
+                        videoSource={videoFile ?? videoUrl}
+                        getCurrentTime={() => videoRef.current?.currentTime ?? 0}
                       />
 
                       {/* Play/Pause Overlay */}
