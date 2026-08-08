@@ -4,6 +4,8 @@ import {
   sampleTrack,
   shiftTrack,
   trackQuality,
+  mergeTracks,
+  lastGoodPoint,
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
