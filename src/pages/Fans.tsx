@@ -16,6 +16,7 @@ import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
 
 
 type Role = "all" | "athlete" | "commentator" | "media";
@@ -48,6 +49,7 @@ const Fans = () => {
   const [selectedRole, setSelectedRole] = useState<Role>("all");
   const [results, setResults] = useState<FanProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const { recents, addRecent, clearRecents } = useRecentSearches();
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -188,7 +190,7 @@ const Fans = () => {
                     {r.type === "sport" ? (
                       <InlineSportIcon sportId={r.id} />
                     ) : (
-                      <History className="h-3.5 w-3.5" />
+                      <HistoryIcon className="h-3.5 w-3.5" />
                     )}
                     {r.label}
                   </Button>
@@ -240,7 +242,10 @@ const Fans = () => {
                     key={sport.id}
                     size="sm"
                     variant={active ? "default" : "outline"}
-                    onClick={() => setSelectedSport(sport.id)}
+                    onClick={() => {
+                      setSelectedSport(sport.id);
+                      addRecent({ type: "sport", id: sport.id, label: sport.name });
+                    }}
                     className="gap-2"
                   >
                     <Icon className="h-4 w-4" />
