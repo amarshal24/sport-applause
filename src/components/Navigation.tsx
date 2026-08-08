@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
 import { User, Search, Upload, LogOut, ChevronDown, Flame, Heart, Trophy, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
