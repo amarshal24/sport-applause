@@ -435,6 +435,8 @@ export const CharacterPinsPanel = ({
   const [howToOpen, setHowToOpen] = useState(false);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [trackPct, setTrackPct] = useState(0);
+  const [liveConf, setLiveConf] = useState<number | null>(null);
+  const [failedIds, setFailedIds] = useState<Record<string, string>>({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
@@ -442,21 +444,43 @@ export const CharacterPinsPanel = ({
   const trackPin = async (pin: CharacterPin) => {
     setTrackingId(pin.id);
     setTrackPct(0);
+    setLiveConf(null);
+    setFailedIds((f) => {
+      const { [pin.id]: _drop, ...rest } = f;
+      return rest;
+    });
     try {
       const track = await trackObject(videoSource!, {
         startTime: getCurrentTime?.() ?? 0,
         x: pin.x,
         y: pin.y,
-        onProgress: setTrackPct,
+        onProgress: (pct, conf) => {
+          setTrackPct(pct);
+          if (typeof conf === "number") setLiveConf(conf);
+        },
       });
+      const q = trackQuality(track);
+      if (!q || q.health === "lost") {
+        setFailedIds((f) => ({
+          ...f,
+          [pin.id]: "Lost the object — reset the tracker and pick a clearer, high-contrast spot.",
+        }));
+        onUpdate(pin.id, { track: undefined });
+        return false;
+      }
       onUpdate(pin.id, { track });
       return true;
     } catch (err) {
       console.error("Object tracking failed", err);
+      setFailedIds((f) => ({
+        ...f,
+        [pin.id]: err instanceof Error ? err.message : "Tracking failed on this clip.",
+      }));
       return false;
     } finally {
       setTrackingId(null);
       setTrackPct(0);
+      setLiveConf(null);
     }
   };
 
@@ -467,7 +491,7 @@ export const CharacterPinsPanel = ({
     }
     const ok = await trackPin(pin);
     if (ok) toast.success("Locked on! The effect now follows the object.");
-    else toast.error("Couldn't track that object — try a clearer spot on it.");
+    else toast.error("Tracker lost the object — reset it and try a clearer spot.");
   };
 
   const runTrackAll = async () => {
@@ -488,8 +512,9 @@ export const CharacterPinsPanel = ({
     }
     setBatch(null);
     if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
-    else toast.warning(`Locked ${ok}/${targets.length}. Re-place the missed ones on a clearer spot.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Reset the failed ones and re-place them.`);
   };
+
 
 
   const {
