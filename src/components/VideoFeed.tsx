@@ -75,7 +75,7 @@ interface FeedItem {
 
 const VideoFeed = () => {
   const { user } = useAuth();
-  const [selectedSport, setSelectedSport] = useState("All");
+  const [selectedSport, setSelectedSport] = useState("all");
   const [feedScope, setFeedScope] = useState<"following" | "everyone">("following");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
