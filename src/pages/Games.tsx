@@ -89,42 +89,6 @@ const Games = () => {
                   );
                 })}
               </div>
-
-              <div className="mt-12 glass-effect p-6 rounded-xl">
-                <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-primary" />
-                  {t("games.title")}
-                </h2>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Brain className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold">{t("games.sportsTrivia")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t("games.triviaDesc")}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Timer className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold">{t("games.guessTheSport")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t("games.guessDesc")}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold">{t("games.sportsAnimator")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t("games.animatorDesc")}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </>
           ) : (
             ActiveGame && <ActiveGame onBack={() => setSelectedGame(null)} />
