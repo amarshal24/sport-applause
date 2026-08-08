@@ -7,6 +7,8 @@ import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getSportIcon } from "@/constants/sports";
+import MusicRecommendations from "@/components/MusicRecommendations";
+
 
 interface Mood {
   id: string;
