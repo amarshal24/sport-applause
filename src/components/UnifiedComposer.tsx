@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } from "lucide-react";
 import MusicTrimmer from "@/components/MusicTrimmer";
+import SyncedClipPreview from "@/components/SyncedClipPreview";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
@@ -707,7 +709,9 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
 
             {/* Selected Music Preview */}
             {selectedMusic && !showTrimmer && (
-              <div className="mb-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between animate-fade-in">
+              <div className="mb-3 space-y-3 animate-fade-in">
+              <div className="p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                     <Music className="h-5 w-5 text-primary" />
@@ -745,7 +749,20 @@ const UnifiedComposer = ({ onPostCreated, initialMode = "post" }: UnifiedCompose
                   </Button>
                 </div>
               </div>
+
+              <SyncedClipPreview
+                videoUrl={videoPreview}
+                imageUrl={imagePreview}
+                audioUrl={customMusicPreview && selectedMusic.isCustom ? customMusicPreview : selectedMusic.url}
+                trimStart={selectedMusic.trimStart ?? 0}
+                trimEnd={selectedMusic.trimEnd ?? null}
+                fadeIn={selectedMusic.fadeIn ?? 0}
+                fadeOut={selectedMusic.fadeOut ?? 0}
+                aspect={postType === "story" ? "9 / 16" : "4 / 5"}
+              />
+              </div>
             )}
+
 
             {isSubmitting && uploadProgress > 0 && (
               <div className="mb-3">
