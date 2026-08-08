@@ -3,7 +3,7 @@ import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Trophy, Timer, Target, Zap, Sparkles } from "lucide-react";
+import { Brain, Target, Zap, Sparkles } from "lucide-react";
 import { useState } from "react";
 import SportsTrivia from "@/components/games/SportsTrivia";
 import GuessTheSport from "@/components/games/GuessTheSport";
