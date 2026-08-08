@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
-import { Heart, Search, Users, Mic, Camera, Trophy } from "lucide-react";
+import { Heart, Search, Users, Mic, Camera, Trophy, History as HistoryIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
 
 
 type Role = "all" | "athlete" | "commentator" | "media";
@@ -48,6 +49,7 @@ const Fans = () => {
   const [selectedRole, setSelectedRole] = useState<Role>("all");
   const [results, setResults] = useState<FanProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const { recents, addRecent, clearRecents } = useRecentSearches();
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -156,6 +158,47 @@ const Fans = () => {
             placeholder="Search athletes by name or sport..."
           />
 
+          {/* Recent searches & filters */}
+          {recents.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Recent</p>
+                <button
+                  type="button"
+                  onClick={clearRecents}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recents.map((r) => (
+                  <Button
+                    key={`${r.type}-${r.id}`}
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => {
+                      if (r.type === "sport") {
+                        setSelectedSport(r.id);
+                        addRecent({ type: "sport", id: r.id, label: r.label });
+                      } else {
+                        navigate(`/athlete/${r.id}`);
+                      }
+                    }}
+                  >
+                    {r.type === "sport" ? (
+                      <InlineSportIcon sportId={r.id} />
+                    ) : (
+                      <HistoryIcon className="h-3.5 w-3.5" />
+                    )}
+                    {r.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* Role filter */}
           <div className="space-y-2">
@@ -199,7 +242,10 @@ const Fans = () => {
                     key={sport.id}
                     size="sm"
                     variant={active ? "default" : "outline"}
-                    onClick={() => setSelectedSport(sport.id)}
+                    onClick={() => {
+                      setSelectedSport(sport.id);
+                      addRecent({ type: "sport", id: sport.id, label: sport.name });
+                    }}
                     className="gap-2"
                   >
                     <Icon className="h-4 w-4" />

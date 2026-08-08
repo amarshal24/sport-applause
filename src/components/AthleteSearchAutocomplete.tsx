@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
+
 
 export interface AthleteSuggestion {
   id: string;
@@ -56,6 +58,8 @@ const AthleteSearchAutocomplete = ({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { recents, addRecent, clearRecents } = useRecentSearches();
+
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), 300);
@@ -94,13 +98,32 @@ const AthleteSearchAutocomplete = ({
       .map((s) => ({ kind: "sport" as const, id: s.id, name: s.name }));
   }, [debounced]);
 
-  const items = useMemo(
-    () => [
-      ...sportMatches.map((s) => ({ type: "sport" as const, sport: s })),
-      ...people.map((p) => ({ type: "athlete" as const, athlete: p })),
-    ],
-    [sportMatches, people]
-  );
+  const hasQuery = debounced.length > 0;
+
+  const items = useMemo(() => {
+    if (!hasQuery) {
+      return recents.map((r) =>
+        r.type === "sport"
+          ? { type: "sport" as const, sport: { kind: "sport" as const, id: r.id, name: r.label }, recent: true }
+          : {
+              type: "athlete" as const,
+              athlete: {
+                id: r.id,
+                username: r.sublabel || r.label,
+                full_name: r.label,
+                avatar_url: r.avatar_url ?? null,
+                sports: r.sportId ? [r.sportId] : null,
+                role: null,
+              } as AthleteSuggestion,
+              recent: true,
+            }
+      );
+    }
+    return [
+      ...sportMatches.map((s) => ({ type: "sport" as const, sport: s, recent: false })),
+      ...people.map((p) => ({ type: "athlete" as const, athlete: p, recent: false })),
+    ];
+  }, [hasQuery, recents, sportMatches, people]);
 
   useEffect(() => setActive(0), [items.length]);
 
@@ -118,10 +141,19 @@ const AthleteSearchAutocomplete = ({
     if (!item) return;
     setOpen(false);
     if (item.type === "sport") {
+      addRecent({ type: "sport", id: item.sport.id, label: item.sport.name });
       if (onSelectSport) onSelectSport(item.sport.id);
       else navigate("/fans");
       setQuery("");
     } else {
+      addRecent({
+        type: "athlete",
+        id: item.athlete.id,
+        label: item.athlete.full_name || item.athlete.username,
+        sublabel: item.athlete.username,
+        avatar_url: item.athlete.avatar_url,
+        sportId: item.athlete.sports?.[0] ?? null,
+      });
       if (onSelectAthlete) onSelectAthlete(item.athlete);
       else navigate(`/athlete/${item.athlete.id}`);
     }
@@ -143,7 +175,8 @@ const AthleteSearchAutocomplete = ({
     }
   };
 
-  const showPanel = open && debounced.length > 0;
+  const showPanel = open && (hasQuery || items.length > 0);
+
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
@@ -179,6 +212,20 @@ const AthleteSearchAutocomplete = ({
 
       {showPanel && (
         <div className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-card/95 backdrop-blur shadow-lg overflow-hidden">
+          {!hasQuery && items.length > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Recent searches
+              </span>
+              <button
+                type="button"
+                onClick={() => clearRecents()}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            </div>
+          )}
           {loading && items.length === 0 ? (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
@@ -188,6 +235,7 @@ const AthleteSearchAutocomplete = ({
               No athletes or sports match "{debounced}"
             </div>
           ) : (
+
             <ul role="listbox" className="max-h-80 overflow-y-auto py-1">
               {items.map((item, i) => (
                 <li key={item.type === "sport" ? `s-${item.sport.id}` : `a-${item.athlete.id}`}>
