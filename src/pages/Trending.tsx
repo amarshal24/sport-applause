@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import TrendingBySport from "@/components/TrendingBySport";
 import { Lock as LockIcon, Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2, Sparkles, Trophy } from "lucide-react";
 import { usePremium } from "@/hooks/usePremium";
 import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
