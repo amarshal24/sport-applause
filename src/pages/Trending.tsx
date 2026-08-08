@@ -328,16 +328,25 @@ const Trending = () => {
 
           {/* Tabs: Trending / Top Plays */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsList className="grid w-full max-w-xl grid-cols-3 mb-6">
               <TabsTrigger value="trending" className="gap-2">
                 <Flame className="h-4 w-4" />
                 Trending
+              </TabsTrigger>
+              <TabsTrigger value="by-sport" className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                By Sport
               </TabsTrigger>
               <TabsTrigger value="top-plays" className="gap-2">
                 <Trophy className="h-4 w-4" />
                 Top Plays
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="by-sport" className="mt-0">
+              <TrendingBySport />
+            </TabsContent>
+
 
             {(["trending", "top-plays"] as const).map((tabKey) => {
               const list = tabKey === "trending" ? trendingVideos : topPlaysVideos;
