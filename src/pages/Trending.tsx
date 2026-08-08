@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import TrendingBySport from "@/components/TrendingBySport";
 import { Lock as LockIcon, Flame, Play, Pause, Heart, MessageCircle, Share2, Eye, TrendingUp, X, ThumbsUp, Bookmark, Volume2, VolumeX, Maximize, SkipBack, SkipForward, PictureInPicture2, Sparkles, Trophy } from "lucide-react";
 import { usePremium } from "@/hooks/usePremium";
 import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
@@ -104,12 +105,18 @@ const trendingVideos = [
 
 const playbackSpeeds = [0.5, 1, 1.5, 2];
 
+type TrendingTab = "trending" | "by-sport" | "top-plays";
+
+
 const Trending = () => {
   const { t } = useTranslation();
   const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
-  const [activeTab, setActiveTab] = useState<"trending" | "top-plays">(initialTab);
+  const tabFromParams = (v: string | null): TrendingTab =>
+    v === "top-plays" || v === "by-sport" ? v : "trending";
+  const initialTab = tabFromParams(searchParams.get("tab"));
+  const [activeTab, setActiveTab] = useState<TrendingTab>(initialTab);
+
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
   const [savedVideos, setSavedVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<typeof trendingVideos[0] | null>(null);
@@ -127,18 +134,16 @@ const Trending = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const tab = searchParams.get("tab") === "top-plays" ? "top-plays" : "trending";
-    setActiveTab(tab);
+    setActiveTab(tabFromParams(searchParams.get("tab")));
   }, [searchParams]);
 
   const handleTabChange = (val: string) => {
-    setActiveTab(val as "trending" | "top-plays");
-    if (val === "top-plays") {
-      setSearchParams({ tab: "top-plays" });
-    } else {
-      setSearchParams({});
-    }
+    const tab = tabFromParams(val);
+    setActiveTab(tab);
+    if (tab === "trending") setSearchParams({});
+    else setSearchParams({ tab });
   };
+
 
   const parseCount = (s: string) => {
     const n = parseFloat(s);
@@ -328,16 +333,25 @@ const Trending = () => {
 
           {/* Tabs: Trending / Top Plays */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsList className="grid w-full max-w-xl grid-cols-3 mb-6">
               <TabsTrigger value="trending" className="gap-2">
                 <Flame className="h-4 w-4" />
                 Trending
+              </TabsTrigger>
+              <TabsTrigger value="by-sport" className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                By Sport
               </TabsTrigger>
               <TabsTrigger value="top-plays" className="gap-2">
                 <Trophy className="h-4 w-4" />
                 Top Plays
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="by-sport" className="mt-0">
+              <TrendingBySport />
+            </TabsContent>
+
 
             {(["trending", "top-plays"] as const).map((tabKey) => {
               const list = tabKey === "trending" ? trendingVideos : topPlaysVideos;

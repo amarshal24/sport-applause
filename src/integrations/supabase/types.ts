@@ -933,6 +933,35 @@ export type Database = {
           },
         ]
       }
+      post_views: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           comments_count: number
@@ -1548,6 +1577,26 @@ export type Database = {
           invite_code: string
           inviter_id: string
           status: string
+        }[]
+      }
+      get_trending_highlights: {
+        Args: { _days?: number; _limit?: number; _sport?: string }
+        Returns: {
+          applause_count: number
+          avatar_url: string
+          comments_count: number
+          content: string
+          created_at: string
+          full_name: string
+          image_url: string
+          likes_count: number
+          post_id: string
+          score: number
+          sports: string[]
+          user_id: string
+          username: string
+          video_url: string
+          views_count: number
         }[]
       }
       has_fx_access: {

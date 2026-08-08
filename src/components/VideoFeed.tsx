@@ -1161,6 +1161,7 @@ const AutoPlayVideo = ({
         entries.forEach((entry) => {
           setIsVisible(entry.isIntersecting);
           if (entry.isIntersecting) {
+            import("@/lib/postViews").then(({ logPostView }) => logPostView(postId));
             video.play().catch(() => {
               // Autoplay blocked, user interaction needed
             });
@@ -1168,13 +1169,14 @@ const AutoPlayVideo = ({
             video.pause();
           }
         });
+
       },
       { threshold: 0.5 }
     );
 
     observer.observe(video);
     return () => observer.disconnect();
-  }, []);
+  }, [postId]);
 
   useEffect(() => {
     const video = videoRef.current;
