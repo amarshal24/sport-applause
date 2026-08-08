@@ -240,6 +240,9 @@ const Fans = () => {
                       <p className="font-semibold text-foreground truncate">
                         {profile.full_name || profile.username}
                       </p>
+                      {profile.sports?.[0] && (
+                        <InlineSportIcon sportId={profile.sports[0]} />
+                      )}
                       {roleBadge(profile.role)}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
