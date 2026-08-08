@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Music, ExternalLink } from "lucide-react";
+import { Music, ExternalLink, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { matchTrackToRecommendation } from "@/constants/musicLibrary";
+import { useEditorTrack } from "@/hooks/useEditorTrack";
+import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
+import { useToast } from "@/hooks/use-toast";
 
 interface MusicRecommendation {
   artist: string;
@@ -16,6 +20,10 @@ interface MusicRecommendationsProps {
 }
 
 const MusicRecommendations = ({ recommendations, loading }: MusicRecommendationsProps) => {
+  const { sendTrackToEditor } = useEditorTrack();
+  const { mood } = useMusicRecommendations();
+  const { toast } = useToast();
+
   if (loading) {
     return (
       <Card className="glass-effect animate-fade-in mb-6">
@@ -42,6 +50,17 @@ const MusicRecommendations = ({ recommendations, loading }: MusicRecommendations
     const query = encodeURIComponent(`${artist} ${title}`);
     window.open(`https://music.apple.com/search?term=${query}`, '_blank');
   };
+
+  const handleUseInClip = (song: MusicRecommendation) => {
+    const matched = matchTrackToRecommendation(song, mood);
+    sendTrackToEditor({ ...matched, sourceLabel: `${song.title} — ${song.artist}` });
+    toast({
+      title: "Track sent to the clip editor",
+      description: `"${song.title}" vibe matched to the licensed track "${matched.title}". Trim it, then post.`,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   return (
     <Card className="glass-effect animate-fade-in mb-6">
