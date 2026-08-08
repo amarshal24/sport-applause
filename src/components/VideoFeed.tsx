@@ -627,11 +627,11 @@ const VideoFeed = () => {
       })),
   ].sort((a, b) => +new Date(b.activityAt) - +new Date(a.activityAt));
 
-  const sportFiltered = selectedSport === "All"
+  const sportFiltered = selectedSport === "all"
     ? feedItems
-    : feedItems.filter(i => i.post.profiles?.sports?.some(s =>
-        s.toLowerCase().includes(selectedSport.toLowerCase())
-      ));
+    : feedItems.filter(i =>
+        i.post.profiles?.sports?.some(s => s.toLowerCase() === selectedSport.toLowerCase())
+      );
 
   const filteredPosts = feedScope === "following" && user
     ? sportFiltered.filter((i) => i.actorId === user.id || followingIds.has(i.actorId))
