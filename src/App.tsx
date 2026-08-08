@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,33 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import AccessibilityToolbar from "@/components/AccessibilityToolbar";
 import QuickNavMenu from "@/components/QuickNavMenu";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 
-// Lazy load pages for faster initial load
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Games = lazy(() => import("./pages/Games"));
-const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
-const VideoEditor = lazy(() => import("./pages/VideoEditor"));
-const Recruiting = lazy(() => import("./pages/Recruiting"));
-const Podcasts = lazy(() => import("./pages/Podcasts"));
-const LiveStreams = lazy(() => import("./pages/LiveStreams"));
-const StreamReplay = lazy(() => import("./pages/StreamReplay"));
-const Trending = lazy(() => import("./pages/Trending"));
-const Fans = lazy(() => import("./pages/Fans"));
-const TopPlays = lazy(() => import("./pages/TopPlays"));
-const WatchLater = lazy(() => import("./pages/WatchLater"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Messages = lazy(() => import("./pages/Messages"));
-const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
-const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
-const Search = lazy(() => import("./pages/Search"));
-const Marketplace = lazy(() => import("./pages/Marketplace"));
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
-const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
-
-const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
