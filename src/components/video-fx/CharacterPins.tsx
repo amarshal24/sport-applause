@@ -630,6 +630,64 @@ export const CharacterPinsPanel = ({
             </Button>
           </div>
 
+          {/* Lock onto the real object in the video */}
+          <div className="rounded-md border border-border bg-card/60 p-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-medium flex items-center gap-1.5">
+                  <Crosshair className="h-3.5 w-3.5 text-primary" />
+                  {pin.track?.length ? "Locked to object" : "Lock onto object"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {pin.track?.length
+                    ? "The effect follows this object through the clip."
+                    : "Drag the FX onto the ball or player, then lock it on."}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {pin.track?.length ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => onUpdate(pin.id, { track: undefined })}
+                  >
+                    Unlock
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant={pin.track?.length ? "outline" : "secondary"}
+                  className="h-7 text-xs gap-1"
+                  disabled={trackingId !== null}
+                  onClick={() => runTracking(pin)}
+                >
+                  {trackingId === pin.id ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {trackPct}%
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="h-3.5 w-3.5" />
+                      {pin.track?.length ? "Re-track" : "Track"}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            {trackingId === pin.id && (
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${trackPct}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+
+
           {/* Characters */}
           <div>
             <div className="flex items-center justify-between mb-2">
