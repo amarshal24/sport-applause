@@ -212,6 +212,20 @@ const AthleteSearchAutocomplete = ({
 
       {showPanel && (
         <div className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-card/95 backdrop-blur shadow-lg overflow-hidden">
+          {!hasQuery && items.length > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Recent searches
+              </span>
+              <button
+                type="button"
+                onClick={() => clearRecents()}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            </div>
+          )}
           {loading && items.length === 0 ? (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
@@ -221,6 +235,7 @@ const AthleteSearchAutocomplete = ({
               No athletes or sports match "{debounced}"
             </div>
           ) : (
+
             <ul role="listbox" className="max-h-80 overflow-y-auto py-1">
               {items.map((item, i) => (
                 <li key={item.type === "sport" ? `s-${item.sport.id}` : `a-${item.athlete.id}`}>
