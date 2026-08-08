@@ -105,6 +105,9 @@ const trendingVideos = [
 
 const playbackSpeeds = [0.5, 1, 1.5, 2];
 
+type TrendingTab = "trending" | "by-sport" | "top-plays";
+
+
 const Trending = () => {
   const { t } = useTranslation();
   const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
