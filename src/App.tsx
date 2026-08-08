@@ -78,7 +78,8 @@ const App = () => (
               <Route path="/trending" element={<Trending />} />
               <Route path="/fans" element={<Fans />} />
               <Route path="/top-plays" element={<TopPlays />} />
-              <Route path="/watch-later" element={<WatchLater />} />
+             <Route path="/watch-later" element={<WatchLater />} />
+             <Route path="/blocked" element={<BlockedUsers />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/messages" element={<Messages />} />
