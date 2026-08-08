@@ -1566,29 +1566,18 @@ export type Database = {
       }
     }
     Views: {
-      creator_pricing_public: {
-        Row: {
-          membership_enabled: boolean | null
-          membership_price_cents: number | null
-          tips_enabled: boolean | null
-          user_id: string | null
-        }
-        Insert: {
-          membership_enabled?: boolean | null
-          membership_price_cents?: number | null
-          tips_enabled?: boolean | null
-          user_id?: string | null
-        }
-        Update: {
-          membership_enabled?: boolean | null
-          membership_price_cents?: number | null
-          tips_enabled?: boolean | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_creator_pricing: {
+        Args: { _creator_ids: string[] }
+        Returns: {
+          membership_enabled: boolean
+          membership_price_cents: number
+          tips_enabled: boolean
+          user_id: string
+        }[]
+      }
       get_invite_by_code: {
         Args: { _invite_code: string }
         Returns: {
