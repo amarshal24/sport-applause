@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
-import { Heart, Search, Users, Mic, Camera, Trophy } from "lucide-react";
+import { Heart, Search, Users, Mic, Camera, Trophy, History as HistoryIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
