@@ -1,8 +1,33 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, Suspense, lazy } from "react";
+import {
+  trackObject,
+  sampleTrack,
+  shiftTrack,
+  trackQuality,
+  mergeTracks,
+  lastGoodPoint,
+  WEAK_CONFIDENCE,
+  type TrackPoint,
+} from "@/lib/objectTracker";
+
 import { Button } from "@/components/ui/button";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
+import { usePremium } from "@/hooks/usePremium";
+import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
+import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
+import { hasSkinTier, skinTierOf } from "@/constants/skinTiers";
+import { useSavedTracks, clipKeyOf } from "@/hooks/useSavedTracks";
+import { SavedTrackControls } from "@/components/video-fx/SavedTrackControls";
+
+
+import { Crown } from "lucide-react";
+
+const AnimationTutorialLazy = lazy(() =>
+  import("@/components/video-fx/AnimationTutorial").then((m) => ({ default: m.AnimationTutorial }))
+);
 
 // ===== Catalogs =====
 export const CHARACTER_ANIMATIONS = [
@@ -20,6 +45,27 @@ export const CHARACTER_ANIMATIONS = [
   { id: "comet", label: "Comet Trail", emoji: "☄️" },
   { id: "electric", label: "Electric Field", emoji: "🔌" },
   { id: "hoop-fire", label: "Fire Hoop", emoji: "🏀" },
+  // ===== PRO animation filters =====
+  { id: "inferno", label: "Inferno", emoji: "🔥", pro: true },
+  { id: "neon-trail", label: "Neon Trail", emoji: "🟢", pro: true },
+  { id: "shadow-clone", label: "Shadow Clone", emoji: "👥", pro: true },
+  { id: "galaxy", label: "Galaxy", emoji: "🌌", pro: true },
+  { id: "matrix", label: "Matrix", emoji: "🟩", pro: true },
+  { id: "gold-aura", label: "Gold Aura", emoji: "🥇", pro: true },
+  { id: "toxic-glow", label: "Toxic Glow", emoji: "☢️", pro: true },
+  { id: "frost-nova", label: "Frost Nova", emoji: "🧊", pro: true },
+  { id: "sonic-boom", label: "Sonic Boom", emoji: "🔊", pro: true },
+  { id: "confetti-burst", label: "Confetti", emoji: "🎉", pro: true },
+  { id: "plasma", label: "Plasma Burn", emoji: "🟣", pro: true },
+  { id: "thunder-crown", label: "Thunder Crown", emoji: "👑", pro: true },
+  { id: "afterimage", label: "Afterimage", emoji: "🎞️", pro: true },
+  { id: "lava-steps", label: "Lava Steps", emoji: "🌋", pro: true },
+  { id: "bubble-trail", label: "Bubble Trail", emoji: "🫧", pro: true },
+  { id: "wind-tunnel", label: "Wind Tunnel", emoji: "🌬️", pro: true },
+  { id: "star-shower", label: "Star Shower", emoji: "🌠", pro: true },
+  { id: "hologram", label: "Hologram", emoji: "🛰️", pro: true },
+  { id: "blood-moon", label: "Blood Moon", emoji: "🌑", pro: true },
+  { id: "diamond-dust", label: "Diamond Dust", emoji: "💎", pro: true },
 ] as const;
 
 // Character skins (persons)
@@ -38,6 +84,27 @@ export const CHARACTER_SKINS = [
   { id: "ghost", label: "Ghost", emoji: "👻", kind: "character" },
   { id: "cowboy", label: "Cowboy", emoji: "🤠", kind: "character" },
   { id: "king", label: "King", emoji: "👑", kind: "character" },
+  // PRO characters
+  { id: "dragon", label: "Dragon", emoji: "🐲", kind: "character", pro: true },
+  { id: "vampire", label: "Vampire", emoji: "🧛", kind: "character", pro: true },
+  { id: "zombie", label: "Zombie", emoji: "🧟", kind: "character", pro: true },
+  { id: "cyborg", label: "Cyborg", emoji: "🦾", kind: "character", pro: true },
+  { id: "genie", label: "Genie", emoji: "🧞", kind: "character", pro: true },
+  { id: "merman", label: "Merfolk", emoji: "🧜", kind: "character", pro: true },
+  { id: "elf", label: "Elf", emoji: "🧝", kind: "character", pro: true },
+  { id: "astronaut", label: "Astronaut", emoji: "🧑‍🚀", kind: "character", pro: true },
+  { id: "gorilla", label: "Gorilla", emoji: "🦍", kind: "character", pro: true },
+  { id: "cheetah", label: "Cheetah", emoji: "🐆", kind: "character", pro: true },
+  { id: "eagle", label: "Eagle", emoji: "🦅", kind: "character", pro: true },
+  { id: "bull", label: "Bull", emoji: "🐂", kind: "character", pro: true },
+  { id: "shark", label: "Shark", emoji: "🦈", kind: "character", pro: true },
+  { id: "wolf", label: "Wolf", emoji: "🐺", kind: "character", pro: true },
+  { id: "tiger", label: "Tiger", emoji: "🐯", kind: "character", pro: true },
+  { id: "phoenix", label: "Phoenix", emoji: "🔥", kind: "character", pro: true },
+  { id: "samurai", label: "Samurai", emoji: "🗡️", kind: "character", pro: true },
+  { id: "knight", label: "Knight", emoji: "🛡️", kind: "character", pro: true },
+  { id: "pirate", label: "Pirate", emoji: "🏴‍☠️", kind: "character", pro: true },
+  { id: "mecha", label: "Mecha Suit", emoji: "🤖", kind: "character", pro: true },
   // Objects
   { id: "basketball", label: "Basketball", emoji: "🏀", kind: "object" },
   { id: "football", label: "Football", emoji: "🏈", kind: "object" },
@@ -49,7 +116,70 @@ export const CHARACTER_SKINS = [
   { id: "trophy", label: "Trophy", emoji: "🏆", kind: "object" },
   { id: "medal", label: "Medal", emoji: "🥇", kind: "object" },
   { id: "flag", label: "Flag", emoji: "🏁", kind: "object" },
+  { id: "sharkfin", label: "Shark Fin", emoji: "🦈", kind: "object" },
+  { id: "flame", label: "Flame", emoji: "🔥", kind: "object" },
+  { id: "smokepuff", label: "Smoke Puff", emoji: "💨", kind: "object" },
+  { id: "bolt", label: "Lightning Bolt", emoji: "⚡", kind: "object" },
+  { id: "wave", label: "Wave", emoji: "🌊", kind: "object" },
+  { id: "rocket", label: "Rocket", emoji: "🚀", kind: "object" },
+  // PRO objects
+  { id: "meteor", label: "Meteor", emoji: "☄️", kind: "object", pro: true },
+  { id: "tornado", label: "Tornado", emoji: "🌪️", kind: "object", pro: true },
+  { id: "crown", label: "Crown", emoji: "👑", kind: "object", pro: true },
+  { id: "diamond", label: "Diamond", emoji: "💎", kind: "object", pro: true },
+  { id: "moneybag", label: "Money Bag", emoji: "💰", kind: "object", pro: true },
+  { id: "explosion", label: "Explosion", emoji: "💥", kind: "object", pro: true },
+  { id: "ufo", label: "UFO", emoji: "🛸", kind: "object", pro: true },
+  { id: "portalring", label: "Portal Ring", emoji: "🌀", kind: "object", pro: true },
+  { id: "snowflake", label: "Snowflake", emoji: "❄️", kind: "object", pro: true },
+  { id: "skull", label: "Skull", emoji: "💀", kind: "object", pro: true },
+  { id: "guitar", label: "Guitar", emoji: "🎸", kind: "object", pro: true },
+  { id: "clock", label: "Time Stop", emoji: "⏱️", kind: "object", pro: true },
+  { id: "cash", label: "Cash Stack", emoji: "💵", kind: "object", pro: true },
+  { id: "ring", label: "Championship Ring", emoji: "💍", kind: "object", pro: true },
+  { id: "jet", label: "Jet Boost", emoji: "✈️", kind: "object", pro: true },
+  { id: "comet-obj", label: "Comet", emoji: "🌠", kind: "object", pro: true },
+  { id: "galaxy-orb", label: "Galaxy Orb", emoji: "🪐", kind: "object", pro: true },
+  { id: "bomb", label: "Bomb Drop", emoji: "💣", kind: "object", pro: true },
+  { id: "wings", label: "Wings", emoji: "🪽", kind: "object", pro: true },
+  { id: "halo", label: "Halo", emoji: "😇", kind: "object", pro: true },
+  { id: "trident", label: "Trident", emoji: "🔱", kind: "object", pro: true },
 ] as const;
+
+// One-tap combos: object/character + animation
+export const FX_PRESETS = [
+  { id: "ball-on-fire", label: "Ball On Fire", emoji: "🔥", skin: "basketball", animation: "fire-aura", hint: "Basketball lit on fire" },
+  { id: "flaming-hoop", label: "Flaming Hoop", emoji: "🏀", skin: "hoop", animation: "hoop-fire", hint: "Fire through the net" },
+  { id: "smoke-trail", label: "Smoke Trail", emoji: "💨", skin: "smokepuff", animation: "smoke", hint: "Smoke behind a runner" },
+  { id: "shark-swim", label: "Shark Fin", emoji: "🦈", skin: "sharkfin", animation: "speed-lines", hint: "Fin follows the swimmer" },
+  { id: "speed-demon", label: "Speed Demon", emoji: "🏃", skin: "athlete", animation: "speed-lines", hint: "Blur lines on a sprinter" },
+  { id: "electric-play", label: "Electric", emoji: "⚡", skin: "bolt", animation: "electric", hint: "Electric field burst" },
+  { id: "comet-ball", label: "Comet Ball", emoji: "☄️", skin: "football", animation: "comet", hint: "Trail behind the ball" },
+  { id: "ice-cold", label: "Ice Cold", emoji: "❄️", skin: "champ", animation: "ice", hint: "Freeze the moment" },
+  // PRO one-tap combos
+  { id: "dragon-fire", label: "Dragon Fire", emoji: "🐲", skin: "dragon", animation: "inferno", hint: "Breathe pure inferno", pro: true },
+  { id: "meteor-dunk", label: "Meteor Dunk", emoji: "☄️", skin: "meteor", animation: "inferno", hint: "Meteor slam on the rim", pro: true },
+  { id: "cheetah-blur", label: "Cheetah Blur", emoji: "🐆", skin: "cheetah", animation: "neon-trail", hint: "Neon speed streaks", pro: true },
+  { id: "shadow-run", label: "Shadow Clones", emoji: "👥", skin: "athlete", animation: "shadow-clone", hint: "Triple-image afterburn", pro: true },
+  { id: "galaxy-jam", label: "Galaxy Jam", emoji: "🌌", skin: "basketball", animation: "galaxy", hint: "Cosmic ball trail", pro: true },
+  { id: "gold-mode", label: "Gold Mode", emoji: "🥇", skin: "crown", animation: "gold-aura", hint: "MVP golden aura", pro: true },
+  { id: "twister", label: "Twister", emoji: "🌪️", skin: "tornado", animation: "sonic-boom", hint: "Spin-cycle blowout", pro: true },
+  { id: "freeze-frame", label: "Freeze Frame", emoji: "🧊", skin: "snowflake", animation: "frost-nova", hint: "Ice-blast the moment", pro: true },
+  { id: "matrix-move", label: "Matrix Move", emoji: "🟩", skin: "clock", animation: "matrix", hint: "Bullet-time code rain", pro: true },
+  { id: "cash-out", label: "Cash Out", emoji: "💰", skin: "moneybag", animation: "confetti-burst", hint: "Confetti money drop", pro: true },
+  { id: "phoenix-rise", label: "Phoenix Rise", emoji: "🔥", skin: "phoenix", animation: "lava-steps", hint: "Rise in flames", pro: true },
+  { id: "wolf-pack", label: "Wolf Pack", emoji: "🐺", skin: "wolf", animation: "afterimage", hint: "Ghost-trail sprint", pro: true },
+  { id: "shark-attack", label: "Shark Attack", emoji: "🦈", skin: "shark", animation: "bubble-trail", hint: "Bubbles in the lane", pro: true },
+  { id: "jet-speed", label: "Jet Speed", emoji: "✈️", skin: "jet", animation: "wind-tunnel", hint: "Afterburner blast", pro: true },
+  { id: "ring-night", label: "Ring Night", emoji: "💍", skin: "ring", animation: "diamond-dust", hint: "Championship shine", pro: true },
+  { id: "holo-play", label: "Holo Play", emoji: "🛰️", skin: "mecha", animation: "hologram", hint: "Futuristic scan", pro: true },
+  { id: "star-dunk", label: "Star Dunk", emoji: "🌠", skin: "comet-obj", animation: "star-shower", hint: "Falling star slam", pro: true },
+  { id: "plasma-hit", label: "Plasma Hit", emoji: "🟣", skin: "bomb", animation: "plasma", hint: "Plasma impact burn", pro: true },
+  { id: "king-strike", label: "King Strike", emoji: "👑", skin: "crown", animation: "thunder-crown", hint: "Thunder over the king", pro: true },
+  { id: "blood-moon-run", label: "Blood Moon", emoji: "🌑", skin: "tiger", animation: "blood-moon", hint: "Dark red intensity", pro: true },
+] as const;
+
+
 
 export type CharacterAnimationId = (typeof CHARACTER_ANIMATIONS)[number]["id"];
 export type CharacterSkinId = (typeof CHARACTER_SKINS)[number]["id"];
@@ -60,7 +190,10 @@ export interface CharacterPin {
   y: number;
   skin: CharacterSkinId;
   animation: CharacterAnimationId;
+  /** Motion path when the pin is locked onto a real object in the clip. */
+  track?: TrackPoint[];
 }
+
 
 export const MAX_PINS = 6;
 
@@ -76,6 +209,34 @@ interface OverlayProps {
   onPlace?: (x: number, y: number) => void;
 }
 
+/** Follows the playback time of the <video> rendered next to the overlay. */
+const useNeighbourVideoTime = (containerRef: React.RefObject<HTMLDivElement>) => {
+  const [time, setTime] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const findVideo = (): HTMLVideoElement | null => {
+      let node: HTMLElement | null = containerRef.current?.parentElement ?? null;
+      for (let i = 0; i < 3 && node; i++) {
+        const v = node.querySelector("video");
+        if (v) return v;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const loop = () => {
+      const v = findVideo();
+      if (v) setTime(v.currentTime);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [containerRef]);
+
+  return time;
+};
+
 export const CharacterPinsOverlay = ({
   pins,
   onMove,
@@ -85,6 +246,7 @@ export const CharacterPinsOverlay = ({
 }: OverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const videoTime = useNeighbourVideoTime(containerRef);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
@@ -129,24 +291,41 @@ export const CharacterPinsOverlay = ({
     >
       {placeMode && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg pointer-events-none animate-pulse">
-          Tap the video to place ({pins.length}/{MAX_PINS})
+          Tap the object in the video ({pins.length}/{MAX_PINS})
         </div>
       )}
       {pins.map((pin) => {
         const skin = getSkin(pin.skin);
         const isObject = skin.kind === "object";
+        // When the pin is locked onto an object, follow the tracked path.
+        const tracked = dragId === pin.id ? null : sampleTrack(pin.track, videoTime);
+        const px = tracked?.x ?? pin.x;
+        const py = tracked?.y ?? pin.y;
+        const weak = tracked ? (tracked.c ?? 1) < WEAK_CONFIDENCE : false;
         return (
           <div
             key={pin.id}
             className="absolute pointer-events-auto select-none group cursor-grab active:cursor-grabbing"
             style={{
-              left: `${pin.x}%`,
-              top: `${pin.y}%`,
+              left: `${px}%`,
+              top: `${py}%`,
               transform: "translate(-50%, -50%)",
             }}
             onPointerDown={(e) => handlePointerDown(e, pin.id)}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Tracker lost the object at this moment */}
+            {weak && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded-full border border-destructive bg-destructive/85 px-2 py-0.5 text-[10px] font-medium text-destructive-foreground pointer-events-none">
+                Tracking lost
+              </div>
+            )}
+            {weak && (
+              <div className="absolute -inset-4 -z-10 rounded-full border-2 border-dashed border-destructive/80 animate-pulse pointer-events-none" />
+            )}
+
+
+
             {/* Auras */}
             {pin.animation === "speed-lines" && (
               <div className="absolute inset-0 -z-10 flex items-center justify-center">
@@ -252,14 +431,250 @@ export const CharacterPinsOverlay = ({
 // ===== Panel =====
 interface PanelProps {
   pins: CharacterPin[];
-  onAdd: () => void;
+  onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
+  /** Clip being edited — enables "lock onto object" tracking. */
+  videoSource?: File | Blob | string | null;
+  /** Current playhead position of the preview, in seconds. */
+  getCurrentTime?: () => number;
 }
 
-export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelProps) => {
+export const CharacterPinsPanel = ({
+  pins,
+  onAdd,
+  onUpdate,
+  onRemove,
+  videoSource,
+  getCurrentTime,
+}: PanelProps) => {
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
+  const full = pins.length >= MAX_PINS;
+  const [howToOpen, setHowToOpen] = useState(false);
+  const [trackingId, setTrackingId] = useState<string | null>(null);
+  const [trackPct, setTrackPct] = useState(0);
+  const [liveConf, setLiveConf] = useState<number | null>(null);
+  const [autoRetry, setAutoRetry] = useState(false);
+  const [failedIds, setFailedIds] = useState<
+    Record<string, { message: string; lastGood: TrackPoint | null; partial?: TrackPoint[] }>
+  >({});
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+
+  const trackedCount = pins.filter((p) => p.track?.length).length;
+
+  // ===== Saved tracking data (path + scores) reusable across re-edits =====
+  const { tracks: savedTracks, saveTrack, deleteTrack } = useSavedTracks();
+  const clipKey = clipKeyOf(videoSource);
+
+  const handleSaveTrack = async (pin: CharacterPin, idx: number) => {
+    if (!pin.track?.length) return;
+    const q = trackQuality(pin.track);
+    const saved = await saveTrack({
+      label: `${getSkin(pin.skin).label} · Object ${idx + 1}`,
+      clipKey: clipKey ?? `session:${Date.now()}`,
+      clipDuration: pin.track[pin.track.length - 1]?.t ?? null,
+      path: pin.track,
+      avgConfidence: q?.average ?? null,
+      worstConfidence: q?.worst ?? null,
+      health: q?.health ?? null,
+    });
+    if (saved) toast.success("Track saved — reuse it on any effect later.");
+    else toast.error("Couldn't save this track. Try again.");
+  };
+
+  const applySavedTrack = (pin: CharacterPin, path: TrackPoint[]) => {
+    clearFailure(pin.id);
+    onUpdate(pin.id, { track: path });
+    toast.success("Saved track applied — pick any animation filter to re-render.");
+  };
+
+
+  const clearFailure = (id: string) =>
+    setFailedIds((f) => {
+      const { [id]: _drop, ...rest } = f;
+      return rest;
+    });
+
+  /** Runs the tracker once and returns the raw path (no state writes on the pin). */
+  const rawTrack = async (opts: {
+    startTime: number;
+    x: number;
+    y: number;
+    forwardOnly?: boolean;
+  }) =>
+    trackObject(videoSource!, {
+      ...opts,
+      onProgress: (pct, conf) => {
+        setTrackPct(pct);
+        if (typeof conf === "number") setLiveConf(conf);
+      },
+    });
+
+  /**
+   * Tracks a pin. When the lock is lost it automatically re-tracks once from
+   * the last good frame and merges the recovered segment in.
+   */
+  const trackPin = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
+    setTrackingId(pin.id);
+    setTrackPct(0);
+    setLiveConf(null);
+    clearFailure(pin.id);
+    try {
+      const failure = failedIds[pin.id];
+      const seed =
+        mode === "from-last-good" && failure?.lastGood
+          ? failure.lastGood
+          : null;
+
+      let track = seed
+        ? mergeTracks(
+            failure?.partial,
+            await rawTrack({
+              startTime: seed.t,
+              x: seed.x,
+              y: seed.y,
+              forwardOnly: true,
+            }),
+            seed.t
+          )
+        : await rawTrack({
+            startTime: getCurrentTime?.() ?? 0,
+            x: pin.x,
+            y: pin.y,
+          });
+
+      let q = trackQuality(track);
+
+      // Auto re-track: recover from the last frame the tracker was confident on.
+      if (q && q.health !== "strong") {
+        const good = lastGoodPoint(track);
+        if (good && good.t > (track[0]?.t ?? 0)) {
+          setAutoRetry(true);
+          setTrackPct(0);
+          const recovered = mergeTracks(
+            track,
+            await rawTrack({
+              startTime: good.t,
+              x: good.x,
+              y: good.y,
+              forwardOnly: true,
+            }),
+            good.t
+          );
+          const rq = trackQuality(recovered);
+          if (rq && rq.average >= q.average) {
+            track = recovered;
+            q = rq;
+          }
+          setAutoRetry(false);
+        }
+      }
+
+      if (!q || q.health === "lost") {
+        setFailedIds((f) => ({
+          ...f,
+          [pin.id]: {
+            message:
+              "Lost the object even after an auto re-track. Restart the tracker below.",
+            lastGood: lastGoodPoint(track),
+            partial: track,
+          },
+        }));
+        onUpdate(pin.id, { track: undefined });
+        return false;
+      }
+      onUpdate(pin.id, { track });
+      return true;
+    } catch (err) {
+      console.error("Object tracking failed", err);
+      setFailedIds((f) => ({
+        ...f,
+        [pin.id]: {
+          message: err instanceof Error ? err.message : "Tracking failed on this clip.",
+          lastGood: null,
+        },
+      }));
+      return false;
+    } finally {
+      setTrackingId(null);
+      setTrackPct(0);
+      setLiveConf(null);
+      setAutoRetry(false);
+    }
+  };
+
+  const runTracking = async (
+    pin: CharacterPin,
+    mode: "fresh" | "from-last-good" = "fresh"
+  ) => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the object.");
+      return;
+    }
+    const ok = await trackPin(pin, mode);
+    if (ok) toast.success("Locked on! The effect now follows the object.");
+    else toast.error("Still losing the object — try restarting from a clearer frame.");
+  };
+
+  const runTrackAll = async () => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then place the FX on the objects.");
+      return;
+    }
+    const targets = pins.filter((p) => !p.track?.length);
+    if (targets.length === 0) {
+      toast.info("Every effect is already locked onto an object.");
+      return;
+    }
+    let ok = 0;
+    for (let i = 0; i < targets.length; i++) {
+      setBatch({ done: i, total: targets.length });
+      // eslint-disable-next-line no-await-in-loop
+      if (await trackPin(targets[i])) ok++;
+    }
+    setBatch(null);
+    if (ok === targets.length) toast.success(`Locked ${ok} object${ok > 1 ? "s" : ""} — each keeps its own effect.`);
+    else toast.warning(`Locked ${ok}/${targets.length}. Restart the failed ones below.`);
+  };
+
+
+
+
+  const {
+    isPremium,
+    skinTier,
+    upgradeOpen,
+    requestUpgrade,
+    closeUpgrade,
+    skinStoreOpen,
+    requestSkinTier,
+    closeSkinStore,
+  } = usePremium();
+
+  const locked = (item: { pro?: boolean } | Record<string, unknown>) =>
+    !!(item as { pro?: boolean }).pro && !isPremium;
+  const guard = (item: { pro?: boolean } | Record<string, unknown>, action: () => void) => {
+    if (locked(item)) {
+      requestUpgrade();
+      return;
+    }
+    action();
+  };
+
+  // Skins are sold in tiers (Starter / Pro / Elite) — gate them separately.
+  const skinLocked = (id: string) => !hasSkinTier(skinTier, skinTierOf(id));
+  const skinGuard = (id: string, action: () => void) => {
+    if (skinLocked(id)) {
+      requestSkinTier();
+      return;
+    }
+    action();
+  };
+
 
   return (
     <div className="space-y-4">
@@ -270,14 +685,130 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
             Character & Object FX
           </p>
           <p className="text-xs text-muted-foreground">
-            Add up to {MAX_PINS}. Drag on the video to reposition.
+            Add up to {MAX_PINS}. Track each object separately — every FX keeps its own skin & animation.
           </p>
         </div>
-        <Button size="sm" onClick={onAdd} disabled={pins.length >= MAX_PINS} className="gap-1">
+        <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
           <Plus className="h-4 w-4" />
           Add ({pins.length}/{MAX_PINS})
         </Button>
       </div>
+
+      {/* Multi-object tracking */}
+      {pins.length > 1 && (
+        <div className="rounded-lg border border-border bg-card/60 p-2.5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-medium flex items-center gap-1.5">
+                <Crosshair className="h-3.5 w-3.5 text-primary" />
+                Multi-object tracking
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {trackedCount}/{pins.length} effects locked onto an object.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 text-xs gap-1 shrink-0"
+              disabled={trackingId !== null}
+              onClick={runTrackAll}
+            >
+              {batch ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {batch.done + 1}/{batch.total}
+                </>
+              ) : (
+                <>
+                  <Crosshair className="h-3.5 w-3.5" />
+                  Track all
+                </>
+              )}
+            </Button>
+          </div>
+          {batch && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${Math.round(((batch.done + trackPct / 100) / batch.total) * 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+
+
+      {/* Video preview: how to customize your video */}
+      <button
+        type="button"
+        onClick={() => setHowToOpen(true)}
+        className="w-full rounded-lg border border-border bg-card/60 p-2.5 flex items-center gap-3 text-left hover:bg-accent/60 transition-colors"
+      >
+        <div className="h-10 w-16 rounded-md overflow-hidden bg-muted relative shrink-0">
+          <video
+            src={(tutorialVideo as { url?: string })?.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+          />
+          <span className="absolute inset-0 flex items-center justify-center bg-background/40">
+            <PlayCircle className="h-5 w-5 text-primary" />
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Watch: customize your video</p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            60-sec preview — filters, characters & saving
+          </p>
+        </div>
+      </button>
+
+      {howToOpen && (
+        <Suspense fallback={null}>
+          <AnimationTutorialLazy open={howToOpen} onOpenChange={setHowToOpen} />
+        </Suspense>
+      )}
+
+
+      {/* One-tap FX combos */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          One-tap effects
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {FX_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              disabled={full && !locked(p)}
+              onClick={() =>
+                guard(p, () =>
+                  skinGuard(p.skin, () =>
+                    onAdd({ skin: p.skin as CharacterSkinId, animation: p.animation as CharacterAnimationId })
+                  )
+                )
+              }
+
+              className={cn(
+                "relative rounded-lg border border-border bg-card/60 p-2 text-left transition-colors hover:bg-accent/60",
+                full && !locked(p) && "opacity-50 pointer-events-none",
+                locked(p) && "border-primary/40"
+              )}
+            >
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <span>{p.emoji}</span>
+                {p.label}
+                {locked(p) && <Crown className="h-3 w-3 text-primary ml-auto" />}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">{p.hint}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
 
       {/* AI Skin Swap (coming soon) */}
       <button
@@ -316,7 +847,15 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
       {pins.map((pin, idx) => (
         <div key={pin.id} className="rounded-lg border border-border p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">FX {idx + 1}</p>
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              Object {idx + 1}
+              <span className="text-[10px] text-muted-foreground">{getSkin(pin.skin).label}</span>
+              {pin.track?.length ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
+                  Tracked
+                </span>
+              ) : null}
+            </p>
             <Button
               size="sm"
               variant="ghost"
@@ -328,24 +867,242 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
             </Button>
           </div>
 
+          {/* Lock onto the real object in the video */}
+          <div className="rounded-md border border-border bg-card/60 p-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-medium flex items-center gap-1.5">
+                  <Crosshair className="h-3.5 w-3.5 text-primary" />
+                  {pin.track?.length ? "Locked to object" : "Lock onto object"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {pin.track?.length
+                    ? "The effect follows this object through the clip."
+                    : "Drag the FX onto the ball or player, then lock it on."}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {pin.track?.length || failedIds[pin.id] ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    disabled={trackingId !== null}
+                    onClick={() => {
+                      onUpdate(pin.id, { track: undefined });
+                      setFailedIds((f) => {
+                        const { [pin.id]: _drop, ...rest } = f;
+                        return rest;
+                      });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant={pin.track?.length ? "outline" : "secondary"}
+                  className="h-7 text-xs gap-1"
+                  disabled={trackingId !== null}
+                  onClick={() => runTracking(pin)}
+                >
+                  {trackingId === pin.id ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {trackPct}%
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="h-3.5 w-3.5" />
+                      {pin.track?.length ? "Re-track" : "Track"}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Save / reuse tracking data */}
+            <SavedTrackControls
+              tracks={savedTracks}
+              clipKey={clipKey}
+              canSave={!!pin.track?.length}
+              disabled={trackingId !== null}
+              onSave={() => handleSaveTrack(pin, idx)}
+              onApply={(path) => applySavedTrack(pin, path)}
+              onDelete={deleteTrack}
+            />
+
+
+
+            {/* Live progress + confidence while tracking */}
+            {trackingId === pin.id && (
+              <div className="space-y-1.5">
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${trackPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">
+                    {autoRetry ? "Auto re-tracking from last good frame…" : "Match confidence"}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-medium",
+                      liveConf === null
+                        ? "text-muted-foreground"
+                        : liveConf < WEAK_CONFIDENCE
+                          ? "text-destructive"
+                          : liveConf < 0.7
+                            ? "text-amber-500"
+                            : "text-emerald-500"
+                    )}
+                  >
+                    {liveConf === null ? "measuring…" : `${Math.round(liveConf * 100)}%`}
+                  </span>
+                </div>
+                {liveConf !== null && liveConf < WEAK_CONFIDENCE && (
+                  <p className="text-[11px] text-destructive">
+                    Losing the object — you'll likely need to reset and re-pick.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Result quality once tracked */}
+            {trackingId !== pin.id && pin.track?.length ? (() => {
+              const q = trackQuality(pin.track);
+              if (!q) return null;
+              const tone =
+                q.health === "strong"
+                  ? "text-emerald-500"
+                  : q.health === "shaky"
+                    ? "text-amber-500"
+                    : "text-destructive";
+              return (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={cn("font-medium flex items-center gap-1", tone)}>
+                      {q.health === "strong" ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      ) : (
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                      )}
+                      {q.health === "strong"
+                        ? "Strong lock"
+                        : q.health === "shaky"
+                          ? "Shaky lock"
+                          : "Lost lock"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      avg {Math.round(q.average * 100)}% · low {Math.round(q.worst * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full",
+                        q.health === "strong"
+                          ? "bg-emerald-500"
+                          : q.health === "shaky"
+                            ? "bg-amber-500"
+                            : "bg-destructive"
+                      )}
+                      style={{ width: `${Math.round(q.average * 100)}%` }}
+                    />
+                  </div>
+                  {q.health !== "strong" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {q.lostAt !== null
+                        ? `Drifts around ${q.lostAt.toFixed(1)}s — reset and re-pick there for a cleaner lock.`
+                        : "Re-track from a frame where the object is bigger and sharper."}
+                    </p>
+                  )}
+                </div>
+              );
+            })() : null}
+
+            {/* Failure state + restart choice */}
+            {trackingId !== pin.id && failedIds[pin.id] && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-destructive">{failedIds[pin.id].message}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {failedIds[pin.id].lastGood && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 text-xs gap-1"
+                      disabled={trackingId !== null}
+                      onClick={() => runTracking(pin, "from-last-good")}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Restart at {failedIds[pin.id].lastGood!.t.toFixed(1)}s
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    disabled={trackingId !== null}
+                    onClick={() => runTracking(pin, "fresh")}
+                  >
+                    <Crosshair className="h-3.5 w-3.5" />
+                    Restart from beginning
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => clearFailure(pin.id)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+
+
+
           {/* Characters */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <User className="h-3 w-3" /> Character Skin
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <User className="h-3 w-3" /> Character Skin
+              </p>
+              <button
+                type="button"
+                onClick={requestSkinTier}
+                className="text-[10px] font-medium text-primary hover:underline"
+              >
+                {skinTier === "elite" ? "All skins unlocked" : "Unlock skin packs"}
+              </button>
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {characters.map((s) => (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => onUpdate(pin.id, { skin: s.id })}
+                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
                   className={cn(
-                    "rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
+                    "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
                       ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
+                    skinLocked(s.id) && "opacity-70"
                   )}
                 >
+                  {skinLocked(s.id) && (
+                    <span className="absolute top-0.5 right-0.5 flex items-center">
+                      <Lock className="h-3 w-3 text-primary" />
+                    </span>
+                  )}
                   <span className="text-xl">{s.emoji}</span>
                   <span className="text-[10px] truncate w-full">{s.label}</span>
                 </button>
@@ -363,20 +1120,27 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => onUpdate(pin.id, { skin: s.id })}
+                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
                   className={cn(
-                    "rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
+                    "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
                       ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
+                    skinLocked(s.id) && "opacity-70"
                   )}
                 >
+                  {skinLocked(s.id) && (
+                    <span className="absolute top-0.5 right-0.5 flex items-center">
+                      <Lock className="h-3 w-3 text-primary" />
+                    </span>
+                  )}
                   <span className="text-xl">{s.emoji}</span>
                   <span className="text-[10px] truncate w-full">{s.label}</span>
                 </button>
               ))}
             </div>
           </div>
+
 
           {/* Animation */}
           <div>
@@ -388,14 +1152,18 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => onUpdate(pin.id, { animation: a.id })}
+                  onClick={() => guard(a, () => onUpdate(pin.id, { animation: a.id }))}
                   className={cn(
-                    "rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
+                    "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.animation === a.id
                       ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                      : "border-border hover:border-primary/50",
+                    locked(a) && "opacity-70"
                   )}
                 >
+                  {locked(a) && (
+                    <Crown className="absolute top-0.5 right-0.5 h-3 w-3 text-primary" />
+                  )}
                   <span className="text-lg">{a.emoji}</span>
                   <span className="text-[10px] truncate w-full">{a.label}</span>
                 </button>
@@ -404,6 +1172,10 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
           </div>
         </div>
       ))}
+
+      <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
+      <SkinTiersModal open={skinStoreOpen} onClose={closeSkinStore} />
+
     </div>
   );
 };
@@ -412,12 +1184,18 @@ export const CharacterPinsPanel = ({ pins, onAdd, onUpdate, onRemove }: PanelPro
 export const useCharacterPins = () => {
   const [pins, setPins] = useState<CharacterPin[]>([]);
 
-  const add = () => {
+  const add = (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => {
     setPins((prev) => {
       if (prev.length >= MAX_PINS) return prev;
       return [
         ...prev,
-        { id: `pin-${Date.now()}`, x: 50, y: 50, skin: "athlete", animation: "glow" },
+        {
+          id: `pin-${Date.now()}`,
+          x: 50,
+          y: 50,
+          skin: preset?.skin ?? "athlete",
+          animation: preset?.animation ?? "glow",
+        },
       ];
     });
   };
@@ -438,7 +1216,20 @@ export const useCharacterPins = () => {
   const remove = (id: string) => setPins((prev) => prev.filter((p) => p.id !== id));
 
   const move = (id: string, x: number, y: number) =>
-    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)));
+    setPins((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              x,
+              y,
+              // Keep the locked path aligned when the pin is nudged by hand
+              track: p.track ? shiftTrack(p.track, x - p.x, y - p.y) : undefined,
+            }
+          : p
+      )
+    );
+
 
   return { pins, add, addAt, update, remove, move };
 };

@@ -77,31 +77,69 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
           created_at: string
+          delivered_at: string | null
           id: string
           image_url: string | null
           read: boolean
+          read_at: string | null
           recipient_id: string
           sender_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           read?: boolean
+          read_at?: string | null
           recipient_id: string
           sender_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           read?: boolean
+          read_at?: string | null
           recipient_id?: string
           sender_id?: string
         }
@@ -143,6 +181,93 @@ export type Database = {
           stats?: Json | null
           user_id?: string
           weight?: string
+        }
+        Relationships: []
+      }
+      creator_memberships: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          creator_id: string
+          current_period_end: string | null
+          environment: string
+          fan_id: string
+          id: string
+          price_cents: number
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          creator_id: string
+          current_period_end?: string | null
+          environment?: string
+          fan_id: string
+          id?: string
+          price_cents?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string | null
+          environment?: string
+          fan_id?: string
+          id?: string
+          price_cents?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      creator_payouts: {
+        Row: {
+          created_at: string
+          membership_enabled: boolean
+          membership_price_cents: number
+          payout_country: string | null
+          payout_email: string | null
+          payout_email_alerts: boolean
+          payout_schedule: string
+          payout_status: string
+          tips_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          membership_enabled?: boolean
+          membership_price_cents?: number
+          payout_country?: string | null
+          payout_email?: string | null
+          payout_email_alerts?: boolean
+          payout_schedule?: string
+          payout_status?: string
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          membership_enabled?: boolean
+          membership_price_cents?: number
+          payout_country?: string | null
+          payout_email?: string | null
+          payout_email_alerts?: boolean
+          payout_schedule?: string
+          payout_status?: string
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -242,6 +367,78 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_purchases: {
+        Row: {
+          created_at: string
+          environment: string
+          id: string
+          price_id: string
+          stripe_customer_id: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          environment?: string
+          id?: string
+          price_id: string
+          stripe_customer_id?: string | null
+          stripe_session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          id?: string
+          price_id?: string
+          stripe_customer_id?: string | null
+          stripe_session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fx_tracks: {
+        Row: {
+          avg_confidence: number | null
+          clip_duration: number | null
+          clip_key: string
+          created_at: string
+          health: string | null
+          id: string
+          label: string
+          path: Json
+          updated_at: string
+          user_id: string
+          worst_confidence: number | null
+        }
+        Insert: {
+          avg_confidence?: number | null
+          clip_duration?: number | null
+          clip_key: string
+          created_at?: string
+          health?: string | null
+          id?: string
+          label: string
+          path: Json
+          updated_at?: string
+          user_id: string
+          worst_confidence?: number | null
+        }
+        Update: {
+          avg_confidence?: number | null
+          clip_duration?: number | null
+          clip_key?: string
+          created_at?: string
+          health?: string | null
+          id?: string
+          label?: string
+          path?: Json
+          updated_at?: string
+          user_id?: string
+          worst_confidence?: number | null
+        }
+        Relationships: []
+      }
       game_scores: {
         Row: {
           created_at: string
@@ -329,11 +526,16 @@ export type Database = {
           condition: string
           created_at: string
           description: string | null
+          fulfillment: string
           id: string
           images: string[] | null
+          league: string | null
           location: string | null
           price: number
+          shipping_cost: number | null
+          size: string | null
           status: string
+          team: string | null
           title: string
           updated_at: string
           user_id: string
@@ -345,11 +547,16 @@ export type Database = {
           condition?: string
           created_at?: string
           description?: string | null
+          fulfillment?: string
           id?: string
           images?: string[] | null
+          league?: string | null
           location?: string | null
           price: number
+          shipping_cost?: number | null
+          size?: string | null
           status?: string
+          team?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -361,11 +568,16 @@ export type Database = {
           condition?: string
           created_at?: string
           description?: string | null
+          fulfillment?: string
           id?: string
           images?: string[] | null
+          league?: string | null
           location?: string | null
           price?: number
+          shipping_cost?: number | null
+          size?: string | null
           status?: string
+          team?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -471,6 +683,137 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          environment: string
+          failure_reason: string | null
+          id: string
+          processed_at: string | null
+          scheduled_for: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          environment?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      podcast_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          creator_id: string
+          creator_net_cents: number
+          currency: string
+          environment: string
+          id: string
+          kind: string
+          payer_id: string
+          platform_fee_cents: number
+          podcast_id: string | null
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          creator_id: string
+          creator_net_cents?: number
+          currency?: string
+          environment?: string
+          id?: string
+          kind: string
+          payer_id: string
+          platform_fee_cents?: number
+          podcast_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          creator_id?: string
+          creator_net_cents?: number
+          currency?: string
+          environment?: string
+          id?: string
+          kind?: string
+          payer_id?: string
+          platform_fee_cents?: number
+          podcast_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "podcast_payments_podcast_id_fkey"
+            columns: ["podcast_id"]
+            isOneToOne: false
+            referencedRelation: "podcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       podcasts: {
         Row: {
           audio_url: string
@@ -478,10 +821,13 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_premium: boolean
           likes_count: number
           plays_count: number
           thumbnail_url: string | null
+          tips_enabled: boolean
           title: string
+          unlock_price_cents: number
           updated_at: string
           user_id: string
         }
@@ -491,10 +837,13 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean
           likes_count?: number
           plays_count?: number
           thumbnail_url?: string | null
+          tips_enabled?: boolean
           title: string
+          unlock_price_cents?: number
           updated_at?: string
           user_id: string
         }
@@ -504,14 +853,56 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_premium?: boolean
           likes_count?: number
           plays_count?: number
           thumbnail_url?: string | null
+          tips_enabled?: boolean
           title?: string
+          unlock_price_cents?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_reactions: {
         Row: {
@@ -538,6 +929,74 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reposts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reposts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_reposts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_views: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
@@ -616,6 +1075,8 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          profile_video_caption: string | null
+          profile_video_caption_vtt: string | null
           profile_video_url: string | null
           role: string
           sports: string[] | null
@@ -630,6 +1091,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          profile_video_caption?: string | null
+          profile_video_caption_vtt?: string | null
           profile_video_url?: string | null
           role?: string
           sports?: string[] | null
@@ -644,6 +1107,8 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          profile_video_caption?: string | null
+          profile_video_caption_vtt?: string | null
           profile_video_url?: string | null
           role?: string
           sports?: string[] | null
@@ -756,6 +1221,48 @@ export type Database = {
           },
         ]
       }
+      saved_searches: {
+        Row: {
+          alerts_enabled: boolean
+          category: string | null
+          created_at: string
+          id: string
+          last_checked_at: string
+          max_price: number | null
+          min_price: number | null
+          name: string
+          query: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerts_enabled?: boolean
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          query?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerts_enabled?: boolean
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          query?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           created_at: string
@@ -858,6 +1365,54 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          environment: string
+          id: string
+          price_id: string
+          product_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          price_id: string
+          product_id: string
+          status?: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
+          id?: string
+          price_id?: string
+          product_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       top_five_videos: {
         Row: {
           created_at: string
@@ -923,6 +1478,36 @@ export type Database = {
           id?: string
           unlocked_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+          level: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+          level?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+          level?: string
+          note?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1026,7 +1611,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_creator_pricing: {
+        Args: { _creator_ids: string[] }
+        Returns: {
+          membership_enabled: boolean
+          membership_price_cents: number
+          tips_enabled: boolean
+          user_id: string
+        }[]
+      }
+      get_invite_by_code: {
+        Args: { _invite_code: string }
+        Returns: {
+          created_at: string
+          id: string
+          invite_code: string
+          inviter_id: string
+          status: string
+        }[]
+      }
+      get_trending_highlights: {
+        Args: { _days?: number; _limit?: number; _sport?: string }
+        Returns: {
+          applause_count: number
+          avatar_url: string
+          comments_count: number
+          content: string
+          created_at: string
+          full_name: string
+          image_url: string
+          likes_count: number
+          post_id: string
+          score: number
+          sports: string[]
+          user_id: string
+          username: string
+          video_url: string
+          views_count: number
+        }[]
+      }
+      has_fx_access: {
+        Args: { check_env?: string; user_uuid: string }
+        Returns: boolean
+      }
+      has_podcast_access: {
+        Args: { _podcast_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

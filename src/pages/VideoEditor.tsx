@@ -986,6 +986,7 @@ const VideoEditor = () => {
                         onRemove={characterPins.remove}
                       />
 
+
                       {/* Play/Pause Overlay */}
                       {!dragState && (
                         <div 
@@ -1268,7 +1269,10 @@ const VideoEditor = () => {
                         onAdd={characterPins.add}
                         onUpdate={characterPins.update}
                         onRemove={characterPins.remove}
+                        videoSource={videoFile ?? videoUrl}
+                        getCurrentTime={() => videoRef.current?.currentTime ?? 0}
                       />
+
 
                       <div className="border-t border-border pt-4 space-y-4">
                         <p className="text-sm text-muted-foreground">Quick effects presets</p>

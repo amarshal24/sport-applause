@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
 import { User, Search, Upload, LogOut, ChevronDown, Flame, Heart, Trophy, Gamepad2, Mic, Quote, GraduationCap, ClipboardList, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +10,7 @@ import AnimatedAvatar from "./AnimatedAvatar";
 import { SportIcon } from "./SportIcon";
 import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
+import NotificationBell from "./NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +43,7 @@ const Navigation = () => {
     { name: t("sidebar.quotes"), icon: Quote, path: "/motivation" },
     { name: t("sidebar.recruiting"), icon: GraduationCap, path: "/recruiting" },
     { name: "Recruiter Dashboard", icon: ClipboardList, path: "/recruiter-dashboard" },
+    { name: "Marketplace", icon: ShoppingBag, path: "/marketplace" },
   ];
 
   return (
@@ -79,17 +82,23 @@ const Navigation = () => {
           </div>
 
           <div className="flex items-center gap-1">
+            <div className="hidden md:block w-64">
+              <AthleteSearchAutocomplete placeholder="Search athletes..." />
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => navigate("/search")}
               aria-label="Search"
+              className="md:hidden"
             >
               <Search className="h-5 w-5" />
             </Button>
+
             <LanguageSwitcher />
             {user ? (
               <>
+                <NotificationBell />
                 <Button variant="ghost" size="sm" className="hidden md:flex border-primary text-foreground">
                   <Upload className="mr-2 h-4 w-4" />
                   {t("nav.upload")}

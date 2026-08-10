@@ -7,6 +7,7 @@ import MobileNav from "@/components/MobileNav";
 import PodcastUploader from "@/components/PodcastUploader";
 import MyPodcasts from "@/components/MyPodcasts";
 import PodcastBrowser from "@/components/PodcastBrowser";
+import PodcastDiscover from "@/components/podcast/PodcastDiscover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,8 +97,9 @@ const Podcasts = () => {
               <TabsTrigger value="mine">{t("podcasts.mine")}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="browse" className="mt-0">
+            <TabsContent value="browse" className="mt-0 space-y-8">
               <PodcastBrowser focusId={focusId} onFocusConsumed={clearFocus} />
+              <PodcastDiscover />
             </TabsContent>
 
             <TabsContent value="mine" className="mt-0 space-y-8">

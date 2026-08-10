@@ -7,6 +7,8 @@ import { useMusicRecommendations } from "@/hooks/useMusicRecommendations";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getSportIcon } from "@/constants/sports";
+import MusicRecommendations from "@/components/MusicRecommendations";
+
 
 interface Mood {
   id: string;
@@ -64,7 +66,8 @@ const moods: Mood[] = [
 const MoodSelector = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [userSport, setUserSport] = useState<string | null>(null);
-  const { fetchRecommendations, loading } = useMusicRecommendations();
+  const { fetchRecommendations, loading, recommendations } = useMusicRecommendations();
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -151,9 +154,16 @@ const MoodSelector = () => {
             </Button>
           </div>
         )}
+
+        {(loading || recommendations.length > 0) && (
+          <div className="mt-4">
+            <MusicRecommendations recommendations={recommendations} loading={loading} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
+
 
 export default MoodSelector;

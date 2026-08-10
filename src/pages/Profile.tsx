@@ -1,6 +1,9 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { ProBadge } from "@/components/ProBadge";
+import { PaymentPastDueBanner } from "@/components/PaymentPastDueBanner";
+import { usePremium } from "@/hooks/usePremium";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
@@ -8,8 +11,12 @@ import FavoriteVideos from "@/components/FavoriteVideos";
 import TopFiveVideos from "@/components/TopFiveVideos";
 import ProfileVideoRecorder from "@/components/ProfileVideoRecorder";
 import AnimatedAvatar from "@/components/AnimatedAvatar";
-import { SportIcon } from "@/components/SportIcon";
+import { SportIcon, InlineSportIcon } from "@/components/SportIcon";
 import { SecureImage, SecureVideo } from "@/components/SecureMedia";
+import { PostMusicPlayer } from "@/components/PostMusicPlayer";
+import ApplauseButton from "@/components/ApplauseButton";
+import StoryViewer from "@/components/StoryViewer";
+
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,7 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock } from "lucide-react";
+import { Grid3x3, Heart, Bookmark, Video, Music, Radio, Sparkles, Edit, Camera, Clock, Captions, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import WatchLaterVideos from "@/components/WatchLaterVideos";
 import { toast } from "sonner";
@@ -32,6 +40,31 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myStories, setMyStories] = useState<any[]>([]);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+
+  const { isPremium } = usePremium();
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePost = async () => {
+    if (!deleteTarget || !user) return;
+    setDeleting(true);
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("id", deleteTarget.id)
+      .eq("user_id", user.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Could not delete post");
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    toast.success("Post deleted");
+  };
+
   const [showVideoRecorder, setShowVideoRecorder] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -53,9 +86,15 @@ const Profile = () => {
   const fetchData = async () => {
     if (!user) return;
     
-    const [profileResult, postsResult] = await Promise.all([
+    const [profileResult, postsResult, storiesResult] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+      supabase.from("posts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase
+        .from("stories")
+        .select("*")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
     ]);
     
     if (profileResult.data) {
@@ -68,8 +107,19 @@ const Profile = () => {
     }
     
     setPosts(postsResult.data || []);
+    setMyStories(
+      (storiesResult.data || []).map((s: any) => ({
+        ...s,
+        profiles: {
+          username: profileResult.data?.username || "You",
+          avatar_url: profileResult.data?.avatar_url || null,
+          sports: profileResult.data?.sports || null,
+        },
+      }))
+    );
     setLoading(false);
   };
+
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -159,6 +209,7 @@ const Profile = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+        <PaymentPastDueBanner />
         <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto w-full space-y-6">
           
           {/* Profile Header Card */}
@@ -168,13 +219,29 @@ const Profile = () => {
                 {/* Avatar Section */}
                 <div className="relative group shrink-0">
                   <div className="absolute inset-0 bg-gradient-power rounded-full blur-xl opacity-30 animate-pulse-glow"></div>
-                  <AnimatedAvatar
-                    videoUrl={profile?.profile_video_url}
-                    imageUrl={profile?.avatar_url}
-                    fallback={profile?.username?.[0]?.toUpperCase() || "U"}
-                    className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
-                    showPlayIcon
-                  />
+                  <div
+                    className={
+                      myStories.length > 0
+                        ? "relative z-10 rounded-full p-[3px] bg-gradient-power animate-pulse-glow cursor-pointer"
+                        : "relative z-10"
+                    }
+                    onClick={() => myStories.length > 0 && setStoryViewerOpen(true)}
+                  >
+                    <AnimatedAvatar
+                      videoUrl={profile?.profile_video_url}
+                      captionVtt={profile?.profile_video_caption_vtt}
+                      imageUrl={profile?.avatar_url}
+                      fallback={profile?.username?.[0]?.toUpperCase() || "U"}
+                      className="h-24 w-24 border-4 border-primary/30 shadow-glow relative z-10"
+                      showPlayIcon
+                    />
+                  </div>
+                  {myStories.length > 0 && (
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Story
+                    </span>
+                  )}
+
                   {profile?.sports && profile.sports.length > 0 && (
                     <SportIcon 
                       sportId={profile.sports[0]} 
@@ -194,8 +261,10 @@ const Profile = () => {
                 {/* Info Section */}
                 <div className="flex-1 text-center sm:text-left space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <h1 className="text-xl font-display font-bold text-foreground">
+                    <h1 className="text-xl font-display font-bold text-foreground flex items-center justify-center sm:justify-start gap-2">
                       {profile?.username}
+                      {profile?.sports?.[0] && <InlineSportIcon sportId={profile.sports[0]} />}
+                      {isPremium && <ProBadge />}
                     </h1>
                     <Button 
                       variant="outline" 
@@ -208,6 +277,18 @@ const Profile = () => {
                     </Button>
                   </div>
                   
+                  {profile?.profile_video_caption && (
+                    <div className="rounded-lg border border-border/50 bg-muted/40 p-3 text-left">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                        <Captions className="w-3.5 h-3.5 text-primary" />
+                        Video captions
+                      </p>
+                      <p className="text-sm text-foreground/90 leading-relaxed">
+                        {profile.profile_video_caption}
+                      </p>
+                    </div>
+                  )}
+
                   {profile?.full_name && (
                     <p className="text-sm text-muted-foreground font-medium">
                       {profile.full_name}
@@ -330,13 +411,53 @@ const Profile = () => {
                           </p>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <div className="flex items-center gap-1 text-foreground">
                           <Sparkles className="h-4 w-4 fill-current" />
                           <span className="font-semibold text-sm">{post.likes_count}</span>
                         </div>
+                        <ApplauseButton postId={post.id} />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="h-8 w-8"
+                          aria-label="Delete post"
+                          onClick={() => setDeleteTarget(post)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
+                      {post.music_url && (
+                        <PostMusicPlayer
+                          compact
+                          musicUrl={post.music_url}
+                          title={post.music_title}
+                          startTime={post.music_start_time}
+                          endTime={post.music_end_time}
+                          fadeIn={post.music_fade_in}
+                          fadeOut={post.music_fade_out}
+                          className="absolute top-1 left-1 z-10"
+                        />
+                      )}
+                      <ApplauseButton
+                        postId={post.id}
+                        className="absolute bottom-1 left-1 sm:hidden backdrop-blur"
+                      />
+
+
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="h-7 w-7 absolute top-1 right-1 sm:hidden"
+                        aria-label="Delete post"
+                        onClick={() => setDeleteTarget(post)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
+
                   ))}
                 </div>
               ) : (
@@ -383,15 +504,14 @@ const Profile = () => {
         </div>
       </main>
 
-      {/* Video Recorder Dialog */}
-      <Dialog open={showVideoRecorder} onOpenChange={setShowVideoRecorder}>
-        <DialogContent className="max-w-2xl p-0 bg-transparent border-none">
-          <ProfileVideoRecorder
-            onVideoUploaded={fetchProfile}
-            onClose={() => setShowVideoRecorder(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Fullscreen Video Recorder */}
+      {showVideoRecorder && (
+        <ProfileVideoRecorder
+          onVideoUploaded={fetchProfile}
+          onClose={() => setShowVideoRecorder(false)}
+        />
+      )}
+
 
       {/* Edit Profile Dialog */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
@@ -439,7 +559,32 @@ const Profile = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the post from your profile and the feed. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeletePost(); }} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <StoryViewer
+        stories={myStories}
+        initialIndex={0}
+        open={storyViewerOpen}
+        onOpenChange={setStoryViewerOpen}
+      />
     </div>
+
   );
 };
 

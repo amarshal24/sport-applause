@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import AccessibilityToolbar from "@/components/AccessibilityToolbar";
 import DeafAccessibilityBridge from "@/components/DeafAccessibilityBridge";
 import QuickNavMenu from "@/components/QuickNavMenu";
 import { DeafAccessibilityProvider } from "@/hooks/useDeafAccessibility";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
@@ -25,14 +26,18 @@ const Trending = lazy(() => import("./pages/Trending"));
 const Fans = lazy(() => import("./pages/Fans"));
 const TopPlays = lazy(() => import("./pages/TopPlays"));
 const WatchLater = lazy(() => import("./pages/WatchLater"));
+const BlockedUsers = lazy(() => import("./pages/BlockedUsers"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Messages = lazy(() => import("./pages/Messages"));
 const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
 const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
 const Search = lazy(() => import("./pages/Search"));
-
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +68,7 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/games" element={<Games />} />
@@ -77,12 +83,15 @@ const App = () => (
                 <Route path="/fans" element={<Fans />} />
                 <Route path="/top-plays" element={<TopPlays />} />
                 <Route path="/watch-later" element={<WatchLater />} />
+                <Route path="/blocked" element={<BlockedUsers />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/athlete/:userId" element={<AthleteProfile />} />
                 <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
                 <Route path="/search" element={<Search />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/checkout/return" element={<CheckoutReturn />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

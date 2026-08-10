@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image, Video, ChevronRight, Music, X, Play, Pause, Upload, Scissors } from "lucide-react";
 import MusicTrimmer from "@/components/MusicTrimmer";
+import SyncedClipPreview from "@/components/SyncedClipPreview";
+
 import { supabase } from "@/integrations/supabase/client";
 import { storageRefUrl } from "@/lib/signedMedia";
 import { useToast } from "@/hooks/use-toast";
@@ -34,32 +36,9 @@ interface Mood {
   gradient: string;
 }
 
-// Royalty-free music library
-interface MusicTrack {
-  id: string;
-  title: string;
-  artist: string;
-  duration: string;
-  mood: string;
-  url: string;
-  isCustom?: boolean;
-  trimStart?: number;
-  trimEnd?: number;
-  fadeIn?: number;
-  fadeOut?: number;
-}
+import { musicLibrary, type MusicTrack } from "@/constants/musicLibrary";
+import { useEditorTrack } from "@/hooks/useEditorTrack";
 
-// Hosted samples that allow cross-origin playback (Pixabay CDN hotlink returns 403 in-app).
-const musicLibrary: MusicTrack[] = [
-  { id: "1", title: "Victory Anthem", artist: "Sports Beats", duration: "6:12", mood: "energetic", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { id: "2", title: "Champion's Rise", artist: "Athletic Sounds", duration: "7:05", mood: "motivated", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-  { id: "3", title: "Warm Up Flow", artist: "Gym Vibes", duration: "5:44", mood: "chill", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-  { id: "4", title: "Focus Mode", artist: "Zen Athletics", duration: "4:58", mood: "focused", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-  { id: "5", title: "Game Day Energy", artist: "Sports Beats", duration: "5:22", mood: "pumped", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
-  { id: "6", title: "Winning Moment", artist: "Victory Lane", duration: "6:01", mood: "victorious", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
-  { id: "7", title: "Training Montage", artist: "Workout Mix", duration: "5:36", mood: "energetic", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
-  { id: "8", title: "Cool Down", artist: "Relaxed Beats", duration: "5:18", mood: "chill", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
-];
 
 const moods: Mood[] = [
   {
@@ -165,6 +144,19 @@ const UnifiedComposer = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { fetchRecommendations, loading: musicLoading } = useMusicRecommendations();
+  const { editorTrack, clearEditorTrack } = useEditorTrack();
+
+  // A track picked from mood recommendations lands here: open the trimmer for it.
+  useEffect(() => {
+    if (!editorTrack) return;
+    if (audioRef.current) audioRef.current.pause();
+    setPreviewingTrack(null);
+    setMusicDialogOpen(false);
+    setPendingTrimTrack(editorTrack);
+    setShowTrimmer(true);
+    clearEditorTrack();
+  }, [editorTrack, clearEditorTrack]);
+
 
   useEffect(() => {
     const fetchUserSport = async () => {
@@ -745,7 +737,9 @@ const UnifiedComposer = ({
 
             {/* Selected Music Preview */}
             {selectedMusic && !showTrimmer && (
-              <div className="mb-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between animate-fade-in">
+              <div className="mb-3 space-y-3 animate-fade-in">
+              <div className="p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                     <Music className="h-5 w-5 text-primary" />
@@ -783,7 +777,20 @@ const UnifiedComposer = ({
                   </Button>
                 </div>
               </div>
+
+              <SyncedClipPreview
+                videoUrl={videoPreview}
+                imageUrl={imagePreview}
+                audioUrl={customMusicPreview && selectedMusic.isCustom ? customMusicPreview : selectedMusic.url}
+                trimStart={selectedMusic.trimStart ?? 0}
+                trimEnd={selectedMusic.trimEnd ?? null}
+                fadeIn={selectedMusic.fadeIn ?? 0}
+                fadeOut={selectedMusic.fadeOut ?? 0}
+                aspect={postType === "story" ? "9 / 16" : "4 / 5"}
+              />
+              </div>
             )}
+
 
             {isSubmitting && uploadProgress > 0 && (
               <div className="mb-3">

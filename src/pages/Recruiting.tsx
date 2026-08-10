@@ -15,9 +15,10 @@ import {
   Trophy, Upload, Play, Eye, Calendar, MapPin, 
   School, Ruler, Weight, Star, Plus, Filter, 
   Share2, Download, Edit, Trash2, MoreVertical, X, Mail, ArrowUpDown, User,
-  Sparkles, HelpCircle, Wand2
+  Sparkles, HelpCircle, Wand2, Undo2, Redo2, Lock as LockIcon
 } from "lucide-react";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import { useUndoableState } from "@/hooks/useUndoableState";
 import { FilterHelpDialog } from "@/components/recruiting/FilterHelpDialog";
 import {
   DropdownMenu,
@@ -36,6 +37,26 @@ import ContactAthleteModal from "@/components/ContactAthleteModal";
 import AthleteSearch from "@/components/AthleteSearch";
 import AthleteComparison from "@/components/AthleteComparison";
 import ProAthleteComparison from "@/components/ProAthleteComparison";
+import {
+  AnimatedFilter,
+  animatedFilters,
+  colorFilters,
+  getColorFilterStyle,
+  type FilterType,
+  type ColorFilterType,
+} from "@/components/AnimatedFilters";
+import { bakeVideoFx, hasBakeableFx } from "@/lib/videoFxBake";
+import { usePremium } from "@/hooks/usePremium";
+import { UpgradeProModal } from "@/components/video-fx/UpgradeProModal";
+import {
+
+  CharacterPinsOverlay,
+  CharacterPinsPanel,
+  CHARACTER_SKINS,
+  MAX_PINS,
+  type CharacterPin,
+} from "@/components/video-fx/CharacterPins";
+
 
 interface RecruitingVideo {
   id: string;
@@ -63,6 +84,8 @@ interface RecruitingVideo {
 
 const Recruiting = () => {
   const { user } = useAuth();
+  const { isPremium, upgradeOpen, requestUpgrade, closeUpgrade } = usePremium();
+
   const navigate = useNavigate();
   const [videos, setVideos] = useState<RecruitingVideo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +115,14 @@ const Recruiting = () => {
   
   // Form state
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [colorFilter, setColorFilter] = useState<ColorFilterType>("none");
+  const [animatedFilter, setAnimatedFilter] = useState<FilterType>("none");
+  const pinHistory = useUndoableState<CharacterPin[]>([]);
+  const pins = pinHistory.value;
+  const setPins = pinHistory.set;
+  const [placeMode, setPlaceMode] = useState(false);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sport, setSport] = useState("");
@@ -102,6 +133,7 @@ const Recruiting = () => {
   const [location, setLocation] = useState("");
   const [school, setSchool] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [renderProgress, setRenderProgress] = useState<number | null>(null);
 
   // Undo-delete state: video removed from UI immediately, actual DB delete happens after timeout
   const UNDO_TIMEOUT_MS = 5000;
@@ -189,8 +221,16 @@ const Recruiting = () => {
         if (video.duration > 180) { // 3 minutes
           toast.error("Video must be 3 minutes or less");
           setVideoFile(null);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
         } else {
           setVideoFile(file);
+          setVideoPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+          });
           toast.success("Video loaded successfully!");
         }
       };
@@ -222,10 +262,45 @@ const Recruiting = () => {
 
       // Upload new video if provided
       if (videoFile) {
-        const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+        let uploadBody: Blob = videoFile;
+        let fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+
+        // Burn the selected filters into the clip so the saved video keeps them
+        const bakePins = pins.map((p) => {
+          const skin = CHARACTER_SKINS.find((s) => s.id === p.skin) ?? CHARACTER_SKINS[0];
+          return {
+            x: p.x,
+            y: p.y,
+            emoji: skin.emoji,
+            animation: p.animation as string,
+            isObject: skin.kind === "object",
+            track: p.track,
+          };
+        });
+        if (hasBakeableFx(colorFilter, animatedFilter, bakePins)) {
+          try {
+            setRenderProgress(0);
+            toast.info("Applying filters to your video...");
+            uploadBody = await bakeVideoFx(videoFile, {
+              colorFilter,
+              animatedFilter,
+              pins: bakePins,
+              onProgress: setRenderProgress,
+            });
+
+            fileName = `${user.id}/${Date.now()}-fx-${videoFile.name.replace(/\.[^.]+$/, "")}.webm`;
+          } catch (fxError) {
+            console.error("Filter render failed", fxError);
+            toast.error("Could not render the filters — uploading the original clip.");
+            uploadBody = videoFile;
+          } finally {
+            setRenderProgress(null);
+          }
+        }
+
         const { error: uploadError } = await supabase.storage
           .from("recruiting-videos")
-          .upload(fileName, videoFile);
+          .upload(fileName, uploadBody, { contentType: uploadBody.type || "video/webm" });
 
         if (uploadError) throw uploadError;
 
@@ -459,8 +534,71 @@ const Recruiting = () => {
     setShowContactModal(true);
   };
 
+  const handleAddPin = (preset?: { skin: any; animation: any }) => {
+    if (pins.length >= MAX_PINS) return;
+    setPins((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        x: 50,
+        y: 50,
+        skin: preset?.skin ?? "athlete",
+        animation: preset?.animation ?? "glow",
+      },
+    ]);
+    setPlaceMode(false);
+  };
+
+  const handleUpdatePin = (id: string, patch: Partial<CharacterPin>) =>
+    setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  const handleRemovePin = (id: string) =>
+    setPins((prev) => prev.filter((p) => p.id !== id));
+
+  const handleMovePin = (id: string, x: number, y: number) =>
+    setPins(
+      (prev) => prev.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      { coalesceKey: `move-${id}` }
+    );
+
+  const handlePlacePin = (x: number, y: number) => {
+    setPins((prev) =>
+      prev.length >= MAX_PINS
+        ? prev
+        : [...prev, { id: crypto.randomUUID(), x, y, skin: "athlete", animation: "glow" }]
+    );
+    setPlaceMode(false);
+  };
+
+  // Undo/redo keyboard shortcuts while the upload editor is open
+  useEffect(() => {
+    if (!showUploadModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      e.preventDefault();
+      if (e.shiftKey) pinHistory.redo();
+      else pinHistory.undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showUploadModal, pinHistory.undo, pinHistory.redo]);
+
+
+
   const resetForm = () => {
     setVideoFile(null);
+    setVideoPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setColorFilter("none");
+    setAnimatedFilter("none");
+    pinHistory.reset([]);
+    setPlaceMode(false);
+
     setTitle("");
     setDescription("");
     setSport("");
@@ -905,7 +1043,43 @@ const Recruiting = () => {
                 className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {videoFile ? (
+                {videoFile && videoPreviewUrl ? (
+                  <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative rounded-lg overflow-hidden bg-black">
+                      <video
+                        src={videoPreviewUrl}
+                        data-fx-preview
+                        controls
+                        playsInline
+                        className="w-full max-h-[320px] object-contain"
+                        style={getColorFilterStyle(colorFilter)}
+                      />
+                      <div className="absolute inset-0 pointer-events-none">
+                        <AnimatedFilter type={animatedFilter} />
+                      </div>
+                      <CharacterPinsOverlay
+                        pins={pins}
+                        onMove={handleMovePin}
+                        onRemove={handleRemovePin}
+                        placeMode={placeMode}
+                        onPlace={handlePlacePin}
+                      />
+
+                    </div>
+                    <p className="font-medium truncate">{videoFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Choose a different video
+                    </Button>
+                  </div>
+                ) : videoFile ? (
                   <div className="space-y-2">
                     <Play className="w-12 h-12 text-primary mx-auto" />
                     <p className="font-medium">{videoFile.name}</p>
@@ -939,6 +1113,120 @@ const Recruiting = () => {
                 />
               </div>
             </div>
+
+            {/* Filters (only when a clip is loaded) */}
+            {videoFile && videoPreviewUrl && (
+              <div className="space-y-3 rounded-lg border border-border p-4">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-primary" />
+                  <Label className="m-0">Animated filters</Label>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Color look</p>
+                  <div className="flex flex-wrap gap-2">
+                    {colorFilters.map((f) => {
+                      const locked = !!f.pro && !isPremium;
+                      return (
+                        <Button
+                          key={f.type}
+                          type="button"
+                          size="sm"
+                          variant={colorFilter === f.type ? "default" : "outline"}
+                          onClick={() => (locked ? requestUpgrade() : setColorFilter(f.type))}
+                          className={locked ? "opacity-70" : undefined}
+                        >
+                          {f.label}
+                          {locked && <LockIcon className="ml-1 h-3 w-3" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Animation overlay</p>
+                  <div className="flex flex-wrap gap-2">
+                    {animatedFilters.map((f) => {
+                      const locked = !!f.pro && !isPremium;
+                      return (
+                        <Button
+                          key={f.type}
+                          type="button"
+                          size="sm"
+                          variant={animatedFilter === f.type ? "default" : "outline"}
+                          onClick={() => (locked ? requestUpgrade() : setAnimatedFilter(f.type))}
+                          className={locked ? "opacity-70" : undefined}
+                        >
+                          <span className="mr-1">{f.icon}</span>
+                          {f.label}
+                          {locked && <LockIcon className="ml-1 h-3 w-3" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+
+                {/* Characters & objects */}
+                <div className="pt-2 border-t border-border space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-xs text-muted-foreground">
+                      Place characters & objects on your clip
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.undo}
+                        disabled={!pinHistory.canUndo}
+                        title="Undo (Ctrl/⌘+Z)"
+                        aria-label="Undo FX pin change"
+                        className="gap-1"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                        Undo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={pinHistory.redo}
+                        disabled={!pinHistory.canRedo}
+                        title="Redo (Ctrl/⌘+Shift+Z)"
+                        aria-label="Redo FX pin change"
+                        className="gap-1"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                        Redo
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={placeMode ? "default" : "outline"}
+                        onClick={() => setPlaceMode((v) => !v)}
+                        disabled={pins.length >= MAX_PINS}
+                      >
+                        {placeMode ? "Tap video…" : "Tap to place"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <CharacterPinsPanel
+                    pins={pins}
+                    onAdd={handleAddPin}
+                    onUpdate={handleUpdatePin}
+                    onRemove={handleRemovePin}
+                    videoSource={videoFile}
+                    getCurrentTime={() =>
+                      document.querySelector<HTMLVideoElement>("video[data-fx-preview]")?.currentTime ?? 0
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
 
             {/* Title */}
             <div>
@@ -1068,7 +1356,13 @@ const Recruiting = () => {
               className="w-full"
               size="lg"
             >
-              {uploading ? "Saving..." : editingVideo ? "Save Changes" : "Upload Highlight Reel"}
+              {renderProgress !== null
+                ? `Rendering filters... ${renderProgress}%`
+                : uploading
+                  ? "Saving..."
+                  : editingVideo
+                    ? "Save Changes"
+                    : "Upload Highlight Reel"}
             </Button>
           </div>
         </DialogContent>
@@ -1175,6 +1469,9 @@ const Recruiting = () => {
 
       {/* How-to popup */}
       <FilterHelpDialog open={showFilterHelp} onOpenChange={setShowFilterHelp} />
+      {/* Pro FX upgrade */}
+      <UpgradeProModal open={upgradeOpen} onClose={closeUpgrade} />
+
       {/* Contact Athlete Modal */}
       {contactAthlete && (
         <ContactAthleteModal

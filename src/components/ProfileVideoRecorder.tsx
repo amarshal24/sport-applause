@@ -1,12 +1,32 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, StopCircle, PlayCircle, Upload, Sparkles, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Video, StopCircle, PlayCircle, Upload, Sparkles, X, SwitchCamera, Maximize2, Minimize2, Scissors, Crop, RotateCcw, AlertCircle, CheckCircle2, Loader2, Camera, Check, SmartphoneCharging, Mic, MicOff, Captions } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { storageRefUrl } from "@/lib/signedMedia";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { trimVideo } from "@/lib/videoTrim";
+import { buildVtt } from "@/lib/captions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 
 interface Filter {
   id: string;
@@ -16,12 +36,12 @@ interface Filter {
 }
 
 const filters: Filter[] = [
-  { id: "none", name: "Original", cssFilter: "none", emoji: "✨" },
-  { id: "vintage", name: "Vintage", cssFilter: "sepia(0.5) contrast(1.2)", emoji: "📷" },
-  { id: "cool", name: "Cool", cssFilter: "saturate(1.5) hue-rotate(-15deg)", emoji: "❄️" },
-  { id: "warm", name: "Warm", cssFilter: "saturate(1.3) hue-rotate(15deg)", emoji: "🔥" },
-  { id: "vivid", name: "Vivid", cssFilter: "saturate(2) contrast(1.3)", emoji: "🌈" },
-  { id: "noir", name: "Noir", cssFilter: "grayscale(1) contrast(1.5)", emoji: "🎬" },
+  { id: "none", name: "Original", cssFilter: "none", emoji: "Ô£¿" },
+  { id: "vintage", name: "Vintage", cssFilter: "sepia(0.5) contrast(1.2)", emoji: "­ƒôÀ" },
+  { id: "cool", name: "Cool", cssFilter: "saturate(1.5) hue-rotate(-15deg)", emoji: "ÔØä´©Å" },
+  { id: "warm", name: "Warm", cssFilter: "saturate(1.3) hue-rotate(15deg)", emoji: "­ƒöÑ" },
+  { id: "vivid", name: "Vivid", cssFilter: "saturate(2) contrast(1.3)", emoji: "­ƒîê" },
+  { id: "noir", name: "Noir", cssFilter: "grayscale(1) contrast(1.5)", emoji: "­ƒÄ¼" },
 ];
 
 interface Props {
@@ -37,75 +57,221 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   const [selectedFilter, setSelectedFilter] = useState<Filter>(filters[0]);
   const [uploading, setUploading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [micDenied, setMicDenied] = useState(false);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
+    typeof window !== "undefined" && window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+  );
+  const [rotatedWhileRecording, setRotatedWhileRecording] = useState(false);
+  const [fitMode, setFitMode] = useState<"cover" | "contain">("cover");
+
+  const [progress, setProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadDone, setUploadDone] = useState(false);
+  const [clipDuration, setClipDuration] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [squareCrop, setSquareCrop] = useState(true);
+  const [trimming, setTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [caption, setCaption] = useState("");
+  const [captioning, setCaptioning] = useState(false);
+  const [captionError, setCaptionError] = useState<string | null>(null);
+
+
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
-  useEffect(() => {
-    startCamera();
-    return () => {
-      stopCamera();
-    };
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
   }, []);
 
-  const startCamera = async () => {
+  const refreshCameras = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 640, facingMode: "user" },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      toast.error("Unable to access camera");
-      console.error("Camera error:", error);
+      const all = await navigator.mediaDevices.enumerateDevices();
+      setCameras(all.filter((d) => d.kind === "videoinput"));
+    } catch {
+      /* ignore */
     }
+  }, []);
+
+  const startCamera = useCallback(
+    async (mode: "user" | "environment", id?: string | null, wantAudio = audioEnabled) => {
+      stopCamera();
+      const landscape = window.innerWidth > window.innerHeight;
+      const ideal = landscape
+        ? { width: { ideal: 1920 }, height: { ideal: 1080 } }
+        : { width: { ideal: 1080 }, height: { ideal: 1920 } };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: id ? { deviceId: { exact: id }, ...ideal } : { facingMode: mode, ...ideal },
+          audio: wantAudio ? { echoCancellation: true, noiseSuppression: true } : false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        const settings = stream.getVideoTracks()[0]?.getSettings();
+        if (settings?.deviceId) setDeviceId(settings.deviceId);
+        refreshCameras();
+      } catch (error) {
+        // Microphone blocked? Fall back to a video-only stream.
+        if (wantAudio) {
+          console.warn("Falling back to video-only capture:", error);
+          setMicDenied(true);
+          setAudioEnabled(false);
+          toast.error("Microphone unavailable ÔÇö recording without sound");
+          await startCameraRef.current?.(mode, id, false);
+          return;
+        }
+        toast.error("Unable to access camera");
+        console.error("Camera error:", error);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stopCamera, refreshCameras, audioEnabled]
+  );
+
+  const startCameraRef = useRef<typeof startCamera | null>(null);
+  startCameraRef.current = startCamera;
+
+  const toggleAudio = async () => {
+    if (isRecording || recordedBlob) return;
+    const next = !audioEnabled;
+    setAudioEnabled(next);
+    if (next) setMicDenied(false);
+    await startCamera(facingMode, deviceId, next);
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
+  useEffect(() => {
+    if (!recordedBlob) startCamera(facingMode, deviceId, audioEnabled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facingMode, deviceId]);
+
+  // Keep the camera list fresh when devices are plugged/unplugged
+  useEffect(() => {
+    const handler = () => {
+      refreshCameras();
+      navigator.mediaDevices.enumerateDevices().then((all) => {
+        const cams = all.filter((d) => d.kind === "videoinput");
+        if (deviceId && !cams.some((c) => c.deviceId === deviceId)) {
+          toast.info("Camera disconnected ÔÇö switching to default");
+          setDeviceId(null);
+        }
+      }).catch(() => {});
+    };
+    navigator.mediaDevices?.addEventListener?.("devicechange", handler);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", handler);
+  }, [refreshCameras, deviceId]);
+
+  // Orientation changes: keep the preview correct, warn mid-recording
+  useEffect(() => {
+    const onResize = () => {
+      const next = window.innerWidth > window.innerHeight ? "landscape" : "portrait";
+      setOrientation((prev) => {
+        if (prev === next) return prev;
+        if (isRecording) {
+          setRotatedWhileRecording(true);
+        } else if (!recordedBlob) {
+          // Re-acquire the stream at the new aspect ratio
+          startCamera(facingMode, deviceId);
+        }
+        return next;
+      });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    screen.orientation?.addEventListener?.("change", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      screen.orientation?.removeEventListener?.("change", onResize);
+    };
+  }, [isRecording, recordedBlob, facingMode, deviceId, startCamera]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      stopCamera();
+    };
+  }, [stopCamera]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const cameraLabel = (d: MediaDeviceInfo, i: number) => {
+    if (d.label) return d.label;
+    return `Camera ${i + 1}`;
   };
+
+  const selectCamera = (id: string) => {
+    if (isRecording) return;
+    setDeviceId(id);
+  };
+
+  const flipCamera = () => {
+    if (isRecording) return;
+    setDeviceId(null);
+    setFacingMode((m) => (m === "user" ? "environment" : "user"));
+  };
+
 
   const startRecording = () => {
     if (!streamRef.current) return;
 
+    setRotatedWhileRecording(false);
     chunksRef.current = [];
-    const mediaRecorder = new MediaRecorder(streamRef.current, {
-      mimeType: "video/webm",
-    });
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : MediaRecorder.isTypeSupported("video/webm")
+      ? "video/webm"
+      : "";
+    const mediaRecorder = new MediaRecorder(streamRef.current, mimeType ? { mimeType } : undefined);
 
     mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        chunksRef.current.push(event.data);
-      }
+      if (event.data.size > 0) chunksRef.current.push(event.data);
     };
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
       setRecordedBlob(blob);
       const url = URL.createObjectURL(blob);
+      if (videoRef.current) videoRef.current.srcObject = null;
       setPreviewUrl(url);
       stopCamera();
+      if (captionsEnabled && audioEnabled) generateCaptions(blob);
     };
 
     mediaRecorderRef.current = mediaRecorder;
     mediaRecorder.start();
     setIsRecording(true);
 
-    // Stop recording after 5 seconds
     let timeLeft = 5;
     setCountdown(timeLeft);
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       timeLeft--;
       setCountdown(timeLeft);
       if (timeLeft <= 0) {
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         setCountdown(null);
         stopRecording();
       }
@@ -113,104 +279,311 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
     }
+    setIsRecording(false);
   };
 
   const retake = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setRecordedBlob(null);
     setPreviewUrl(null);
-    startCamera();
+    setUploadError(null);
+    setProgress(0);
+    setUploadDone(false);
+    setClipDuration(0);
+    setTrimStart(0);
+    setTrimEnd(0);
+    setSquareCrop(true);
+    setCaption("");
+    setCaptionError(null);
+    startCamera(facingMode);
   };
+
+  const cancelUpload = () => {
+    xhrRef.current?.abort();
+    xhrRef.current = null;
+    setUploading(false);
+    setProgress(0);
+    setUploadError("Upload canceled.");
+  };
+
+  const generateCaptions = useCallback(
+    async (blob: Blob) => {
+      setCaptioning(true);
+      setCaptionError(null);
+      try {
+        const form = new FormData();
+        form.append("file", blob, "clip.webm");
+        const { data, error } = await supabase.functions.invoke("transcribe-video", { body: form });
+        if (error) throw error;
+        const text = (data as { text?: string; error?: string })?.text?.trim();
+        if (!text) throw new Error((data as { error?: string })?.error || "No speech detected in this clip.");
+        setCaption(text);
+        toast.success("Captions generated");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Could not generate captions for this clip.";
+        console.error("Caption error:", err);
+        setCaptionError(message);
+      } finally {
+        setCaptioning(false);
+      }
+    },
+    []
+  );
 
   const uploadVideo = async () => {
     if (!recordedBlob || !user) return;
 
     setUploading(true);
+    setUploadError(null);
+    setProgress(0);
+
     try {
-      const fileName = `${user.id}/profile-video-${Date.now()}.webm`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("profile-videos")
-        .upload(fileName, recordedBlob, {
-          contentType: "video/webm",
-          upsert: true,
-        });
+      const needsTrim =
+        clipDuration > 0 && (trimStart > 0.05 || trimEnd < clipDuration - 0.05 || squareCrop);
 
-      if (uploadError) throw uploadError;
+      let blobToUpload = recordedBlob;
+      if (needsTrim) {
+        setTrimming(true);
+        try {
+          blobToUpload = await trimVideo(recordedBlob, {
+            start: trimStart,
+            end: trimEnd,
+            square: squareCrop,
+            withAudio: audioEnabled,
+            onProgress: setTrimProgress,
 
-      const videoUrl = storageRefUrl("profile-videos", fileName);
+          });
+        } finally {
+          setTrimming(false);
+          setTrimProgress(0);
+        }
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Your session expired. Please sign in again.");
+
+      const path = `${user.id}/profile-video-${Date.now()}.webm`;
+
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
+        xhr.open("POST", `${SUPABASE_URL}/storage/v1/object/profile-videos/${path}`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.setRequestHeader("apikey", SUPABASE_KEY);
+        xhr.setRequestHeader("Content-Type", "video/webm");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 95));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setProgress(97);
+            resolve();
+          } else if (xhr.status === 401 || xhr.status === 403) {
+            reject(new Error("You don't have permission to upload. Try signing in again."));
+          } else {
+            reject(new Error(`Upload failed (${xhr.status}). Please try again.`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error — check your connection and retry."));
+        xhr.onabort = () => reject(new Error("Upload canceled."));
+        xhr.send(blobToUpload);
+      });
+
+      const videoUrl = storageRefUrl("profile-videos", path);
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ profile_video_url: videoUrl })
+        .update({
+          profile_video_url: videoUrl,
+          profile_video_caption: caption.trim() || null,
+          profile_video_caption_vtt: caption.trim()
+            ? buildVtt(caption.trim(), Math.max(0.5, (trimEnd || clipDuration) - trimStart))
+            : null,
+        })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error("Video uploaded, but saving it to your profile failed. Retry to finish.");
 
+      setProgress(100);
+      setUploadDone(true);
       toast.success("Profile video updated!");
       onVideoUploaded(videoUrl);
-      onClose();
+      setTimeout(onClose, 600)
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to upload video";
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      setUploadError(message);
+      if (message !== "Upload canceled.") toast.error(message);
     } finally {
+      xhrRef.current = null;
       setUploading(false);
     }
   };
 
-  return (
-    <Card className="glass-effect max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-display">
-            <Video className="w-5 h-5 text-primary" />
-            Record Profile Video
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-4 h-4" />
+
+  const mirrored = facingMode === "user" && !recordedBlob;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+      {/* Video fills the screen */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        loop={false}
+        src={previewUrl || undefined}
+        onLoadedMetadata={(e) => {
+          if (!previewUrl) return;
+          const d = isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 5;
+          setClipDuration(d);
+          setTrimStart(0);
+          setTrimEnd(d);
+        }}
+        onTimeUpdate={(e) => {
+          if (!previewUrl || !clipDuration) return;
+          const v = e.currentTarget;
+          if (v.currentTime >= trimEnd || v.currentTime < trimStart - 0.1) {
+            v.currentTime = trimStart;
+            v.play().catch(() => {});
+          }
+        }}
+        onEnded={(e) => {
+          if (!previewUrl) return;
+          e.currentTarget.currentTime = trimStart;
+          e.currentTarget.play().catch(() => {});
+        }}
+        className={cn(
+          "absolute inset-0 w-full h-full",
+          fitMode === "cover" ? "object-cover" : "object-contain"
+        )}
+        style={{
+          filter: selectedFilter.cssFilter,
+          transform: mirrored ? "scaleX(-1)" : undefined,
+        }}
+      />
+
+      {/* Square crop guide */}
+      {previewUrl && squareCrop && (
+        <div className="absolute inset-0 z-[5] pointer-events-none flex items-center justify-center">
+          <div className="aspect-square w-[92vw] max-w-[92vh] border-2 border-white/70 rounded-2xl shadow-[0_0_0_9999px_hsl(0_0%_0%/0.45)]" />
+        </div>
+      )}
+
+
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-gradient-to-b from-black/70 to-transparent">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="rounded-full text-primary-foreground hover:bg-white/20"
+          onClick={() => { stopCamera(); onClose(); }}
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+
+        <span className="flex items-center gap-2 text-sm font-display text-primary-foreground">
+          <Video className="w-4 h-4 text-primary" />
+          Profile Video
+        </span>
+
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20"
+            onClick={() => setFitMode((m) => (m === "cover" ? "contain" : "cover"))}
+            aria-label={fitMode === "cover" ? "Fit video" : "Fill screen"}
+          >
+            {fitMode === "cover" ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Video Preview */}
-        <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            loop={!!previewUrl}
-            src={previewUrl || undefined}
-            className="w-full h-full object-cover"
-            style={{ filter: selectedFilter.cssFilter }}
-          />
-          
-          {countdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <div className="text-6xl font-bold text-primary animate-pulse-glow">
-                {countdown}
-              </div>
-            </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+            onClick={flipCamera}
+            disabled={isRecording || !!recordedBlob}
+            aria-label="Flip camera"
+          >
+            <SwitchCamera className="w-5 h-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+            onClick={toggleAudio}
+            disabled={isRecording || !!recordedBlob}
+            aria-label={audioEnabled ? "Mute microphone" : "Record with sound"}
+            aria-pressed={audioEnabled}
+          >
+            {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5 text-muted-foreground" />}
+          </Button>
+          {cameras.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full text-primary-foreground hover:bg-white/20 disabled:opacity-40"
+                  disabled={isRecording || !!recordedBlob}
+                  aria-label="Choose camera"
+                >
+                  <Camera className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-[110] w-64">
+                <DropdownMenuLabel>Available cameras</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {cameras.map((cam, i) => (
+                  <DropdownMenuItem
+                    key={cam.deviceId || i}
+                    onClick={() => selectCamera(cam.deviceId)}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span className="truncate">{cameraLabel(cam, i)}</span>
+                    {cam.deviceId === deviceId && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-
-          {!recordedBlob && !isRecording && (
-            <div className="absolute bottom-4 left-4 right-4 text-center text-sm text-white bg-background/80 p-2 rounded-lg">
-              5 second video • Position yourself and click record
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* Filters */}
+      {/* Orientation notice */}
+      {rotatedWhileRecording && isRecording && (
+        <div className="relative z-10 mx-4 flex items-center gap-2 rounded-lg bg-background/70 backdrop-blur px-3 py-2 text-xs text-primary-foreground">
+          <SmartphoneCharging className="w-4 h-4 text-primary shrink-0" />
+          Rotation detected ÔÇö keep the device steady until recording finishes.
+        </div>
+      )}
+
+
+      {countdown !== null && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <div className="text-7xl font-bold text-primary animate-pulse-glow">{countdown}</div>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
+      {/* Bottom controls */}
+      <div className="relative z-10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
         {!recordedBlob && (
           <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Choose Filter
+            <label className="text-xs font-medium flex items-center gap-2 text-primary-foreground/80">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Filter
             </label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {filters.map((filter) => (
                 <Button
                   key={filter.id}
@@ -218,8 +591,8 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
                   size="sm"
                   onClick={() => setSelectedFilter(filter)}
                   className={cn(
-                    "flex-shrink-0",
-                    selectedFilter.id === filter.id && "border-primary bg-primary/10"
+                    "flex-shrink-0 bg-background/30 backdrop-blur border-white/20 text-primary-foreground",
+                    selectedFilter.id === filter.id && "border-primary bg-primary/20"
                   )}
                 >
                   <span className="mr-1">{filter.emoji}</span>
@@ -230,53 +603,221 @@ const ProfileVideoRecorder = ({ onVideoUploaded, onClose }: Props) => {
           </div>
         )}
 
-        {/* Controls */}
-        <div className="flex gap-3">
-          {!recordedBlob ? (
-            <>
-              <Button
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isRecording}
-                className="flex-1"
-                size="lg"
-              >
-                {isRecording ? (
-                  <>
-                    <StopCircle className="mr-2 h-5 w-5 animate-pulse" />
-                    Recording...
-                  </>
+        {/* Trim & crop step */}
+        {recordedBlob && !uploadDone && (
+          <div className="rounded-xl border border-white/20 bg-background/40 backdrop-blur p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium text-primary-foreground">
+                <Scissors className="w-3.5 h-3.5 text-primary" />
+                Trim clip
+              </span>
+              <span className="text-xs font-mono text-primary-foreground/80">
+                {trimStart.toFixed(1)}s ÔÇô {trimEnd.toFixed(1)}s ({Math.max(0, trimEnd - trimStart).toFixed(1)}s)
+              </span>
+            </div>
+
+            <Slider
+              value={[trimStart, trimEnd]}
+              min={0}
+              max={clipDuration || 5}
+              step={0.1}
+              minStepsBetweenThumbs={5}
+              disabled={uploading || trimming || !clipDuration}
+              onValueChange={([s, e]) => {
+                setTrimStart(s);
+                setTrimEnd(e);
+                if (videoRef.current && videoRef.current.currentTime < s) {
+                  videoRef.current.currentTime = s;
+                }
+              }}
+              aria-label="Trim range"
+            />
+
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs text-primary-foreground">
+                <Crop className="w-3.5 h-3.5 text-primary" />
+                Square crop (best for avatars)
+              </span>
+              <Switch
+                checked={squareCrop}
+                onCheckedChange={setSquareCrop}
+                disabled={uploading || trimming}
+                aria-label="Square crop"
+              />
+            </div>
+          </div>
+        )}
+
+
+        {/* Captions */}
+        {recordedBlob && !uploadDone && (
+          <div className="rounded-xl border border-white/20 bg-background/40 backdrop-blur p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-medium text-primary-foreground">
+                <Captions className="w-3.5 h-3.5 text-primary" />
+                Auto captions
+              </span>
+              <Switch
+                checked={captionsEnabled}
+                onCheckedChange={(v) => {
+                  setCaptionsEnabled(v);
+                  if (!v) {
+                    setCaption("");
+                    setCaptionError(null);
+                  }
+                }}
+                disabled={uploading || captioning}
+                aria-label="Auto captions"
+              />
+            </div>
+
+            {captionsEnabled && (
+              <>
+                {!audioEnabled ? (
+                  <p className="text-xs text-primary-foreground/70">
+                    Turn the microphone on and re-record to caption your highlights.
+                  </p>
+                ) : captioning ? (
+                  <p className="flex items-center gap-2 text-xs text-primary-foreground/80">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Listening to your clip and writing captionsÔÇª
+                  </p>
                 ) : (
                   <>
-                    <PlayCircle className="mr-2 h-5 w-5" />
-                    Start Recording
+                    <Textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="Captions will appear here ÔÇö you can edit them before uploading."
+                      rows={3}
+                      disabled={uploading}
+                      aria-label="Video captions"
+                      className="bg-background/50 text-sm text-primary-foreground placeholder:text-primary-foreground/50 border-white/20"
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      {captionError ? (
+                        <span className="text-xs text-destructive">{captionError}</span>
+                      ) : (
+                        <span className="text-xs text-primary-foreground/60">
+                          Viewers can read these under your video.
+                        </span>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => recordedBlob && generateCaptions(recordedBlob)}
+                        disabled={uploading || captioning || !audioEnabled}
+                        className="bg-background/30 border-white/20 text-primary-foreground shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        {caption ? "Redo" : "Generate"}
+                      </Button>
+                    </div>
                   </>
                 )}
-              </Button>
-            </>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Upload status */}
+        {recordedBlob && (uploading || uploadError || uploadDone) && (
+          <div
+            className={cn(
+              "rounded-xl border p-3 space-y-2 backdrop-blur",
+              uploadError
+                ? "border-destructive/50 bg-destructive/15"
+                : "border-white/20 bg-background/40"
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center gap-2 text-sm text-primary-foreground">
+              {uploadError ? (
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+              ) : uploadDone ? (
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              )}
+              <span className="flex-1">
+                {uploadError
+                  ? uploadError
+                  : uploadDone
+                  ? "Upload complete"
+                  : trimming
+                  ? `Trimming clipÔÇª ${trimProgress}%`
+                  : progress < 95
+                  ? `Uploading videoÔÇª ${progress}%`
+                  : "Saving to your profileÔÇª"}
+              </span>
+
+              {uploading && !trimming && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelUpload}
+                  className="h-7 px-2 text-primary-foreground hover:bg-white/20"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
+            {!uploadError && <Progress value={trimming ? trimProgress : progress} className="h-1.5" />}
+
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          {!recordedBlob ? (
+            <Button
+              onClick={isRecording ? stopRecording : startRecording}
+              className="flex-1"
+              size="lg"
+            >
+              {isRecording ? (
+                <>
+                  <StopCircle className="mr-2 h-5 w-5 animate-pulse" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Record 5s
+                </>
+              )}
+            </Button>
           ) : (
             <>
-              <Button onClick={retake} variant="outline" className="flex-1">
+              <Button
+                onClick={retake}
+                variant="outline"
+                size="lg"
+                disabled={uploading || uploadDone}
+                className="flex-1 bg-background/30 backdrop-blur border-white/20 text-primary-foreground"
+              >
                 Retake
               </Button>
-              <Button
-                onClick={uploadVideo}
-                disabled={uploading}
-                className="flex-1"
-              >
-                {uploading ? (
-                  "Uploading..."
+              <Button onClick={uploadVideo} disabled={uploading || uploadDone} size="lg" className="flex-1">
+                {trimming ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Trimming</>
+                ) : uploading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{progress}%</>
+
+                ) : uploadError ? (
+                  <><RotateCcw className="mr-2 h-4 w-4" />Retry</>
+                ) : uploadDone ? (
+                  <><CheckCircle2 className="mr-2 h-4 w-4" />Done</>
                 ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
+                  <><Upload className="mr-2 h-4 w-4" />Upload</>
                 )}
               </Button>
             </>
           )}
         </div>
-      </CardContent>
-    </Card>
+
+      </div>
+    </div>,
+    document.body
   );
 };
 

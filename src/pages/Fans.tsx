@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
-import { Heart, Search, Users, Mic, Camera, Trophy } from "lucide-react";
+import { Heart, Search, Users, Mic, Camera, Trophy, History as HistoryIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
+import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
+import AthleteSearchAutocomplete from "@/components/AthleteSearchAutocomplete";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FriendsPanel from "@/components/friends/FriendsPanel";
+import FriendChat from "@/components/friends/FriendChat";
+import UserActionsMenu from "@/components/friends/UserActionsMenu";
+
 
 type Role = "all" | "athlete" | "commentator" | "media";
 
@@ -45,6 +53,14 @@ const Fans = () => {
   const [selectedRole, setSelectedRole] = useState<Role>("all");
   const [results, setResults] = useState<FanProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const { recents, addRecent, clearRecents } = useRecentSearches();
+  const [tab, setTab] = useState<"discover" | "friends" | "messages">("discover");
+  const [chatWith, setChatWith] = useState<string | undefined>(undefined);
+
+  const openChat = (id: string) => {
+    setChatWith(id);
+    setTab("messages");
+  };
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -141,16 +157,75 @@ const Fans = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or username..."
-              className="pl-10"
-            />
-          </div>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="discover">Discover</TabsTrigger>
+              <TabsTrigger value="friends">Friends</TabsTrigger>
+              <TabsTrigger value="messages">Messages</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="friends">
+              <FriendsPanel />
+            </TabsContent>
+
+            <TabsContent value="messages">
+              <FriendChat initialRecipientId={chatWith} />
+            </TabsContent>
+
+            <TabsContent value="discover" className="space-y-6">
+          {/* Search with autocomplete */}
+          <AthleteSearchAutocomplete
+            value={query}
+            onValueChange={setQuery}
+            onSelectSport={(sportId) => {
+              setSelectedSport(sportId);
+              setQuery("");
+            }}
+            onSelectAthlete={(a) => navigate(`/athlete/${a.id}`)}
+            placeholder="Search athletes by name or sport..."
+          />
+
+          {/* Recent searches & filters */}
+          {recents.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Recent</p>
+                <button
+                  type="button"
+                  onClick={clearRecents}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recents.map((r) => (
+                  <Button
+                    key={`${r.type}-${r.id}`}
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => {
+                      if (r.type === "sport") {
+                        setSelectedSport(r.id);
+                        addRecent({ type: "sport", id: r.id, label: r.label });
+                      } else {
+                        navigate(`/athlete/${r.id}`);
+                      }
+                    }}
+                  >
+                    {r.type === "sport" ? (
+                      <InlineSportIcon sportId={r.id} />
+                    ) : (
+                      <HistoryIcon className="h-3.5 w-3.5" />
+                    )}
+                    {r.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* Role filter */}
           <div className="space-y-2">
@@ -194,7 +269,10 @@ const Fans = () => {
                     key={sport.id}
                     size="sm"
                     variant={active ? "default" : "outline"}
-                    onClick={() => setSelectedSport(sport.id)}
+                    onClick={() => {
+                      setSelectedSport(sport.id);
+                      addRecent({ type: "sport", id: sport.id, label: sport.name });
+                    }}
                     className="gap-2"
                   >
                     <Icon className="h-4 w-4" />
@@ -240,6 +318,9 @@ const Fans = () => {
                       <p className="font-semibold text-foreground truncate">
                         {profile.full_name || profile.username}
                       </p>
+                      {profile.sports?.[0] && (
+                        <InlineSportIcon sportId={profile.sports[0]} />
+                      )}
                       {roleBadge(profile.role)}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
@@ -260,14 +341,17 @@ const Fans = () => {
                     )}
                   </div>
 
-                  <Button size="sm" variant="secondary" className="gap-1 shrink-0">
-                    <Heart className="h-4 w-4" />
-                    View
-                  </Button>
+                  <UserActionsMenu
+                    targetId={profile.id}
+                    targetName={profile.full_name || profile.username}
+                    onMessage={openChat}
+                  />
                 </Card>
               ))
             )}
           </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

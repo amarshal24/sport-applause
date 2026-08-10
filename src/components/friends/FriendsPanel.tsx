@@ -18,7 +18,20 @@ import {
   UserMinus,
   Clock,
   Link as LinkIcon,
+  Ban,
+  ShieldAlert,
+  ShieldCheck,
+  MoreVertical,
+  RotateCcw,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useUserBlocks, BlockLevel } from '@/hooks/useUserBlocks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFriends, Friend } from '@/hooks/useFriends';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +57,14 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
     createAppInvite,
     searchUsers,
   } = useFriends();
+  const {
+    blocks,
+    isLoading: blocksLoading,
+    blockUser,
+    restrictUser,
+    unblockUser,
+    levelFor,
+  } = useUserBlocks();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -129,7 +150,7 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="friends" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsList className="grid w-full grid-cols-5 mb-4">
             <TabsTrigger value="friends" className="text-xs sm:text-sm">
               Friends ({friends.length})
             </TabsTrigger>
@@ -146,6 +167,9 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
             </TabsTrigger>
             <TabsTrigger value="invite" className="text-xs sm:text-sm">
               Invite
+            </TabsTrigger>
+            <TabsTrigger value="blocked" className="text-xs sm:text-sm">
+              Blocked{blocks.length > 0 ? ` (${blocks.length})` : ''}
             </TabsTrigger>
           </TabsList>
 
@@ -168,6 +192,10 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
                     key={friend.id}
                     friend={friend}
                     onRemove={() => removeFriend(friend.id)}
+                    accessLevel={levelFor(friend.profile.id)}
+                    onBlock={() => blockUser(friend.profile.id)}
+                    onRestrict={() => restrictUser(friend.profile.id)}
+                    onRestore={() => unblockUser(friend.profile.id)}
                     onChallenge={onChallengeFriend ? () => onChallengeFriend(friend.profile.id) : undefined}
                   />
                 ))}
@@ -374,6 +402,74 @@ const FriendsPanel: React.FC<FriendsPanelProps> = ({ onChallengeFriend }) => {
               </div>
             )}
           </TabsContent>
+
+          {/* Blocked & restricted */}
+          <TabsContent value="blocked" className="space-y-3">
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.location.assign('/blocked')}
+              >
+                Open block manager
+              </Button>
+            </div>
+            {blocksLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
+              </div>
+            ) : blocks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No blocked or restricted people</p>
+                <p className="text-sm">Use the menu on a friend to limit their access.</p>
+              </div>
+            ) : (
+              <AnimatePresence>
+                {blocks.map((b) => (
+                  <motion.div
+                    key={b.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={b.profile?.avatarUrl || undefined} />
+                        <AvatarFallback>
+                          {(b.profile?.username || '?')[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{b.profile?.username || 'Unknown user'}</p>
+                        <Badge variant={b.level === 'blocked' ? 'destructive' : 'secondary'} className="mt-1">
+                          {b.level === 'blocked' ? 'Blocked' : 'Restricted'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {b.level === 'blocked' ? (
+                        <Button size="sm" variant="outline" onClick={() => restrictUser(b.userId)}>
+                          <ShieldAlert className="w-4 h-4 mr-1" />
+                          Restrict
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => blockUser(b.userId)}>
+                          <Ban className="w-4 h-4 mr-1" />
+                          Block
+                        </Button>
+                      )}
+                      <Button size="sm" onClick={() => unblockUser(b.userId)}>
+                        <RotateCcw className="w-4 h-4 mr-1" />
+                        Unblock
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
@@ -384,7 +480,11 @@ const FriendCard: React.FC<{
   friend: Friend;
   onRemove: () => void;
   onChallenge?: () => void;
-}> = ({ friend, onRemove, onChallenge }) => (
+  accessLevel?: BlockLevel | null;
+  onBlock?: () => void;
+  onRestrict?: () => void;
+  onRestore?: () => void;
+}> = ({ friend, onRemove, onChallenge, accessLevel, onBlock, onRestrict, onRestore }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -403,6 +503,11 @@ const FriendCard: React.FC<{
         {friend.profile.fullName && (
           <p className="text-xs text-muted-foreground">{friend.profile.fullName}</p>
         )}
+        {accessLevel && (
+          <Badge variant={accessLevel === 'blocked' ? 'destructive' : 'secondary'} className="mt-1">
+            {accessLevel === 'blocked' ? 'Blocked' : 'Restricted'}
+          </Badge>
+        )}
       </div>
     </div>
     <div className="flex gap-1">
@@ -411,9 +516,38 @@ const FriendCard: React.FC<{
           Challenge
         </Button>
       )}
-      <Button size="icon" variant="ghost" onClick={onRemove}>
-        <UserMinus className="w-4 h-4 text-destructive" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="ghost" aria-label="Friend options">
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          {accessLevel !== 'restricted' && onRestrict && (
+            <DropdownMenuItem onClick={onRestrict}>
+              <ShieldAlert className="w-4 h-4 mr-2" />
+              Restrict access
+            </DropdownMenuItem>
+          )}
+          {accessLevel !== 'blocked' && onBlock && (
+            <DropdownMenuItem onClick={onBlock}>
+              <Ban className="w-4 h-4 mr-2" />
+              Block
+            </DropdownMenuItem>
+          )}
+          {accessLevel && onRestore && (
+            <DropdownMenuItem onClick={onRestore}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restore access
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
+            <UserMinus className="w-4 h-4 mr-2" />
+            Remove friend
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   </motion.div>
 );
