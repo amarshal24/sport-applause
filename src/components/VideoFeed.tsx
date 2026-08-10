@@ -695,71 +695,91 @@ const VideoFeed = () => {
       className={`relative ${slideHeightClass} w-full max-w-lg mx-auto bg-black overflow-hidden`}
     >
       {/* Scope + sport filters overlay */}
-      <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none space-y-2">
-        {user && (
-          <div className="flex gap-2 pointer-events-auto">
-            <Button
-              size="sm"
-              variant={feedScope === "following" ? "default" : "secondary"}
-              className={
-                feedScope === "following"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-background/50 text-foreground backdrop-blur-md border-0 hover:bg-background/70"
-              }
-              onClick={() => setFeedScope("following")}
+      <div className="absolute top-0 inset-x-0 z-30 px-3 pt-3 pointer-events-none">
+        <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/45 p-2 shadow-steel backdrop-blur-xl space-y-2">
+          {user && (
+            <div
+              role="tablist"
+              aria-label="Feed scope"
+              className="grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1"
             >
-              Following
-            </Button>
-            <Button
-              size="sm"
-              variant={feedScope === "everyone" ? "default" : "secondary"}
-              className={
-                feedScope === "everyone"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-background/50 text-foreground backdrop-blur-md border-0 hover:bg-background/70"
-              }
-              onClick={() => setFeedScope("everyone")}
-            >
-              Everyone
-            </Button>
-          </div>
-        )}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide pointer-events-auto">
-          <Button
-            onClick={() => setSelectedSport("all")}
-            size="sm"
-            variant={selectedSport === "all" ? "default" : "secondary"}
-            className={
-              selectedSport === "all"
-                ? "bg-primary text-primary-foreground shrink-0 shadow-md"
-                : "bg-background/50 text-foreground backdrop-blur-md border-0 shrink-0 hover:bg-background/70"
-            }
-          >
-            All Sports
-          </Button>
-          {SPORTS.map((sport) => {
-            const Icon = sport.icon;
-            const active = selectedSport === sport.id;
-            return (
-              <Button
-                key={sport.id}
-                onClick={() => setSelectedSport(active ? "all" : sport.id)}
-                size="sm"
-                variant={active ? "default" : "secondary"}
-                className={
-                  active
-                    ? "bg-primary text-primary-foreground shrink-0 gap-2 shadow-md"
-                    : "bg-background/50 text-foreground backdrop-blur-md border-0 shrink-0 gap-2 hover:bg-background/70"
-                }
-                title={sport.name}
-                aria-label={sport.name}
-                aria-pressed={active}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={feedScope === "following"}
+                onClick={() => setFeedScope("following")}
+                className={`h-8 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                  feedScope === "following"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
               >
-                <Icon className="h-4 w-4" />
-                {sport.name}
-              </Button>
-            );
-          })}
+                Following
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={feedScope === "everyone"}
+                onClick={() => setFeedScope("everyone")}
+                className={`h-8 rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                  feedScope === "everyone"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                Everyone  
+              </button>
+            </div>
+          )}
+
+          <div className="relative">
+            <div
+              role="listbox"
+              aria-label="Filter by sport"
+              className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 snap-x snap-mandatory scrollbar-hide [-webkit-overflow-scrolling:touch]"
+            >
+              <button
+                type="button"
+                role="option"
+                aria-selected={selectedSport === "all"}
+                onClick={() => setSelectedSport("all")}
+                className={`snap-start shrink-0 inline-flex h-8 items-center rounded-full px-3 text-xs font-medium transition-colors ${
+                  selectedSport === "all"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-white/10 text-white/80 hover:bg-white/15 hover:text-white"
+                }`}
+              >
+                All
+              </button>
+              {SPORTS.map((sport) => {
+                const Icon = sport.icon;
+                const active = selectedSport === sport.id;
+                return (
+                  <button
+                    key={sport.id}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => setSelectedSport(active ? "all" : sport.id)}
+                    title={sport.name}
+                    aria-label={sport.name}
+                    className={`snap-start shrink-0 inline-flex h-8 max-w-[9.5rem] items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "bg-white/10 text-white/80 hover:bg-white/15 hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    <span className="truncate">{sport.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-xl bg-gradient-to-l from-black/70 to-transparent"
+            />
+          </div>
         </div>
       </div>
 
