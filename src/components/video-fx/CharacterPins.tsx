@@ -890,32 +890,92 @@ export const CharacterPinsPanel = ({
       </div>
 
 
-      {/* AI Skin Swap (coming soon) */}
-      <button
-        type="button"
-        onClick={() =>
-          toast.info("AI Skin Swap is coming soon", {
-            description: "Auto-detect people & objects and replace them with new skins.",
-          })
-        }
-        className="w-full rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 flex items-center gap-3 text-left hover:bg-primary/10 transition-colors"
-      >
-        <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center">
-          <Wand2 className="h-4 w-4 text-primary" />
+      {/* Auto-detect movers in the clip */}
+      {onAddAt && (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2.5">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+              <Wand2 className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Auto-detect</p>
+              <p className="text-xs text-muted-foreground">
+                Scans the action and finds the players & balls in motion.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="h-7 text-xs gap-1 shrink-0"
+              disabled={detecting || trackingId !== null || !videoSource}
+              onClick={runAutoDetect}
+            >
+              {detecting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {detectPct}%
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Scan
+                </>
+              )}
+            </Button>
+          </div>
+
+          {detecting && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${detectPct}%` }}
+              />
+            </div>
+          )}
+
+          {detected && detected.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {detected.map((t, i) => (
+                  <button
+                    key={`${t.x}-${t.y}-${i}`}
+                    type="button"
+                    disabled={full}
+                    onClick={() => addDetected([t], true)}
+                    className={cn(
+                      "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
+                      full && "opacity-50 pointer-events-none"
+                    )}
+                  >
+                    <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
+                    {t.kind === "character" ? "Player" : "Object"} {i + 1}
+                    <span className="text-muted-foreground">
+                      {Math.round(t.score * 100)}%
+                    </span>
+                    <Plus className="h-3 w-3 text-primary" />
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 w-full text-xs gap-1"
+                disabled={full || trackingId !== null}
+                onClick={() => addDetected(detected, true)}
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+                Add all & lock on
+              </Button>
+            </div>
+          )}
+
+          {detected && detected.length === 0 && !detecting && (
+            <p className="text-[11px] text-muted-foreground">
+              No movement detected here. Scrub to an action moment and scan again.
+            </p>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium flex items-center gap-1.5">
-            AI Skin Swap
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
-              Soon
-            </span>
-          </p>
-          <p className="text-xs text-muted-foreground truncate">
-            Auto-detect players & balls, swap them into full-body skins.
-          </p>
-        </div>
-        <Lock className="h-4 w-4 text-muted-foreground" />
-      </button>
+      )}
+
 
       {pins.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
