@@ -657,6 +657,70 @@ export const CharacterPinsPanel = ({
     else toast.warning(`Locked ${ok}/${targets.length}. Restart the failed ones below.`);
   };
 
+  // ===== Auto-detect movers in the clip =====
+  const autoTrackPending = useRef(false);
+
+  const runAutoDetect = async () => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then run auto-detect.");
+      return;
+    }
+    setDetecting(true);
+    setDetectPct(0);
+    setDetected(null);
+    try {
+      const found = await detectTargets(videoSource, {
+        around: getCurrentTime?.() ?? undefined,
+        max: MAX_PINS,
+        onProgress: setDetectPct,
+      });
+      setDetected(found);
+      if (found.length === 0) {
+        toast.info("Nothing moving found here — scrub to an action moment and try again.");
+      } else {
+        toast.success(
+          `Found ${found.length} mover${found.length > 1 ? "s" : ""} — add the ones you want.`
+        );
+      }
+    } catch (err) {
+      console.error("Auto-detect failed", err);
+      toast.error(err instanceof Error ? err.message : "Auto-detect failed on this clip.");
+    } finally {
+      setDetecting(false);
+      setDetectPct(0);
+    }
+  };
+
+  const suggestedPreset = (t: DetectedTarget) =>
+    t.kind === "character"
+      ? { skin: "athlete" as CharacterSkinId, animation: "speed-lines" as CharacterAnimationId }
+      : { skin: "basketball" as CharacterSkinId, animation: "fire-aura" as CharacterAnimationId };
+
+  const addDetected = (targets: DetectedTarget[], autoTrack: boolean) => {
+    if (!onAddAt) return;
+    const room = MAX_PINS - pins.length;
+    const picks = targets.slice(0, Math.max(0, room));
+    if (picks.length === 0) {
+      toast.info(`You already have the max of ${MAX_PINS} effects.`);
+      return;
+    }
+    picks.forEach((t) => onAddAt(t.x, t.y, suggestedPreset(t)));
+    setDetected((prev) => (prev ? prev.filter((t) => !picks.includes(t)) : prev));
+    if (autoTrack) autoTrackPending.current = true;
+  };
+
+  // Lock the freshly detected pins onto their objects once they're mounted.
+  useEffect(() => {
+    if (!autoTrackPending.current) return;
+    if (trackingId || batch) return;
+    if (!pins.some((p) => !p.track?.length)) return;
+    autoTrackPending.current = false;
+    void runTrackAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pins]);
+
+
+
 
 
 
