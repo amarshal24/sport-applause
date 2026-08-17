@@ -39,6 +39,9 @@ interface PanelProps {
   // Character pins (existing functionality reused)
   pins: CharacterPin[];
   onAddPin: (preset?: { skin: any; animation: any }) => void;
+  onAddPinAt?: (x: number, y: number, preset?: { skin?: any; animation?: any }) => void;
+  videoSource?: File | Blob | string | null;
+  getCurrentTime?: () => number;
   onUpdatePin: (id: string, patch: Partial<CharacterPin>) => void;
   onRemovePin: (id: string) => void;
 }
@@ -129,6 +132,9 @@ export const FullscreenFiltersEffectsPanel = ({
   onChange,
   pins,
   onAddPin,
+  onAddPinAt,
+  videoSource,
+  getCurrentTime,
   onUpdatePin,
   onRemovePin,
 }: PanelProps) => {
@@ -299,6 +305,9 @@ export const FullscreenFiltersEffectsPanel = ({
                       <CharacterPinsPanel
                         pins={pins}
                         onAdd={onAddPin}
+                        onAddAt={onAddPinAt}
+                        videoSource={videoSource}
+                        getCurrentTime={getCurrentTime}
                         onUpdate={onUpdatePin}
                         onRemove={onRemovePin}
                       />

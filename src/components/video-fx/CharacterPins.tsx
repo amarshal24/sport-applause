@@ -9,6 +9,8 @@ import {
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
+import { detectTargets, type DetectedTarget } from "@/lib/autoDetect";
+
 
 import { Button } from "@/components/ui/button";
 import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
@@ -434,6 +436,12 @@ interface PanelProps {
   onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
+  /** Drops a pin at an exact spot — enables auto-detection. */
+  onAddAt?: (
+    x: number,
+    y: number,
+    preset?: { skin?: CharacterSkinId; animation?: CharacterAnimationId }
+  ) => void;
   /** Clip being edited — enables "lock onto object" tracking. */
   videoSource?: File | Blob | string | null;
   /** Current playhead position of the preview, in seconds. */
@@ -445,9 +453,11 @@ export const CharacterPinsPanel = ({
   onAdd,
   onUpdate,
   onRemove,
+  onAddAt,
   videoSource,
   getCurrentTime,
 }: PanelProps) => {
+
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
@@ -461,7 +471,13 @@ export const CharacterPinsPanel = ({
   >({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
+  // ===== Auto-detection =====
+  const [detecting, setDetecting] = useState(false);
+  const [detectPct, setDetectPct] = useState(0);
+  const [detected, setDetected] = useState<DetectedTarget[] | null>(null);
+
   const trackedCount = pins.filter((p) => p.track?.length).length;
+
 
   // ===== Saved tracking data (path + scores) reusable across re-edits =====
   const { tracks: savedTracks, saveTrack, deleteTrack } = useSavedTracks();
@@ -641,6 +657,70 @@ export const CharacterPinsPanel = ({
     else toast.warning(`Locked ${ok}/${targets.length}. Restart the failed ones below.`);
   };
 
+  // ===== Auto-detect movers in the clip =====
+  const autoTrackPending = useRef(false);
+
+  const runAutoDetect = async () => {
+    if (!videoSource) {
+      toast.error("Load a clip first, then run auto-detect.");
+      return;
+    }
+    setDetecting(true);
+    setDetectPct(0);
+    setDetected(null);
+    try {
+      const found = await detectTargets(videoSource, {
+        around: getCurrentTime?.() ?? undefined,
+        max: MAX_PINS,
+        onProgress: setDetectPct,
+      });
+      setDetected(found);
+      if (found.length === 0) {
+        toast.info("Nothing moving found here — scrub to an action moment and try again.");
+      } else {
+        toast.success(
+          `Found ${found.length} mover${found.length > 1 ? "s" : ""} — add the ones you want.`
+        );
+      }
+    } catch (err) {
+      console.error("Auto-detect failed", err);
+      toast.error(err instanceof Error ? err.message : "Auto-detect failed on this clip.");
+    } finally {
+      setDetecting(false);
+      setDetectPct(0);
+    }
+  };
+
+  const suggestedPreset = (t: DetectedTarget) =>
+    t.kind === "character"
+      ? { skin: "athlete" as CharacterSkinId, animation: "speed-lines" as CharacterAnimationId }
+      : { skin: "basketball" as CharacterSkinId, animation: "fire-aura" as CharacterAnimationId };
+
+  const addDetected = (targets: DetectedTarget[], autoTrack: boolean) => {
+    if (!onAddAt) return;
+    const room = MAX_PINS - pins.length;
+    const picks = targets.slice(0, Math.max(0, room));
+    if (picks.length === 0) {
+      toast.info(`You already have the max of ${MAX_PINS} effects.`);
+      return;
+    }
+    picks.forEach((t) => onAddAt(t.x, t.y, suggestedPreset(t)));
+    setDetected((prev) => (prev ? prev.filter((t) => !picks.includes(t)) : prev));
+    if (autoTrack) autoTrackPending.current = true;
+  };
+
+  // Lock the freshly detected pins onto their objects once they're mounted.
+  useEffect(() => {
+    if (!autoTrackPending.current) return;
+    if (trackingId || batch) return;
+    if (!pins.some((p) => !p.track?.length)) return;
+    autoTrackPending.current = false;
+    void runTrackAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pins]);
+
+
+
 
 
 
@@ -810,32 +890,92 @@ export const CharacterPinsPanel = ({
       </div>
 
 
-      {/* AI Skin Swap (coming soon) */}
-      <button
-        type="button"
-        onClick={() =>
-          toast.info("AI Skin Swap is coming soon", {
-            description: "Auto-detect people & objects and replace them with new skins.",
-          })
-        }
-        className="w-full rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 flex items-center gap-3 text-left hover:bg-primary/10 transition-colors"
-      >
-        <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center">
-          <Wand2 className="h-4 w-4 text-primary" />
+      {/* Auto-detect movers in the clip */}
+      {onAddAt && (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2.5">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+              <Wand2 className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Auto-detect</p>
+              <p className="text-xs text-muted-foreground">
+                Scans the action and finds the players & balls in motion.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="h-7 text-xs gap-1 shrink-0"
+              disabled={detecting || trackingId !== null || !videoSource}
+              onClick={runAutoDetect}
+            >
+              {detecting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {detectPct}%
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Scan
+                </>
+              )}
+            </Button>
+          </div>
+
+          {detecting && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${detectPct}%` }}
+              />
+            </div>
+          )}
+
+          {detected && detected.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {detected.map((t, i) => (
+                  <button
+                    key={`${t.x}-${t.y}-${i}`}
+                    type="button"
+                    disabled={full}
+                    onClick={() => addDetected([t], true)}
+                    className={cn(
+                      "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
+                      full && "opacity-50 pointer-events-none"
+                    )}
+                  >
+                    <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
+                    {t.kind === "character" ? "Player" : "Object"} {i + 1}
+                    <span className="text-muted-foreground">
+                      {Math.round(t.score * 100)}%
+                    </span>
+                    <Plus className="h-3 w-3 text-primary" />
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 w-full text-xs gap-1"
+                disabled={full || trackingId !== null}
+                onClick={() => addDetected(detected, true)}
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+                Add all & lock on
+              </Button>
+            </div>
+          )}
+
+          {detected && detected.length === 0 && !detecting && (
+            <p className="text-[11px] text-muted-foreground">
+              No movement detected here. Scrub to an action moment and scan again.
+            </p>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium flex items-center gap-1.5">
-            AI Skin Swap
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
-              Soon
-            </span>
-          </p>
-          <p className="text-xs text-muted-foreground truncate">
-            Auto-detect players & balls, swap them into full-body skins.
-          </p>
-        </div>
-        <Lock className="h-4 w-4 text-muted-foreground" />
-      </button>
+      )}
+
 
       {pins.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -1200,15 +1340,26 @@ export const useCharacterPins = () => {
     });
   };
 
-  const addAt = (x: number, y: number) => {
+  const addAt = (
+    x: number,
+    y: number,
+    preset?: { skin?: CharacterSkinId; animation?: CharacterAnimationId }
+  ) => {
     setPins((prev) => {
       if (prev.length >= MAX_PINS) return prev;
       return [
         ...prev,
-        { id: `pin-${Date.now()}`, x, y, skin: "athlete", animation: "glow" },
+        {
+          id: `pin-${Date.now()}-${Math.round(Math.random() * 1e4)}`,
+          x,
+          y,
+          skin: preset?.skin ?? "athlete",
+          animation: preset?.animation ?? "glow",
+        },
       ];
     });
   };
+
 
   const update = (id: string, patch: Partial<CharacterPin>) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
