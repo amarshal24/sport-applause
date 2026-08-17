@@ -1216,6 +1216,7 @@ const Recruiting = () => {
                   <CharacterPinsPanel
                     pins={pins}
                     onAdd={handleAddPin}
+                    onAddAt={handleAddPinAt}
                     onUpdate={handleUpdatePin}
                     onRemove={handleRemovePin}
                     videoSource={videoFile}
