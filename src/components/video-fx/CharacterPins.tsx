@@ -434,6 +434,12 @@ interface PanelProps {
   onAdd: (preset?: { skin: CharacterSkinId; animation: CharacterAnimationId }) => void;
   onUpdate: (id: string, patch: Partial<CharacterPin>) => void;
   onRemove: (id: string) => void;
+  /** Drops a pin at an exact spot — enables auto-detection. */
+  onAddAt?: (
+    x: number,
+    y: number,
+    preset?: { skin?: CharacterSkinId; animation?: CharacterAnimationId }
+  ) => void;
   /** Clip being edited — enables "lock onto object" tracking. */
   videoSource?: File | Blob | string | null;
   /** Current playhead position of the preview, in seconds. */
@@ -445,9 +451,11 @@ export const CharacterPinsPanel = ({
   onAdd,
   onUpdate,
   onRemove,
+  onAddAt,
   videoSource,
   getCurrentTime,
 }: PanelProps) => {
+
   const characters = CHARACTER_SKINS.filter((s) => s.kind === "character");
   const objects = CHARACTER_SKINS.filter((s) => s.kind === "object");
   const full = pins.length >= MAX_PINS;
