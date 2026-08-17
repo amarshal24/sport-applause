@@ -1200,15 +1200,26 @@ export const useCharacterPins = () => {
     });
   };
 
-  const addAt = (x: number, y: number) => {
+  const addAt = (
+    x: number,
+    y: number,
+    preset?: { skin?: CharacterSkinId; animation?: CharacterAnimationId }
+  ) => {
     setPins((prev) => {
       if (prev.length >= MAX_PINS) return prev;
       return [
         ...prev,
-        { id: `pin-${Date.now()}`, x, y, skin: "athlete", animation: "glow" },
+        {
+          id: `pin-${Date.now()}-${Math.round(Math.random() * 1e4)}`,
+          x,
+          y,
+          skin: preset?.skin ?? "athlete",
+          animation: preset?.animation ?? "glow",
+        },
       ];
     });
   };
+
 
   const update = (id: string, patch: Partial<CharacterPin>) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
