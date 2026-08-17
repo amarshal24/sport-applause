@@ -9,6 +9,8 @@ import {
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
+import { detectTargets, type DetectedTarget } from "@/lib/autoDetect";
+
 
 import { Button } from "@/components/ui/button";
 import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
