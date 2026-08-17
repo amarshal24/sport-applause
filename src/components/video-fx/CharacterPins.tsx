@@ -469,7 +469,13 @@ export const CharacterPinsPanel = ({
   >({});
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
+  // ===== Auto-detection =====
+  const [detecting, setDetecting] = useState(false);
+  const [detectPct, setDetectPct] = useState(0);
+  const [detected, setDetected] = useState<DetectedTarget[] | null>(null);
+
   const trackedCount = pins.filter((p) => p.track?.length).length;
+
 
   // ===== Saved tracking data (path + scores) reusable across re-edits =====
   const { tracks: savedTracks, saveTrack, deleteTrack } = useSavedTracks();
