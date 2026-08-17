@@ -1267,6 +1267,8 @@ const VideoEditor = () => {
                       <CharacterPinsPanel
                         pins={characterPins.pins}
                         onAdd={characterPins.add}
+                        onAddAt={characterPins.addAt}
+
                         onUpdate={characterPins.update}
                         onRemove={characterPins.remove}
                         videoSource={videoFile ?? videoUrl}
