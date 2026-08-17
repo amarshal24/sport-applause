@@ -549,6 +549,29 @@ const Recruiting = () => {
     setPlaceMode(false);
   };
 
+  const handleAddPinAt = (
+    x: number,
+    y: number,
+    preset?: { skin?: any; animation?: any }
+  ) => {
+    setPins((prev) =>
+      prev.length >= MAX_PINS
+        ? prev
+        : [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              x,
+              y,
+              skin: preset?.skin ?? "athlete",
+              animation: preset?.animation ?? "glow",
+            },
+          ]
+    );
+    setPlaceMode(false);
+  };
+
+
   const handleUpdatePin = (id: string, patch: Partial<CharacterPin>) =>
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
 
