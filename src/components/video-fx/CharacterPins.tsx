@@ -482,6 +482,44 @@ export const CharacterPinsPanel = ({
   >({});
   const [editingDetect, setEditingDetect] = useState<number | null>(null);
 
+  // ===== AI Skin Swap live preview (non-destructive until committed) =====
+  const [swapPreviewOn, setSwapPreviewOn] = useState(false);
+  const [swapPreviewSkin, setSwapPreviewSkin] = useState<CharacterSkinId | null>(null);
+  const swapSnapshot = useRef<Record<string, CharacterSkinId>>({});
+
+  const applySwapPreview = (skin: CharacterSkinId) => {
+    setSwapPreviewSkin(skin);
+    pins.forEach((p) => onUpdate(p.id, { skin }));
+  };
+
+  const toggleSwapPreview = (on: boolean) => {
+    if (on) {
+      if (pins.length === 0) {
+        toast.info("Add or detect an object first.");
+        return;
+      }
+      swapSnapshot.current = Object.fromEntries(pins.map((p) => [p.id, p.skin]));
+      setSwapPreviewOn(true);
+      applySwapPreview(swapPreviewSkin ?? pins[0].skin);
+      return;
+    }
+    // Roll back to the skins the pins had before previewing.
+    pins.forEach((p) => {
+      const prev = swapSnapshot.current[p.id];
+      if (prev && prev !== p.skin) onUpdate(p.id, { skin: prev });
+    });
+    swapSnapshot.current = {};
+    setSwapPreviewOn(false);
+  };
+
+  const commitSwapPreview = () => {
+    swapSnapshot.current = {};
+    setSwapPreviewOn(false);
+    toast.success("Skin swap applied to all objects.");
+  };
+
+
+
   const trackedCount = pins.filter((p) => p.track?.length).length;
 
 
