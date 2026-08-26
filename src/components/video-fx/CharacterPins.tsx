@@ -724,18 +724,50 @@ export const CharacterPinsPanel = ({
   };
 
 
-  const addDetected = (targets: DetectedTarget[], autoTrack: boolean) => {
-    if (!onAddAt) return;
+  /** Suggested preset with any manual override the user picked applied on top. */
+  const effectivePreset = (t: DetectedTarget, i: number) => {
+    const base = suggestedPreset(t);
+    const o = detectOverrides[i] ?? {};
+    const skin = o.skin ?? base.skin;
+    const animation = o.animation ?? base.animation;
+    const overridden = !!(o.skin || o.animation);
+    const label = overridden
+      ? `${getSkin(skin).label} · ${CHARACTER_ANIMATIONS.find((a) => a.id === animation)?.label ?? animation}`
+      : base.label;
+    return { skin, animation, label, overridden };
+  };
+
+  const addDetected = (indices: number[], autoTrack: boolean) => {
+    if (!onAddAt || !detected) return;
     const room = MAX_PINS - pins.length;
-    const picks = targets.slice(0, Math.max(0, room));
+    const picks = indices.slice(0, Math.max(0, room));
     if (picks.length === 0) {
       toast.info(`You already have the max of ${MAX_PINS} effects.`);
       return;
     }
-    picks.forEach((t) => onAddAt(t.x, t.y, suggestedPreset(t)));
-    setDetected((prev) => (prev ? prev.filter((t) => !picks.includes(t)) : prev));
+    picks.forEach((i) => {
+      const t = detected[i];
+      if (!t) return;
+      const { skin, animation } = effectivePreset(t, i);
+      onAddAt(t.x, t.y, { skin, animation });
+    });
+    const dropped = new Set(picks);
+    // Keep remaining overrides aligned with the re-indexed list.
+    setDetectOverrides((prev) => {
+      const next: typeof prev = {};
+      let k = 0;
+      detected.forEach((_t, i) => {
+        if (dropped.has(i)) return;
+        if (prev[i]) next[k] = prev[i];
+        k += 1;
+      });
+      return next;
+    });
+    setEditingDetect(null);
+    setDetected((prev) => (prev ? prev.filter((_t, i) => !dropped.has(i)) : prev));
     if (autoTrack) autoTrackPending.current = true;
   };
+
 
   // Lock the freshly detected pins onto their objects once they're mounted.
   useEffect(() => {
