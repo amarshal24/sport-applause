@@ -691,10 +691,31 @@ export const CharacterPinsPanel = ({
     }
   };
 
-  const suggestedPreset = (t: DetectedTarget) =>
-    t.kind === "character"
-      ? { skin: "athlete" as CharacterSkinId, animation: "speed-lines" as CharacterAnimationId }
-      : { skin: "basketball" as CharacterSkinId, animation: "fire-aura" as CharacterAnimationId };
+  /**
+   * Picks a free-tier skin + animation that matches what the scan found:
+   * fast little blobs read as a ball, big/tall ones read as a player,
+   * and the motion strength decides how loud the effect should be.
+   */
+  const suggestedPreset = (
+    t: DetectedTarget
+  ): { skin: CharacterSkinId; animation: CharacterAnimationId; label: string } => {
+    if (t.kind === "character") {
+      if (t.score >= 0.66)
+        return { skin: "athlete", animation: "speed-lines", label: "Athlete · Speed Lines" };
+      if (t.score >= 0.4)
+        return { skin: "athlete", animation: "fire-aura", label: "Athlete · Fire Aura" };
+      return { skin: "athlete", animation: "glow", label: "Athlete · Glow" };
+    }
+    // Objects: a tiny, very fast blob is almost always the ball.
+    if (t.size <= 8 && t.score >= 0.55)
+      return { skin: "basketball", animation: "fire-aura", label: "Ball · Fire Aura" };
+    if (t.size <= 8)
+      return { skin: "basketball", animation: "comet", label: "Ball · Comet Trail" };
+    if (t.score >= 0.6)
+      return { skin: "bolt", animation: "lightning", label: "Object · Lightning" };
+    return { skin: "flame", animation: "smoke", label: "Object · Smoke" };
+  };
+
 
   const addDetected = (targets: DetectedTarget[], autoTrack: boolean) => {
     if (!onAddAt) return;
@@ -935,25 +956,31 @@ export const CharacterPinsPanel = ({
           {detected && detected.length > 0 && (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">
-                {detected.map((t, i) => (
-                  <button
-                    key={`${t.x}-${t.y}-${i}`}
-                    type="button"
-                    disabled={full}
-                    onClick={() => addDetected([t], true)}
-                    className={cn(
-                      "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
-                      full && "opacity-50 pointer-events-none"
-                    )}
-                  >
-                    <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
-                    {t.kind === "character" ? "Player" : "Object"} {i + 1}
-                    <span className="text-muted-foreground">
-                      {Math.round(t.score * 100)}%
-                    </span>
-                    <Plus className="h-3 w-3 text-primary" />
-                  </button>
-                ))}
+                {detected.map((t, i) => {
+                  const preset = suggestedPreset(t);
+                  return (
+                    <button
+                      key={`${t.x}-${t.y}-${i}`}
+                      type="button"
+                      disabled={full}
+                      onClick={() => addDetected([t], true)}
+                      title={`Auto-applies ${preset.label}`}
+                      className={cn(
+                        "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
+                        full && "opacity-50 pointer-events-none"
+                      )}
+                    >
+                      <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
+                      {t.kind === "character" ? "Player" : "Object"} {i + 1}
+                      <span className="text-muted-foreground">
+                        {Math.round(t.score * 100)}%
+                      </span>
+                      <span className="text-primary/90">{preset.label}</span>
+                      <Plus className="h-3 w-3 text-primary" />
+                    </button>
+                  );
+                })}
+
               </div>
               <Button
                 size="sm"
