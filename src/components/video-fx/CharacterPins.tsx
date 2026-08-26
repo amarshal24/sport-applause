@@ -673,6 +673,8 @@ export const CharacterPinsPanel = ({
     setDetecting(true);
     setDetectPct(0);
     setDetected(null);
+    setDetectOverrides({});
+    setEditingDetect(null);
     try {
       const found = await detectTargets(videoSource, {
         around: getCurrentTime?.() ?? undefined,
