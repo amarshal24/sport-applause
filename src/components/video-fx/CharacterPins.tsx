@@ -1366,15 +1366,31 @@ export const CharacterPinsPanel = ({
                 </span>
               ) : null}
             </p>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onRemove(pin.id)}
-              className="h-7 w-7 p-0 text-destructive"
-              aria-label="Remove"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => togglePinSelected(pin.id)}
+                className={cn(
+                  "rounded-md border px-2 py-1 text-[10px] transition-colors",
+                  selectedPinIds.includes(pin.id)
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50"
+                )}
+                aria-pressed={selectedPinIds.includes(pin.id)}
+              >
+                {selectedPinIds.includes(pin.id) ? "Selected" : "Select"}
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onRemove(pin.id)}
+                className="h-7 w-7 p-0 text-destructive"
+                aria-label="Remove"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
           </div>
 
           {/* Lock onto the real object in the video */}
