@@ -994,44 +994,154 @@ export const CharacterPinsPanel = ({
 
           {detected && detected.length > 0 && (
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-1.5">
                 {detected.map((t, i) => {
-                  const preset = suggestedPreset(t);
+                  const preset = effectivePreset(t, i);
+                  const open = editingDetect === i;
                   return (
-                    <button
+                    <div
                       key={`${t.x}-${t.y}-${i}`}
-                      type="button"
-                      disabled={full}
-                      onClick={() => addDetected([t], true)}
-                      title={`Auto-applies ${preset.label}`}
-                      className={cn(
-                        "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
-                        full && "opacity-50 pointer-events-none"
-                      )}
+                      className="rounded-md border border-border bg-card/70"
                     >
-                      <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
-                      {t.kind === "character" ? "Player" : "Object"} {i + 1}
-                      <span className="text-muted-foreground">
-                        {Math.round(t.score * 100)}%
-                      </span>
-                      <span className="text-primary/90">{preset.label}</span>
-                      <Plus className="h-3 w-3 text-primary" />
-                    </button>
+                      <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px]">
+                        <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
+                        <span className="font-medium">
+                          {t.kind === "character" ? "Player" : "Object"} {i + 1}
+                        </span>
+                        <span className="text-muted-foreground">{Math.round(t.score * 100)}%</span>
+                        <span className="text-primary/90 truncate">{preset.label}</span>
+                        {preset.overridden && (
+                          <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                            custom
+                          </span>
+                        )}
+                        <div className="ml-auto flex items-center gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() => setEditingDetect(open ? null : i)}
+                          >
+                            {open ? "Done" : "Change"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-6 px-2 text-[11px] gap-1"
+                            disabled={full}
+                            onClick={() => addDetected([i], true)}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+
+                      {open && (
+                        <div className="border-t border-border p-2 space-y-2">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                              <User className="h-3 w-3" /> Skin
+                            </p>
+                            <div className="grid grid-cols-5 gap-1.5">
+                              {CHARACTER_SKINS.map((s) => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() =>
+                                    skinGuard(s.id, () =>
+                                      setDetectOverrides((prev) => ({
+                                        ...prev,
+                                        [i]: { ...prev[i], skin: s.id },
+                                      }))
+                                    )
+                                  }
+                                  className={cn(
+                                    "relative rounded-md border p-1 flex flex-col items-center gap-0.5 transition-colors",
+                                    preset.skin === s.id
+                                      ? "border-primary bg-primary/10"
+                                      : "border-border hover:border-primary/50",
+                                    skinLocked(s.id) && "opacity-70"
+                                  )}
+                                >
+                                  {skinLocked(s.id) && (
+                                    <Lock className="absolute top-0 right-0 h-2.5 w-2.5 text-primary" />
+                                  )}
+                                  <span className="text-base">{s.emoji}</span>
+                                  <span className="text-[9px] truncate w-full">{s.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" /> Animation
+                            </p>
+                            <div className="grid grid-cols-5 gap-1.5">
+                              {CHARACTER_ANIMATIONS.map((a) => (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() =>
+                                    guard(a, () =>
+                                      setDetectOverrides((prev) => ({
+                                        ...prev,
+                                        [i]: { ...prev[i], animation: a.id },
+                                      }))
+                                    )
+                                  }
+                                  className={cn(
+                                    "relative rounded-md border p-1 flex flex-col items-center gap-0.5 transition-colors",
+                                    preset.animation === a.id
+                                      ? "border-primary bg-primary/10"
+                                      : "border-border hover:border-primary/50",
+                                    locked(a) && "opacity-70"
+                                  )}
+                                >
+                                  {locked(a) && (
+                                    <Crown className="absolute top-0 right-0 h-2.5 w-2.5 text-primary" />
+                                  )}
+                                  <span className="text-base">{a.emoji}</span>
+                                  <span className="text-[9px] truncate w-full">{a.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {preset.overridden && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-[11px]"
+                              onClick={() =>
+                                setDetectOverrides((prev) => {
+                                  const { [i]: _drop, ...rest } = prev;
+                                  return rest;
+                                })
+                              }
+                            >
+                              Reset to suggested
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-
               </div>
               <Button
                 size="sm"
                 variant="secondary"
                 className="h-7 w-full text-xs gap-1"
                 disabled={full || trackingId !== null}
-                onClick={() => addDetected(detected, true)}
+                onClick={() => addDetected(detected.map((_t, i) => i), true)}
               >
                 <Crosshair className="h-3.5 w-3.5" />
                 Add all & lock on
               </Button>
             </div>
+
           )}
 
           {detected && detected.length === 0 && !detecting && (
