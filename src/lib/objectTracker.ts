@@ -313,3 +313,24 @@ export const lastGoodPoint = (track: TrackPoint[] | undefined): TrackPoint | nul
   }
   return best;
 };
+
+/**
+ * Smooths a tracked path. `stickiness` (0..1) controls how tightly the effect
+ * clings to the raw detection: 1 = follow every jitter, 0 = very smooth/lazy.
+ */
+export const smoothTrack = (
+  track: TrackPoint[] | undefined,
+  stickiness: number
+): TrackPoint[] | undefined => {
+  if (!track?.length) return track;
+  const alpha = Math.max(0.05, Math.min(1, 0.12 + 0.88 * stickiness));
+  if (alpha >= 1) return track;
+  let px = track[0].x;
+  let py = track[0].y;
+  return track.map((p, i) => {
+    if (i === 0) return { ...p };
+    px += (p.x - px) * alpha;
+    py += (p.y - py) * alpha;
+    return { t: p.t, x: px, y: py, c: p.c };
+  });
+};

@@ -6,6 +6,7 @@ import {
   trackQuality,
   mergeTracks,
   lastGoodPoint,
+  smoothTrack,
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
@@ -14,7 +15,7 @@ import { detectTargets, type DetectedTarget } from "@/lib/autoDetect";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw, Undo2, Redo2, Move, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -24,6 +25,10 @@ import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
 import { hasSkinTier, skinTierOf } from "@/constants/skinTiers";
 import { useSavedTracks, clipKeyOf } from "@/hooks/useSavedTracks";
 import { SavedTrackControls } from "@/components/video-fx/SavedTrackControls";
+import { PinDragPad } from "@/components/video-fx/PinDragPad";
+import { TrackedPreview } from "@/components/video-fx/TrackedPreview";
+import { useStyleHistory } from "@/hooks/useStyleHistory";
+import { Slider } from "@/components/ui/slider";
 
 
 import { Crown } from "lucide-react";
@@ -195,6 +200,10 @@ export interface CharacterPin {
   animation: CharacterAnimationId;
   /** Motion path when the pin is locked onto a real object in the clip. */
   track?: TrackPoint[];
+  /** Unsmoothed tracker output, kept so stickiness can be re-applied live. */
+  trackRaw?: TrackPoint[];
+  /** 0..1 — how tightly the effect clings to the tracked path. */
+  stickiness?: number;
 }
 
 
@@ -478,9 +487,16 @@ export const CharacterPinsPanel = ({
   const [detected, setDetected] = useState<DetectedTarget[] | null>(null);
   // Manual overrides for what a detected target gets applied, keyed by detection index.
   const [detectOverrides, setDetectOverrides] = useState<
-    Record<number, { skin?: CharacterSkinId; animation?: CharacterAnimationId }>
+    Record<
+      number,
+      { skin?: CharacterSkinId; animation?: CharacterAnimationId; stickiness?: number }
+    >
   >({});
   const [editingDetect, setEditingDetect] = useState<number | null>(null);
+  const [previewDetect, setPreviewDetect] = useState<number | null>(null);
+  const [previewPinId, setPreviewPinId] = useState<string | null>(null);
+  // Stickiness picked on a detection, applied once the pin is created.
+  const pendingStickiness = useRef<{ x: number; y: number; value: number }[]>([]);
 
   // ===== AI Skin Swap live preview (non-destructive until committed) =====
   const [swapPreviewOn, setSwapPreviewOn] = useState(false);
@@ -493,6 +509,41 @@ export const CharacterPinsPanel = ({
     setSelectedPinIds((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
+
+  // ===== Undo / redo for skin & animation edits (before locking them in) =====
+  const styleHistory = useStyleHistory<Partial<CharacterPin>>((id, patch) =>
+    onUpdate(id, patch)
+  );
+
+  const changeStyle = (pin: CharacterPin, patch: Partial<CharacterPin>) => {
+    const prev: Partial<CharacterPin> = {};
+    (Object.keys(patch) as (keyof CharacterPin)[]).forEach((k) => {
+      (prev as Record<string, unknown>)[k as string] = pin[k];
+    });
+    styleHistory.record(pin.id, prev, patch);
+    onUpdate(pin.id, patch);
+  };
+
+  // ===== Drag-to-adjust position & stickiness of a (tracked) pin =====
+  const nudgePin = (pin: CharacterPin, x: number, y: number) => {
+    const dx = x - pin.x;
+    const dy = y - pin.y;
+    onUpdate(pin.id, {
+      x,
+      y,
+      track: pin.track ? shiftTrack(pin.track, dx, dy) : undefined,
+      trackRaw: pin.trackRaw ? shiftTrack(pin.trackRaw, dx, dy) : undefined,
+    });
+  };
+
+  const setStickiness = (pin: CharacterPin, value: number) => {
+    const raw = pin.trackRaw ?? pin.track;
+    onUpdate(pin.id, {
+      stickiness: value,
+      track: raw ? smoothTrack(raw, value) ?? raw : pin.track,
+      trackRaw: raw,
+    });
+  };
 
   const scopedPins = (scope = swapScope) =>
     scope === "selected"
@@ -587,7 +638,10 @@ export const CharacterPinsPanel = ({
 
   const applySavedTrack = (pin: CharacterPin, path: TrackPoint[]) => {
     clearFailure(pin.id);
-    onUpdate(pin.id, { track: path });
+    onUpdate(pin.id, {
+      trackRaw: path,
+      track: smoothTrack(path, pin.stickiness ?? 0.6) ?? path,
+    });
     toast.success("Saved track applied — pick any animation filter to re-render.");
   };
 
@@ -689,7 +743,12 @@ export const CharacterPinsPanel = ({
         onUpdate(pin.id, { track: undefined });
         return false;
       }
-      onUpdate(pin.id, { track });
+      const stick = pin.stickiness ?? 0.6;
+      onUpdate(pin.id, {
+        trackRaw: track,
+        track: smoothTrack(track, stick) ?? track,
+        stickiness: stick,
+      });
       return true;
     } catch (err) {
       console.error("Object tracking failed", err);
@@ -830,6 +889,8 @@ export const CharacterPinsPanel = ({
       const t = detected[i];
       if (!t) return;
       const { skin, animation } = effectivePreset(t, i);
+      const stick = detectOverrides[i]?.stickiness;
+      if (typeof stick === "number") pendingStickiness.current.push({ x: t.x, y: t.y, value: stick });
       onAddAt(t.x, t.y, { skin, animation });
     });
     const dropped = new Set(picks);
@@ -849,6 +910,24 @@ export const CharacterPinsPanel = ({
     if (autoTrack) autoTrackPending.current = true;
   };
 
+
+  // Carry the stickiness chosen on a detection over to its new pin.
+  useEffect(() => {
+    if (pendingStickiness.current.length === 0) return;
+    const rest: typeof pendingStickiness.current = [];
+    pendingStickiness.current.forEach((entry) => {
+      const pin = pins.find(
+        (p) =>
+          p.stickiness === undefined &&
+          Math.abs(p.x - entry.x) < 0.01 &&
+          Math.abs(p.y - entry.y) < 0.01
+      );
+      if (pin) onUpdate(pin.id, { stickiness: entry.value });
+      else rest.push(entry);
+    });
+    pendingStickiness.current = rest;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pins]);
 
   // Lock the freshly detected pins onto their objects once they're mounted.
   useEffect(() => {
@@ -909,10 +988,34 @@ export const CharacterPinsPanel = ({
             Add up to {MAX_PINS}. Track each object separately — every FX keeps its own skin & animation.
           </p>
         </div>
-        <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add ({pins.length}/{MAX_PINS})
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            disabled={!styleHistory.canUndo}
+            onClick={() => styleHistory.undo()}
+            aria-label="Undo skin or animation change"
+            title={`Undo (${styleHistory.undoCount})`}
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            disabled={!styleHistory.canRedo}
+            onClick={() => styleHistory.redo()}
+            aria-label="Redo skin or animation change"
+            title={`Redo (${styleHistory.redoCount})`}
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+          <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add ({pins.length}/{MAX_PINS})
+          </Button>
+        </div>
       </div>
 
       {/* Multi-object tracking */}
@@ -1100,6 +1203,15 @@ export const CharacterPinsPanel = ({
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="h-6 px-2 text-[11px] gap-1"
+                            onClick={() => setPreviewDetect(previewDetect === i ? null : i)}
+                          >
+                            <Eye className="h-3 w-3" />
+                            {previewDetect === i ? "Hide" : "Preview"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="h-6 px-2 text-[11px]"
                             onClick={() => setEditingDetect(open ? null : i)}
                           >
@@ -1118,8 +1230,73 @@ export const CharacterPinsPanel = ({
                         </div>
                       </div>
 
+                      {previewDetect === i && (
+                        <div className="border-t border-border p-2">
+                          <TrackedPreview
+                            source={videoSource}
+                            x={t.x}
+                            y={t.y}
+                            skinEmoji={getSkin(preset.skin).emoji}
+                            animationEmoji={
+                              CHARACTER_ANIMATIONS.find((a) => a.id === preset.animation)?.emoji
+                            }
+                            label={preset.label}
+                          />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            Scrub the clip to check the skin & animation land on this target
+                            before you add it.
+                          </p>
+                        </div>
+                      )}
+
                       {open && (
                         <div className="border-t border-border p-2 space-y-2">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                              <Move className="h-3 w-3" /> Position — drag to fine-tune
+                            </p>
+                            <PinDragPad
+                              x={t.x}
+                              y={t.y}
+                              emoji={getSkin(preset.skin).emoji}
+                              onChange={(nx, ny) =>
+                                setDetected((prev) =>
+                                  prev
+                                    ? prev.map((d, di) => (di === i ? { ...d, x: nx, y: ny } : d))
+                                    : prev
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Crosshair className="h-3 w-3" /> Stickiness
+                              </p>
+                              <span className="text-[10px] tabular-nums text-muted-foreground">
+                                {Math.round((detectOverrides[i]?.stickiness ?? 0.6) * 100)}%
+                              </span>
+                            </div>
+                            <Slider
+                              value={[detectOverrides[i]?.stickiness ?? 0.6]}
+                              min={0.05}
+                              max={1}
+                              step={0.05}
+                              onValueChange={([v]) =>
+                                setDetectOverrides((prev) => ({
+                                  ...prev,
+                                  [i]: { ...prev[i], stickiness: v },
+                                }))
+                              }
+                              aria-label="Tracking stickiness"
+                            />
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Higher sticks tighter to the object; lower glides smoother through
+                              jitter.
+                            </p>
+                          </div>
+
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
                               <User className="h-3 w-3" /> Skin
@@ -1415,7 +1592,7 @@ export const CharacterPinsPanel = ({
                     className="h-7 text-xs"
                     disabled={trackingId !== null}
                     onClick={() => {
-                      onUpdate(pin.id, { track: undefined });
+                      onUpdate(pin.id, { track: undefined, trackRaw: undefined });
                       setFailedIds((f) => {
                         const { [pin.id]: _drop, ...rest } = f;
                         return rest;
@@ -1446,6 +1623,67 @@ export const CharacterPinsPanel = ({
                 </Button>
               </div>
             </div>
+
+            {/* Fine-tune position & stickiness by dragging */}
+            <div className="grid grid-cols-2 gap-2 items-start">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                  <Move className="h-3 w-3" /> Position
+                </p>
+                <PinDragPad
+                  x={pin.x}
+                  y={pin.y}
+                  emoji={getSkin(pin.skin).emoji}
+                  onChange={(nx, ny) => nudgePin(pin, nx, ny)}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Crosshair className="h-3 w-3" /> Stickiness
+                  </p>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {Math.round((pin.stickiness ?? 0.6) * 100)}%
+                  </span>
+                </div>
+                <Slider
+                  value={[pin.stickiness ?? 0.6]}
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  onValueChange={([v]) => setStickiness(pin, v)}
+                  aria-label="Tracking stickiness"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Drag the pin to re-centre it — the locked path moves with it.
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-[11px] gap-1 mt-1"
+                  onClick={() => setPreviewPinId(previewPinId === pin.id ? null : pin.id)}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {previewPinId === pin.id ? "Hide preview" : "Preview on clip"}
+                </Button>
+              </div>
+            </div>
+
+            {previewPinId === pin.id && (
+              <TrackedPreview
+                source={videoSource}
+                track={pin.track}
+                x={pin.x}
+                y={pin.y}
+                skinEmoji={getSkin(pin.skin).emoji}
+                animationEmoji={
+                  CHARACTER_ANIMATIONS.find((a) => a.id === pin.animation)?.emoji
+                }
+                label={`${getSkin(pin.skin).label} · ${
+                  CHARACTER_ANIMATIONS.find((a) => a.id === pin.animation)?.label ?? ""
+                }`}
+              />
+            )}
 
             {/* Save / reuse tracking data */}
             <SavedTrackControls
@@ -1615,7 +1853,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => changeStyle(pin, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
@@ -1646,7 +1884,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => changeStyle(pin, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
@@ -1678,7 +1916,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => guard(a, () => onUpdate(pin.id, { animation: a.id }))}
+                  onClick={() => guard(a, () => changeStyle(pin, { animation: a.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.animation === a.id
