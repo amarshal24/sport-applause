@@ -503,6 +503,41 @@ export const CharacterPinsPanel = ({
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
 
+  // ===== Undo / redo for skin & animation edits (before locking them in) =====
+  const styleHistory = useStyleHistory<Partial<CharacterPin>>((id, patch) =>
+    onUpdate(id, patch)
+  );
+
+  const changeStyle = (pin: CharacterPin, patch: Partial<CharacterPin>) => {
+    const prev: Partial<CharacterPin> = {};
+    (Object.keys(patch) as (keyof CharacterPin)[]).forEach((k) => {
+      (prev as Record<string, unknown>)[k as string] = pin[k];
+    });
+    styleHistory.record(pin.id, prev, patch);
+    onUpdate(pin.id, patch);
+  };
+
+  // ===== Drag-to-adjust position & stickiness of a (tracked) pin =====
+  const nudgePin = (pin: CharacterPin, x: number, y: number) => {
+    const dx = x - pin.x;
+    const dy = y - pin.y;
+    onUpdate(pin.id, {
+      x,
+      y,
+      track: pin.track ? shiftTrack(pin.track, dx, dy) : undefined,
+      trackRaw: pin.trackRaw ? shiftTrack(pin.trackRaw, dx, dy) : undefined,
+    });
+  };
+
+  const setStickiness = (pin: CharacterPin, value: number) => {
+    const raw = pin.trackRaw ?? pin.track;
+    onUpdate(pin.id, {
+      stickiness: value,
+      track: raw ? smoothTrack(raw, value) ?? raw : pin.track,
+      trackRaw: raw,
+    });
+  };
+
   const scopedPins = (scope = swapScope) =>
     scope === "selected"
       ? pins.filter((p) => selectedPinIds.includes(p.id))
@@ -596,7 +631,10 @@ export const CharacterPinsPanel = ({
 
   const applySavedTrack = (pin: CharacterPin, path: TrackPoint[]) => {
     clearFailure(pin.id);
-    onUpdate(pin.id, { track: path });
+    onUpdate(pin.id, {
+      trackRaw: path,
+      track: smoothTrack(path, pin.stickiness ?? 0.6) ?? path,
+    });
     toast.success("Saved track applied — pick any animation filter to re-render.");
   };
 
@@ -698,7 +736,12 @@ export const CharacterPinsPanel = ({
         onUpdate(pin.id, { track: undefined });
         return false;
       }
-      onUpdate(pin.id, { track });
+      const stick = pin.stickiness ?? 0.6;
+      onUpdate(pin.id, {
+        trackRaw: track,
+        track: smoothTrack(track, stick) ?? track,
+        stickiness: stick,
+      });
       return true;
     } catch (err) {
       console.error("Object tracking failed", err);
@@ -918,10 +961,34 @@ export const CharacterPinsPanel = ({
             Add up to {MAX_PINS}. Track each object separately — every FX keeps its own skin & animation.
           </p>
         </div>
-        <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add ({pins.length}/{MAX_PINS})
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            disabled={!styleHistory.canUndo}
+            onClick={() => styleHistory.undo()}
+            aria-label="Undo skin or animation change"
+            title={`Undo (${styleHistory.undoCount})`}
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            disabled={!styleHistory.canRedo}
+            onClick={() => styleHistory.redo()}
+            aria-label="Redo skin or animation change"
+            title={`Redo (${styleHistory.redoCount})`}
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+          <Button size="sm" onClick={() => onAdd()} disabled={full} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add ({pins.length}/{MAX_PINS})
+          </Button>
+        </div>
       </div>
 
       {/* Multi-object tracking */}
@@ -1424,7 +1491,7 @@ export const CharacterPinsPanel = ({
                     className="h-7 text-xs"
                     disabled={trackingId !== null}
                     onClick={() => {
-                      onUpdate(pin.id, { track: undefined });
+                      onUpdate(pin.id, { track: undefined, trackRaw: undefined });
                       setFailedIds((f) => {
                         const { [pin.id]: _drop, ...rest } = f;
                         return rest;
@@ -1624,7 +1691,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => changeStyle(pin, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
@@ -1655,7 +1722,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => skinGuard(s.id, () => onUpdate(pin.id, { skin: s.id }))}
+                  onClick={() => skinGuard(s.id, () => changeStyle(pin, { skin: s.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.skin === s.id
@@ -1687,7 +1754,7 @@ export const CharacterPinsPanel = ({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => guard(a, () => onUpdate(pin.id, { animation: a.id }))}
+                  onClick={() => guard(a, () => changeStyle(pin, { animation: a.id }))}
                   className={cn(
                     "relative rounded-md border p-2 flex flex-col items-center gap-1 transition-colors",
                     pin.animation === a.id
