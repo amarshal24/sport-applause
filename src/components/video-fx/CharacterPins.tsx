@@ -1003,6 +1003,32 @@ export const CharacterPinsPanel = ({
         </div>
       )}
 
+      {/* AI Skin Swap (coming soon) */}
+      <button
+        type="button"
+        onClick={() =>
+          toast.info("AI Skin Swap is coming soon", {
+            description: "Replace detected players & objects with full-body skins automatically.",
+          })
+        }
+        className="w-full rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 flex items-center gap-3 text-left hover:bg-primary/10 transition-colors"
+      >
+        <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium flex items-center gap-1.5">
+            AI Skin Swap
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
+              Soon
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            Swap detected players & balls into full-body skins.
+          </p>
+        </div>
+      </button>
+
 
       {pins.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
