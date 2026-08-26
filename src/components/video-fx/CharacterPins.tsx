@@ -487,9 +487,16 @@ export const CharacterPinsPanel = ({
   const [detected, setDetected] = useState<DetectedTarget[] | null>(null);
   // Manual overrides for what a detected target gets applied, keyed by detection index.
   const [detectOverrides, setDetectOverrides] = useState<
-    Record<number, { skin?: CharacterSkinId; animation?: CharacterAnimationId }>
+    Record<
+      number,
+      { skin?: CharacterSkinId; animation?: CharacterAnimationId; stickiness?: number }
+    >
   >({});
   const [editingDetect, setEditingDetect] = useState<number | null>(null);
+  const [previewDetect, setPreviewDetect] = useState<number | null>(null);
+  const [previewPinId, setPreviewPinId] = useState<string | null>(null);
+  // Stickiness picked on a detection, applied once the pin is created.
+  const pendingStickiness = useRef<{ x: number; y: number; value: number }[]>([]);
 
   // ===== AI Skin Swap live preview (non-destructive until committed) =====
   const [swapPreviewOn, setSwapPreviewOn] = useState(false);
@@ -882,6 +889,8 @@ export const CharacterPinsPanel = ({
       const t = detected[i];
       if (!t) return;
       const { skin, animation } = effectivePreset(t, i);
+      const stick = detectOverrides[i]?.stickiness;
+      if (typeof stick === "number") pendingStickiness.current.push({ x: t.x, y: t.y, value: stick });
       onAddAt(t.x, t.y, { skin, animation });
     });
     const dropped = new Set(picks);
@@ -901,6 +910,24 @@ export const CharacterPinsPanel = ({
     if (autoTrack) autoTrackPending.current = true;
   };
 
+
+  // Carry the stickiness chosen on a detection over to its new pin.
+  useEffect(() => {
+    if (pendingStickiness.current.length === 0) return;
+    const rest: typeof pendingStickiness.current = [];
+    pendingStickiness.current.forEach((entry) => {
+      const pin = pins.find(
+        (p) =>
+          p.stickiness === undefined &&
+          Math.abs(p.x - entry.x) < 0.01 &&
+          Math.abs(p.y - entry.y) < 0.01
+      );
+      if (pin) onUpdate(pin.id, { stickiness: entry.value });
+      else rest.push(entry);
+    });
+    pendingStickiness.current = rest;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pins]);
 
   // Lock the freshly detected pins onto their objects once they're mounted.
   useEffect(() => {
@@ -1176,6 +1203,15 @@ export const CharacterPinsPanel = ({
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="h-6 px-2 text-[11px] gap-1"
+                            onClick={() => setPreviewDetect(previewDetect === i ? null : i)}
+                          >
+                            <Eye className="h-3 w-3" />
+                            {previewDetect === i ? "Hide" : "Preview"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="h-6 px-2 text-[11px]"
                             onClick={() => setEditingDetect(open ? null : i)}
                           >
@@ -1194,8 +1230,73 @@ export const CharacterPinsPanel = ({
                         </div>
                       </div>
 
+                      {previewDetect === i && (
+                        <div className="border-t border-border p-2">
+                          <TrackedPreview
+                            source={videoSource}
+                            x={t.x}
+                            y={t.y}
+                            skinEmoji={getSkin(preset.skin).emoji}
+                            animationEmoji={
+                              CHARACTER_ANIMATIONS.find((a) => a.id === preset.animation)?.emoji
+                            }
+                            label={preset.label}
+                          />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            Scrub the clip to check the skin & animation land on this target
+                            before you add it.
+                          </p>
+                        </div>
+                      )}
+
                       {open && (
                         <div className="border-t border-border p-2 space-y-2">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                              <Move className="h-3 w-3" /> Position — drag to fine-tune
+                            </p>
+                            <PinDragPad
+                              x={t.x}
+                              y={t.y}
+                              emoji={getSkin(preset.skin).emoji}
+                              onChange={(nx, ny) =>
+                                setDetected((prev) =>
+                                  prev
+                                    ? prev.map((d, di) => (di === i ? { ...d, x: nx, y: ny } : d))
+                                    : prev
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Crosshair className="h-3 w-3" /> Stickiness
+                              </p>
+                              <span className="text-[10px] tabular-nums text-muted-foreground">
+                                {Math.round((detectOverrides[i]?.stickiness ?? 0.6) * 100)}%
+                              </span>
+                            </div>
+                            <Slider
+                              value={[detectOverrides[i]?.stickiness ?? 0.6]}
+                              min={0.05}
+                              max={1}
+                              step={0.05}
+                              onValueChange={([v]) =>
+                                setDetectOverrides((prev) => ({
+                                  ...prev,
+                                  [i]: { ...prev[i], stickiness: v },
+                                }))
+                              }
+                              aria-label="Tracking stickiness"
+                            />
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Higher sticks tighter to the object; lower glides smoother through
+                              jitter.
+                            </p>
+                          </div>
+
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
                               <User className="h-3 w-3" /> Skin
