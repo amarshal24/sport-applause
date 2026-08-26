@@ -485,38 +485,80 @@ export const CharacterPinsPanel = ({
   // ===== AI Skin Swap live preview (non-destructive until committed) =====
   const [swapPreviewOn, setSwapPreviewOn] = useState(false);
   const [swapPreviewSkin, setSwapPreviewSkin] = useState<CharacterSkinId | null>(null);
+  const [swapScope, setSwapScope] = useState<"all" | "selected" | "tracked">("all");
+  const [selectedPinIds, setSelectedPinIds] = useState<string[]>([]);
   const swapSnapshot = useRef<Record<string, CharacterSkinId>>({});
 
-  const applySwapPreview = (skin: CharacterSkinId) => {
+  const togglePinSelected = (id: string) =>
+    setSelectedPinIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+
+  const scopedPins = (scope = swapScope) =>
+    scope === "selected"
+      ? pins.filter((p) => selectedPinIds.includes(p.id))
+      : scope === "tracked"
+        ? pins.filter((p) => p.track?.length)
+        : pins;
+
+  const applySwapPreview = (skin: CharacterSkinId, scope = swapScope) => {
     setSwapPreviewSkin(skin);
-    pins.forEach((p) => onUpdate(p.id, { skin }));
+    scopedPins(scope).forEach((p) => onUpdate(p.id, { skin }));
   };
 
-  const toggleSwapPreview = (on: boolean) => {
-    if (on) {
-      if (pins.length === 0) {
-        toast.info("Add or detect an object first.");
-        return;
-      }
-      swapSnapshot.current = Object.fromEntries(pins.map((p) => [p.id, p.skin]));
-      setSwapPreviewOn(true);
-      applySwapPreview(swapPreviewSkin ?? pins[0].skin);
-      return;
-    }
-    // Roll back to the skins the pins had before previewing.
+  const rollbackSwapPreview = () => {
     pins.forEach((p) => {
       const prev = swapSnapshot.current[p.id];
       if (prev && prev !== p.skin) onUpdate(p.id, { skin: prev });
     });
     swapSnapshot.current = {};
+  };
+
+  const startSwapPreview = (scope = swapScope, skin?: CharacterSkinId) => {
+    const targets = scopedPins(scope);
+    if (targets.length === 0) {
+      toast.info(
+        scope === "selected"
+          ? "Select at least one object to swap."
+          : scope === "tracked"
+            ? "No locked objects yet — track one first."
+            : "Add or detect an object first."
+      );
+      return false;
+    }
+    swapSnapshot.current = Object.fromEntries(targets.map((p) => [p.id, p.skin]));
+    setSwapPreviewOn(true);
+    applySwapPreview(skin ?? swapPreviewSkin ?? targets[0].skin, scope);
+    return true;
+  };
+
+  const toggleSwapPreview = (on: boolean) => {
+    if (on) {
+      startSwapPreview();
+      return;
+    }
+    rollbackSwapPreview();
     setSwapPreviewOn(false);
   };
 
+  const changeSwapScope = (scope: "all" | "selected" | "tracked") => {
+    if (!swapPreviewOn) {
+      setSwapScope(scope);
+      return;
+    }
+    rollbackSwapPreview();
+    const ok = startSwapPreview(scope);
+    setSwapScope(scope);
+    if (!ok) setSwapPreviewOn(false);
+  };
+
   const commitSwapPreview = () => {
+    const n = Object.keys(swapSnapshot.current).length;
     swapSnapshot.current = {};
     setSwapPreviewOn(false);
-    toast.success("Skin swap applied to all objects.");
+    toast.success(`Skin swap applied to ${n} object${n === 1 ? "" : "s"}.`);
   };
+
 
 
 
