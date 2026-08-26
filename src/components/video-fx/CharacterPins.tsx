@@ -6,6 +6,7 @@ import {
   trackQuality,
   mergeTracks,
   lastGoodPoint,
+  smoothTrack,
   WEAK_CONFIDENCE,
   type TrackPoint,
 } from "@/lib/objectTracker";
@@ -14,7 +15,7 @@ import { detectTargets, type DetectedTarget } from "@/lib/autoDetect";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Plus, X, User, Sparkles, Package, Wand2, Lock, PlayCircle, Crosshair, Loader2, AlertTriangle, CheckCircle2, RotateCcw, Undo2, Redo2, Move, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import tutorialVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
@@ -24,6 +25,10 @@ import { SkinTiersModal } from "@/components/video-fx/SkinTiersModal";
 import { hasSkinTier, skinTierOf } from "@/constants/skinTiers";
 import { useSavedTracks, clipKeyOf } from "@/hooks/useSavedTracks";
 import { SavedTrackControls } from "@/components/video-fx/SavedTrackControls";
+import { PinDragPad } from "@/components/video-fx/PinDragPad";
+import { TrackedPreview } from "@/components/video-fx/TrackedPreview";
+import { useStyleHistory } from "@/hooks/useStyleHistory";
+import { Slider } from "@/components/ui/slider";
 
 
 import { Crown } from "lucide-react";
@@ -195,6 +200,10 @@ export interface CharacterPin {
   animation: CharacterAnimationId;
   /** Motion path when the pin is locked onto a real object in the clip. */
   track?: TrackPoint[];
+  /** Unsmoothed tracker output, kept so stickiness can be re-applied live. */
+  trackRaw?: TrackPoint[];
+  /** 0..1 — how tightly the effect clings to the tracked path. */
+  stickiness?: number;
 }
 
 
