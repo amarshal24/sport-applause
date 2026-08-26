@@ -1152,31 +1152,83 @@ export const CharacterPinsPanel = ({
         </div>
       )}
 
-      {/* AI Skin Swap (coming soon) */}
-      <button
-        type="button"
-        onClick={() =>
-          toast.info("AI Skin Swap is coming soon", {
-            description: "Replace detected players & objects with full-body skins automatically.",
-          })
-        }
-        className="w-full rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 flex items-center gap-3 text-left hover:bg-primary/10 transition-colors"
-      >
-        <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-          <Sparkles className="h-4 w-4 text-primary" />
+      {/* AI Skin Swap (preview) */}
+      <div className="w-full rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              AI Skin Swap
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
+                Beta
+              </span>
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              Swap detected players & balls into full-body skins.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] text-muted-foreground">Live preview</span>
+            <Switch
+              checked={swapPreviewOn}
+              disabled={pins.length === 0}
+              onCheckedChange={toggleSwapPreview}
+              aria-label="Toggle AI Skin Swap live preview"
+            />
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium flex items-center gap-1.5">
-            AI Skin Swap
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase tracking-wide">
-              Soon
-            </span>
+
+        {pins.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">
+            Add or auto-detect at least one object to preview a skin swap.
           </p>
-          <p className="text-xs text-muted-foreground truncate">
-            Swap detected players & balls into full-body skins.
-          </p>
-        </div>
-      </button>
+        ) : swapPreviewOn ? (
+          <div className="space-y-2">
+            <p className="text-[11px] text-muted-foreground">
+              Previewing on {pins.length} object{pins.length > 1 ? "s" : ""} — nothing is saved until
+              you commit.
+            </p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {CHARACTER_SKINS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => skinGuard(s.id, () => applySwapPreview(s.id))}
+                  className={cn(
+                    "relative rounded-md border p-1 flex flex-col items-center gap-0.5 transition-colors",
+                    swapPreviewSkin === s.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50",
+                    skinLocked(s.id) && "opacity-70"
+                  )}
+                >
+                  {skinLocked(s.id) && (
+                    <Lock className="absolute top-0 right-0 h-2.5 w-2.5 text-primary" />
+                  )}
+                  <span className="text-base">{s.emoji}</span>
+                  <span className="text-[9px] truncate w-full">{s.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" className="h-7 text-xs flex-1" onClick={commitSwapPreview}>
+                Commit swap
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => toggleSwapPreview(false)}
+              >
+                Discard
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
 
 
       {pins.length === 0 && (
