@@ -956,25 +956,31 @@ export const CharacterPinsPanel = ({
           {detected && detected.length > 0 && (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">
-                {detected.map((t, i) => (
-                  <button
-                    key={`${t.x}-${t.y}-${i}`}
-                    type="button"
-                    disabled={full}
-                    onClick={() => addDetected([t], true)}
-                    className={cn(
-                      "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
-                      full && "opacity-50 pointer-events-none"
-                    )}
-                  >
-                    <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
-                    {t.kind === "character" ? "Player" : "Object"} {i + 1}
-                    <span className="text-muted-foreground">
-                      {Math.round(t.score * 100)}%
-                    </span>
-                    <Plus className="h-3 w-3 text-primary" />
-                  </button>
-                ))}
+                {detected.map((t, i) => {
+                  const preset = suggestedPreset(t);
+                  return (
+                    <button
+                      key={`${t.x}-${t.y}-${i}`}
+                      type="button"
+                      disabled={full}
+                      onClick={() => addDetected([t], true)}
+                      title={`Auto-applies ${preset.label}`}
+                      className={cn(
+                        "rounded-full border border-border bg-card/70 px-2.5 py-1 text-[11px] flex items-center gap-1.5 hover:bg-accent/60 transition-colors",
+                        full && "opacity-50 pointer-events-none"
+                      )}
+                    >
+                      <span>{t.kind === "character" ? "🏃" : "🏀"}</span>
+                      {t.kind === "character" ? "Player" : "Object"} {i + 1}
+                      <span className="text-muted-foreground">
+                        {Math.round(t.score * 100)}%
+                      </span>
+                      <span className="text-primary/90">{preset.label}</span>
+                      <Plus className="h-3 w-3 text-primary" />
+                    </button>
+                  );
+                })}
+
               </div>
               <Button
                 size="sm"
