@@ -1265,12 +1265,47 @@ export const CharacterPinsPanel = ({
           <p className="text-[11px] text-muted-foreground">
             Add or auto-detect at least one object to preview a skin swap.
           </p>
-        ) : swapPreviewOn ? (
+        ) : (
+          <>
+            {/* Which pins the swap hits */}
+            <div className="flex items-center gap-1">
+              {(
+                [
+                  { id: "all", label: `All (${pins.length})` },
+                  { id: "selected", label: `Selected (${selectedPinIds.length})` },
+                  { id: "tracked", label: `Locked (${trackedCount})` },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => changeSwapScope(opt.id)}
+                  className={cn(
+                    "flex-1 rounded-md border px-2 py-1 text-[10px] transition-colors",
+                    swapScope === opt.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {swapScope === "selected" && selectedPinIds.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                Tick "Select" on the objects below to target them.
+              </p>
+            )}
+          </>
+        )}
+
+        {pins.length > 0 && swapPreviewOn ? (
           <div className="space-y-2">
             <p className="text-[11px] text-muted-foreground">
-              Previewing on {pins.length} object{pins.length > 1 ? "s" : ""} — nothing is saved until
-              you commit.
+              Previewing on {scopedPins().length} object{scopedPins().length > 1 ? "s" : ""} —
+              nothing is saved until you commit.
             </p>
+
             <div className="grid grid-cols-5 gap-1.5">
               {CHARACTER_SKINS.map((s) => (
                 <button
