@@ -485,38 +485,80 @@ export const CharacterPinsPanel = ({
   // ===== AI Skin Swap live preview (non-destructive until committed) =====
   const [swapPreviewOn, setSwapPreviewOn] = useState(false);
   const [swapPreviewSkin, setSwapPreviewSkin] = useState<CharacterSkinId | null>(null);
+  const [swapScope, setSwapScope] = useState<"all" | "selected" | "tracked">("all");
+  const [selectedPinIds, setSelectedPinIds] = useState<string[]>([]);
   const swapSnapshot = useRef<Record<string, CharacterSkinId>>({});
 
-  const applySwapPreview = (skin: CharacterSkinId) => {
+  const togglePinSelected = (id: string) =>
+    setSelectedPinIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+
+  const scopedPins = (scope = swapScope) =>
+    scope === "selected"
+      ? pins.filter((p) => selectedPinIds.includes(p.id))
+      : scope === "tracked"
+        ? pins.filter((p) => p.track?.length)
+        : pins;
+
+  const applySwapPreview = (skin: CharacterSkinId, scope = swapScope) => {
     setSwapPreviewSkin(skin);
-    pins.forEach((p) => onUpdate(p.id, { skin }));
+    scopedPins(scope).forEach((p) => onUpdate(p.id, { skin }));
   };
 
-  const toggleSwapPreview = (on: boolean) => {
-    if (on) {
-      if (pins.length === 0) {
-        toast.info("Add or detect an object first.");
-        return;
-      }
-      swapSnapshot.current = Object.fromEntries(pins.map((p) => [p.id, p.skin]));
-      setSwapPreviewOn(true);
-      applySwapPreview(swapPreviewSkin ?? pins[0].skin);
-      return;
-    }
-    // Roll back to the skins the pins had before previewing.
+  const rollbackSwapPreview = () => {
     pins.forEach((p) => {
       const prev = swapSnapshot.current[p.id];
       if (prev && prev !== p.skin) onUpdate(p.id, { skin: prev });
     });
     swapSnapshot.current = {};
+  };
+
+  const startSwapPreview = (scope = swapScope, skin?: CharacterSkinId) => {
+    const targets = scopedPins(scope);
+    if (targets.length === 0) {
+      toast.info(
+        scope === "selected"
+          ? "Select at least one object to swap."
+          : scope === "tracked"
+            ? "No locked objects yet — track one first."
+            : "Add or detect an object first."
+      );
+      return false;
+    }
+    swapSnapshot.current = Object.fromEntries(targets.map((p) => [p.id, p.skin]));
+    setSwapPreviewOn(true);
+    applySwapPreview(skin ?? swapPreviewSkin ?? targets[0].skin, scope);
+    return true;
+  };
+
+  const toggleSwapPreview = (on: boolean) => {
+    if (on) {
+      startSwapPreview();
+      return;
+    }
+    rollbackSwapPreview();
     setSwapPreviewOn(false);
   };
 
+  const changeSwapScope = (scope: "all" | "selected" | "tracked") => {
+    if (!swapPreviewOn) {
+      setSwapScope(scope);
+      return;
+    }
+    rollbackSwapPreview();
+    const ok = startSwapPreview(scope);
+    setSwapScope(scope);
+    if (!ok) setSwapPreviewOn(false);
+  };
+
   const commitSwapPreview = () => {
+    const n = Object.keys(swapSnapshot.current).length;
     swapSnapshot.current = {};
     setSwapPreviewOn(false);
-    toast.success("Skin swap applied to all objects.");
+    toast.success(`Skin swap applied to ${n} object${n === 1 ? "" : "s"}.`);
   };
+
 
 
 
@@ -1223,12 +1265,47 @@ export const CharacterPinsPanel = ({
           <p className="text-[11px] text-muted-foreground">
             Add or auto-detect at least one object to preview a skin swap.
           </p>
-        ) : swapPreviewOn ? (
+        ) : (
+          <>
+            {/* Which pins the swap hits */}
+            <div className="flex items-center gap-1">
+              {(
+                [
+                  { id: "all", label: `All (${pins.length})` },
+                  { id: "selected", label: `Selected (${selectedPinIds.length})` },
+                  { id: "tracked", label: `Locked (${trackedCount})` },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => changeSwapScope(opt.id)}
+                  className={cn(
+                    "flex-1 rounded-md border px-2 py-1 text-[10px] transition-colors",
+                    swapScope === opt.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {swapScope === "selected" && selectedPinIds.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                Tick "Select" on the objects below to target them.
+              </p>
+            )}
+          </>
+        )}
+
+        {pins.length > 0 && swapPreviewOn ? (
           <div className="space-y-2">
             <p className="text-[11px] text-muted-foreground">
-              Previewing on {pins.length} object{pins.length > 1 ? "s" : ""} — nothing is saved until
-              you commit.
+              Previewing on {scopedPins().length} object{scopedPins().length > 1 ? "s" : ""} —
+              nothing is saved until you commit.
             </p>
+
             <div className="grid grid-cols-5 gap-1.5">
               {CHARACTER_SKINS.map((s) => (
                 <button
@@ -1289,15 +1366,31 @@ export const CharacterPinsPanel = ({
                 </span>
               ) : null}
             </p>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onRemove(pin.id)}
-              className="h-7 w-7 p-0 text-destructive"
-              aria-label="Remove"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => togglePinSelected(pin.id)}
+                className={cn(
+                  "rounded-md border px-2 py-1 text-[10px] transition-colors",
+                  selectedPinIds.includes(pin.id)
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50"
+                )}
+                aria-pressed={selectedPinIds.includes(pin.id)}
+              >
+                {selectedPinIds.includes(pin.id) ? "Selected" : "Select"}
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onRemove(pin.id)}
+                className="h-7 w-7 p-0 text-destructive"
+                aria-label="Remove"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
           </div>
 
           {/* Lock onto the real object in the video */}
