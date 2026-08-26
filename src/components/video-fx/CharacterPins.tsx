@@ -475,6 +475,11 @@ export const CharacterPinsPanel = ({
   const [detecting, setDetecting] = useState(false);
   const [detectPct, setDetectPct] = useState(0);
   const [detected, setDetected] = useState<DetectedTarget[] | null>(null);
+  // Manual overrides for what a detected target gets applied, keyed by detection index.
+  const [detectOverrides, setDetectOverrides] = useState<
+    Record<number, { skin?: CharacterSkinId; animation?: CharacterAnimationId }>
+  >({});
+  const [editingDetect, setEditingDetect] = useState<number | null>(null);
 
   const trackedCount = pins.filter((p) => p.track?.length).length;
 
