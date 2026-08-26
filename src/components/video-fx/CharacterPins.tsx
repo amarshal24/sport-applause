@@ -1624,6 +1624,67 @@ export const CharacterPinsPanel = ({
               </div>
             </div>
 
+            {/* Fine-tune position & stickiness by dragging */}
+            <div className="grid grid-cols-2 gap-2 items-start">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                  <Move className="h-3 w-3" /> Position
+                </p>
+                <PinDragPad
+                  x={pin.x}
+                  y={pin.y}
+                  emoji={getSkin(pin.skin).emoji}
+                  onChange={(nx, ny) => nudgePin(pin, nx, ny)}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Crosshair className="h-3 w-3" /> Stickiness
+                  </p>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {Math.round((pin.stickiness ?? 0.6) * 100)}%
+                  </span>
+                </div>
+                <Slider
+                  value={[pin.stickiness ?? 0.6]}
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  onValueChange={([v]) => setStickiness(pin, v)}
+                  aria-label="Tracking stickiness"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Drag the pin to re-centre it — the locked path moves with it.
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-[11px] gap-1 mt-1"
+                  onClick={() => setPreviewPinId(previewPinId === pin.id ? null : pin.id)}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {previewPinId === pin.id ? "Hide preview" : "Preview on clip"}
+                </Button>
+              </div>
+            </div>
+
+            {previewPinId === pin.id && (
+              <TrackedPreview
+                source={videoSource}
+                track={pin.track}
+                x={pin.x}
+                y={pin.y}
+                skinEmoji={getSkin(pin.skin).emoji}
+                animationEmoji={
+                  CHARACTER_ANIMATIONS.find((a) => a.id === pin.animation)?.emoji
+                }
+                label={`${getSkin(pin.skin).label} · ${
+                  CHARACTER_ANIMATIONS.find((a) => a.id === pin.animation)?.label ?? ""
+                }`}
+              />
+            )}
+
             {/* Save / reuse tracking data */}
             <SavedTrackControls
               tracks={savedTracks}
