@@ -16,6 +16,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Games = lazy(() => import("./pages/Games"));
+const ARStudio = lazy(() => import("./pages/ARStudio"));
 const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
 const VideoEditor = lazy(() => import("./pages/VideoEditor"));
 const Recruiting = lazy(() => import("./pages/Recruiting"));
@@ -80,6 +81,7 @@ const App = () => (
                 <Route path="/live" element={<LiveStreams />} />
                 <Route path="/live/replay/:streamId" element={<StreamReplay />} />
                 <Route path="/trending" element={<Trending />} />
+                <Route path="/ar-studio" element={<ARStudio />} />
                 <Route path="/fans" element={<Fans />} />
                 <Route path="/top-plays" element={<TopPlays />} />
                 <Route path="/watch-later" element={<WatchLater />} />

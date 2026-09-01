@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import {
   Camera,
   CameraOff,
@@ -24,6 +23,21 @@ const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${Str
 
 const ARStudio = () => {
   const ar = useARCamera();
+
+  useEffect(() => {
+    const prev = document.title;
+    document.title = "AR Camera Studio | U⚡️Sportz";
+    const meta = document.querySelector('meta[name="description"]');
+    const prevDesc = meta?.getAttribute("content") ?? "";
+    meta?.setAttribute(
+      "content",
+      "Real-time AR camera with live face, pose and body tracking, animated effects and full-body character skins."
+    );
+    return () => {
+      document.title = prev;
+      meta?.setAttribute("content", prevDesc);
+    };
+  }, []);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [mode, setMode] = useState<"photo" | "video">("video");
   const [shot, setShot] = useState<string | null>(null);
@@ -54,15 +68,6 @@ const ARStudio = () => {
 
   return (
     <div className="fixed inset-0 bg-background text-foreground">
-      <Helmet>
-        <title>AR Camera Studio | U⚡️Sportz</title>
-        <meta
-          name="description"
-          content="Real-time AR camera with live face, pose and body tracking, animated effects and full-body character skins."
-        />
-        <link rel="canonical" href="/ar-studio" />
-      </Helmet>
-
       {/* --- stage: raw video layer + separate AR overlay canvas --- */}
       <div className="relative h-full w-full overflow-hidden bg-black">
         <video
