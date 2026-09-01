@@ -75,6 +75,7 @@ export class TrackingManager {
   }
 
   private emit(status: "idle" | "loading" | "ready" | "error", message?: string) {
+    if (status === "error") console.error("[vision]", message);
     this.statusListeners.forEach((fn) => fn({ status, message }));
   }
 
