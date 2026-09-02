@@ -171,7 +171,8 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       fetchVideos();
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
+      toast.error(message ? `Failed to upload video: ${message}` : "Failed to upload video");
     } finally {
       setUploading(false);
     }
