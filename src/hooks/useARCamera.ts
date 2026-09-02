@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TrackingManager } from "@/lib/vision/trackingManager";
 import { getFilter, renderARFrame } from "@/lib/filters/filterRenderer";
+import { DEFAULT_RIG, type RigTuning } from "@/lib/ar/characterRig";
 import type { EngineStats } from "@/lib/ar/types";
 
 export type CameraFacing = "user" | "environment";
@@ -30,6 +31,8 @@ export const useARCamera = () => {
   const debugRef = useRef(true);
   const trackingRef = useRef(true);
   const mirrorRef = useRef(true);
+  const tuningRef = useRef<RigTuning>(DEFAULT_RIG);
+  const skinModeRef = useRef<"full" | "face">("full");
   const scratchRef = useRef({
     mask: document.createElement("canvas"),
     layer: document.createElement("canvas"),
@@ -44,6 +47,8 @@ export const useARCamera = () => {
   const [sourceKind, setSourceKind] = useState<SourceKind>("camera");
   const [facing, setFacing] = useState<CameraFacing>("user");
   const [filterId, setFilterId] = useState("head-flame");
+  const [tuning, setTuningState] = useState<RigTuning>(DEFAULT_RIG);
+  const [skinMode, setSkinModeState] = useState<"full" | "face">("full");
   const [debug, setDebug] = useState(true);
   const [tracking, setTracking] = useState(true);
   const [recording, setRecording] = useState(false);
@@ -65,6 +70,8 @@ export const useARCamera = () => {
   debugRef.current = debug;
   trackingRef.current = tracking;
   mirrorRef.current = sourceKind === "camera" && facing === "user";
+  tuningRef.current = tuning;
+  skinModeRef.current = skinMode;
 
   // ---- engine boot ----
   useEffect(() => {
@@ -112,6 +119,8 @@ export const useARCamera = () => {
           filter: getFilter(filterRef.current),
           timeMs: t0,
           debug: debugRef.current,
+          tuning: tuningRef.current,
+          skinMode: skinModeRef.current,
           scratch: scratchRef.current,
         });
       } else {
@@ -330,6 +339,11 @@ export const useARCamera = () => {
     mirrored: sourceKind === "camera" && facing === "user",
     filterId,
     setFilterId,
+    tuning,
+    setTuning: (patch: Partial<RigTuning>) => setTuningState((t) => ({ ...t, ...patch })),
+    resetTuning: () => setTuningState(DEFAULT_RIG),
+    skinMode,
+    setSkinMode: setSkinModeState,
     debug,
     setDebug,
     tracking,

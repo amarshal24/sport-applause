@@ -124,6 +124,90 @@ const px = (l: Landmark | undefined, w: number, h: number): P | null =>
 const mid = (a: P, b: P): P => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
+// ---------- live rig tuning ----------
+
+export type RigAnimationId = "none" | "bounce" | "float" | "breathe" | "sway" | "glitch";
+
+export interface RigTuning {
+  /** Whole-rig scale around the torso pivot. */
+  scale: number;
+  /** Limb / torso thickness multiplier. */
+  bulk: number;
+  /** Head radius multiplier. */
+  headScale: number;
+  /** Pose offset in torso units. */
+  offsetX: number;
+  offsetY: number;
+  /** Static lean in radians. */
+  lean: number;
+  /** Glow strength multiplier. */
+  glow: number;
+  /** Overall opacity multiplier. */
+  opacity: number;
+  animation: RigAnimationId;
+  /** Animation speed multiplier. */
+  animSpeed: number;
+  /** Animation amplitude multiplier. */
+  animAmount: number;
+}
+
+export const DEFAULT_RIG: RigTuning = {
+  scale: 1,
+  bulk: 1,
+  headScale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  lean: 0,
+  glow: 1,
+  opacity: 1,
+  animation: "none",
+  animSpeed: 1,
+  animAmount: 1,
+};
+
+export const RIG_ANIMATIONS: Array<{ id: RigAnimationId; label: string }> = [
+  { id: "none", label: "Locked" },
+  { id: "bounce", label: "Bounce" },
+  { id: "float", label: "Float" },
+  { id: "breathe", label: "Breathe" },
+  { id: "sway", label: "Sway" },
+  { id: "glitch", label: "Glitch" },
+];
+
+/** Per-frame idle animation offsets applied on top of the tracked pose. */
+export const rigAnimation = (t: RigTuning, timeMs: number, unit: number) => {
+  const out = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1 };
+  if (t.animation === "none") return out;
+  const p = (timeMs / 1000) * t.animSpeed * Math.PI * 2;
+  const a = t.animAmount;
+  switch (t.animation) {
+    case "bounce":
+      out.dy = -Math.abs(Math.sin(p)) * unit * 0.12 * a;
+      out.sy = 1 + Math.sin(p * 2) * 0.03 * a;
+      break;
+    case "float":
+      out.dy = Math.sin(p * 0.5) * unit * 0.08 * a;
+      out.rot = Math.sin(p * 0.33) * 0.05 * a;
+      break;
+    case "breathe":
+      out.sx = 1 + Math.sin(p * 0.6) * 0.04 * a;
+      out.sy = 1 + Math.sin(p * 0.6 + 0.4) * 0.05 * a;
+      break;
+    case "sway":
+      out.dx = Math.sin(p * 0.5) * unit * 0.1 * a;
+      out.rot = Math.sin(p * 0.5) * 0.09 * a;
+      break;
+    case "glitch": {
+      const g = Math.sin(p * 7) > 0.75 ? 1 : 0;
+      out.dx = g * unit * 0.05 * a * (Math.random() - 0.5) * 2;
+      out.sx = 1 + g * 0.05 * a;
+      break;
+    }
+  }
+  return out;
+};
+
+
 /**
  * Draws a bone as a tapered quad with rounded caps — a two-triangle
  * mesh strip deformed by its two joints, so it bends and stretches
@@ -188,7 +272,8 @@ export const drawCharacter = (
   w: number,
   h: number,
   style: CharacterStyle,
-  timeMs: number
+  timeMs: number,
+  tuning: RigTuning = DEFAULT_RIG
 ) => {
   const pose = target.pose;
   if (!pose?.length) return;
@@ -206,20 +291,31 @@ export const drawCharacter = (
   const shoulderW = Math.max(8, dist(ls, rs));
   const unit = (shoulderW + torsoLen) / 2;
 
-  const bulk = style.chibi ? 1.35 : 1;
+  const bulk = (style.chibi ? 1.35 : 1) * tuning.bulk;
   const limb = unit * 0.15 * bulk;
   const arm = unit * 0.13 * bulk;
-  const headR = unit * (style.chibi ? 0.52 : 0.36);
+  const headR = unit * (style.chibi ? 0.52 : 0.36) * tuning.headScale;
 
   ctx.save();
-  ctx.globalAlpha = Math.max(0.25, Math.min(1, target.confidence + (target.coasting ? 0.15 : 0.35)));
+  ctx.globalAlpha =
+    Math.max(0.25, Math.min(1, target.confidence + (target.coasting ? 0.15 : 0.35))) * tuning.opacity;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
+  // --- live rig tuning: pose offset, scale, lean and idle animation ---
+  const anim = rigAnimation(tuning, timeMs, unit);
+  const pivotX = (shoulders.x + hips.x) / 2;
+  const pivotY = (shoulders.y + hips.y) / 2;
+  ctx.translate(pivotX + tuning.offsetX * unit + anim.dx, pivotY + tuning.offsetY * unit + anim.dy);
+  ctx.rotate(tuning.lean + anim.rot);
+  ctx.scale(tuning.scale * anim.sx, tuning.scale * anim.sy);
+  ctx.translate(-pivotX, -pivotY);
+
   if (style.glow) {
     ctx.shadowColor = style.glow;
-    ctx.shadowBlur = unit * 0.35;
+    ctx.shadowBlur = unit * 0.35 * tuning.glow;
   }
+
 
   // --- cape (follows torso, sways with velocity) ---
   if (style.cape) {
@@ -354,5 +450,88 @@ export const drawCharacter = (
     ctx.stroke();
   }
   ctx.restore();
+  ctx.restore();
+};
+
+/**
+ * Face-only skin mode: paints the character's mask/helmet over the
+ * person's head using the tracked head pose, without touching the body.
+ */
+export const drawSkinFace = (
+  ctx: CanvasRenderingContext2D,
+  target: TrackedTarget,
+  w: number,
+  h: number,
+  style: CharacterStyle,
+  timeMs: number,
+  tuning: RigTuning = DEFAULT_RIG
+) => {
+  const pose = target.pose;
+  const face = target.face;
+  const p = (i: number) => px(pose?.[i], w, h);
+  const nose = px(face?.[1], w, h) ?? p(POSE.nose);
+  const lEar = px(face?.[234], w, h) ?? p(POSE.leftEar);
+  const rEar = px(face?.[454], w, h) ?? p(POSE.rightEar);
+  if (!nose) return;
+
+  const headR =
+    (lEar && rEar ? dist(lEar, rEar) * 0.62 : Math.max(12, target.box.w * w * 0.28)) * tuning.headScale;
+  const roll = target.head?.roll ?? (lEar && rEar ? Math.atan2(lEar.y - rEar.y, lEar.x - rEar.x) : 0);
+  const yaw = target.head?.yaw ?? 0;
+  const anim = rigAnimation(tuning, timeMs, headR * 2);
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0.3, Math.min(1, target.confidence + 0.35)) * tuning.opacity;
+  ctx.translate(nose.x + tuning.offsetX * headR + anim.dx, nose.y + tuning.offsetY * headR + anim.dy);
+  ctx.rotate(roll + tuning.lean + anim.rot);
+  ctx.scale(tuning.scale * anim.sx, tuning.scale * anim.sy);
+  ctx.lineJoin = "round";
+  if (style.glow) {
+    ctx.shadowColor = style.glow;
+    ctx.shadowBlur = headR * 0.5 * tuning.glow;
+  }
+
+  // head shell
+  ctx.beginPath();
+  ctx.ellipse(0, -headR * 0.12, headR * 0.92, headR * 1.12, 0, 0, Math.PI * 2);
+  const g = ctx.createLinearGradient(0, -headR, 0, headR);
+  g.addColorStop(0, style.helmet || style.mask ? style.suit : style.skin);
+  g.addColorStop(1, style.accent);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = Math.max(2, headR * 0.08);
+  ctx.strokeStyle = style.outline;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // visor / eyes follow head yaw
+  const gx = Math.max(-1, Math.min(1, yaw)) * headR * 0.16;
+  if (style.helmet) {
+    ctx.beginPath();
+    ctx.roundRect(-headR * 0.7 + gx, -headR * 0.35, headR * 1.4, headR * 0.42, headR * 0.2);
+    ctx.fillStyle = style.glow ?? "#38bdf8";
+    ctx.fill();
+  } else {
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(s * headR * 0.34 + gx, -headR * 0.2, headR * 0.2, headR * 0.24, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(s * headR * 0.34 + gx * 1.4, -headR * 0.18, headR * 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = style.outline;
+      ctx.fill();
+    }
+  }
+
+  // mouth guard / mask band
+  if (style.mask) {
+    ctx.beginPath();
+    ctx.roundRect(-headR * 0.55, headR * 0.28, headR * 1.1, headR * 0.34, headR * 0.16);
+    ctx.fillStyle = style.accent;
+    ctx.fill();
+    ctx.strokeStyle = style.outline;
+    ctx.stroke();
+  }
   ctx.restore();
 };

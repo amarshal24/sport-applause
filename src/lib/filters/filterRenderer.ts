@@ -8,7 +8,16 @@
 // without touching the tracking engine.
 // ============================================================
 
-import { CHARACTER_STYLES, POSE, drawCharacter, type CharacterStyle } from "@/lib/ar/characterRig";
+import {
+  CHARACTER_STYLES,
+  DEFAULT_RIG,
+  POSE,
+  drawCharacter,
+  drawSkinFace,
+  type CharacterStyle,
+  type RigTuning,
+} from "@/lib/ar/characterRig";
+import { AR_SKIN_PRESETS } from "@/lib/ar/skinPresets";
 import { maskToCanvas } from "@/lib/vision/segmenter";
 import type {
   AnchorId,
@@ -361,6 +370,15 @@ export const FILTERS: FilterDef[] = [
     skin: s,
     premium: s.premium,
   })),
+  // AI Skin Swap presets shared with the Animation Center
+  ...AR_SKIN_PRESETS.map<FilterDef>((s) => ({
+    id: `swap-${s.swapId}`,
+    label: s.label,
+    emoji: s.emoji,
+    anchor: "fullBody",
+    skin: s,
+    premium: s.premium,
+  })),
 ];
 
 export const getFilter = (id: string) => FILTERS.find((f) => f.id === id) ?? FILTERS[0];
@@ -377,6 +395,10 @@ export interface RenderOptions {
   timeMs: number;
   debug?: boolean;
   mirrored?: boolean;
+  /** Live rig tuning from the skin editor. */
+  tuning?: RigTuning;
+  /** Full-body skin replacement vs. face-only mask. */
+  skinMode?: "full" | "face";
   /** Scratch canvases reused between frames (avoids per-frame allocation). */
   scratch: { mask: HTMLCanvasElement; layer: HTMLCanvasElement };
 }
@@ -465,9 +487,17 @@ const drawDebug = (
  */
 export const renderARFrame = (o: RenderOptions) => {
   const { ctx, width: w, height: h, targets, filter, timeMs, segmentation, scratch } = o;
+  const tuning = o.tuning ?? DEFAULT_RIG;
+  const skinMode = o.skinMode ?? "full";
   ctx.clearRect(0, 0, w, h);
 
   for (const target of targets) {
+    if (filter.skin && skinMode === "face") {
+      // --- face-only skin: mask/helmet locked to the head pose ---
+      drawSkinFace(ctx, target, w, h, filter.skin, timeMs, tuning);
+      continue;
+    }
+
     if (filter.skin) {
       // --- full-body skin: segmentation stencil + skeletal retarget ---
       const layer = scratch.layer;
@@ -478,7 +508,7 @@ export const renderARFrame = (o: RenderOptions) => {
       const lctx = layer.getContext("2d");
       if (!lctx) continue;
       lctx.clearRect(0, 0, w, h);
-      drawCharacter(lctx, target, w, h, filter.skin, timeMs);
+      drawCharacter(lctx, target, w, h, filter.skin, timeMs, tuning);
 
       if (segmentation && target.maskIndex !== undefined) {
         // Keep the character inside the person silhouette so it
@@ -496,7 +526,7 @@ export const renderARFrame = (o: RenderOptions) => {
           // Re-draw the head/limb rig on top at reduced alpha so extremities
           // that fall just outside the mask still read.
           lctx.globalAlpha = 0.55;
-          drawCharacter(lctx, target, w, h, filter.skin, timeMs);
+          drawCharacter(lctx, target, w, h, filter.skin, timeMs, tuning);
           lctx.globalAlpha = 1;
         }
       }
