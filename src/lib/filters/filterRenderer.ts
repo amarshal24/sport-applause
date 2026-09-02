@@ -485,12 +485,19 @@ export const renderARFrame = (o: RenderOptions) => {
         // replaces the body instead of floating over the scene.
         const mask = maskToCanvas(segmentation, scratch.mask, target.maskIndex + 1);
         if (mask) {
+          // Clip the retargeted character to the person silhouette so it
+          // replaces the body instead of floating over the scene.
           lctx.save();
-          lctx.globalCompositeOperation = "destination-over";
-          lctx.globalAlpha = 0.92;
-          lctx.filter = `blur(1px)`;
+          lctx.globalCompositeOperation = "destination-in";
+          lctx.filter = "blur(1.5px)";
           lctx.drawImage(mask as HTMLCanvasElement, 0, 0, w, h);
           lctx.restore();
+          lctx.filter = "none";
+          // Re-draw the head/limb rig on top at reduced alpha so extremities
+          // that fall just outside the mask still read.
+          lctx.globalAlpha = 0.55;
+          drawCharacter(lctx, target, w, h, filter.skin, timeMs);
+          lctx.globalAlpha = 1;
         }
       }
       ctx.drawImage(layer, 0, 0);
