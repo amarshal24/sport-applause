@@ -174,7 +174,7 @@ const ARStudio = () => {
                     : "border-border/60 bg-background/50 text-muted-foreground"
                 )}
               >
-                <span className="text-xl" aria-hidden>{f.emoji}</span>
+                <FilterThumb filter={f} />
                 <span className="line-clamp-2 text-center leading-tight">{f.label}</span>
               </button>
             ))}
