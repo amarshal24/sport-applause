@@ -188,7 +188,8 @@ export const drawCharacter = (
   w: number,
   h: number,
   style: CharacterStyle,
-  timeMs: number
+  timeMs: number,
+  tuning: RigTuning = DEFAULT_RIG
 ) => {
   const pose = target.pose;
   if (!pose?.length) return;
@@ -206,20 +207,31 @@ export const drawCharacter = (
   const shoulderW = Math.max(8, dist(ls, rs));
   const unit = (shoulderW + torsoLen) / 2;
 
-  const bulk = style.chibi ? 1.35 : 1;
+  const bulk = (style.chibi ? 1.35 : 1) * tuning.bulk;
   const limb = unit * 0.15 * bulk;
   const arm = unit * 0.13 * bulk;
-  const headR = unit * (style.chibi ? 0.52 : 0.36);
+  const headR = unit * (style.chibi ? 0.52 : 0.36) * tuning.headScale;
 
   ctx.save();
-  ctx.globalAlpha = Math.max(0.25, Math.min(1, target.confidence + (target.coasting ? 0.15 : 0.35)));
+  ctx.globalAlpha =
+    Math.max(0.25, Math.min(1, target.confidence + (target.coasting ? 0.15 : 0.35))) * tuning.opacity;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
+  // --- live rig tuning: pose offset, scale, lean and idle animation ---
+  const anim = rigAnimation(tuning, timeMs, unit);
+  const pivotX = (shoulders.x + hips.x) / 2;
+  const pivotY = (shoulders.y + hips.y) / 2;
+  ctx.translate(pivotX + tuning.offsetX * unit + anim.dx, pivotY + tuning.offsetY * unit + anim.dy);
+  ctx.rotate(tuning.lean + anim.rot);
+  ctx.scale(tuning.scale * anim.sx, tuning.scale * anim.sy);
+  ctx.translate(-pivotX, -pivotY);
+
   if (style.glow) {
     ctx.shadowColor = style.glow;
-    ctx.shadowBlur = unit * 0.35;
+    ctx.shadowBlur = unit * 0.35 * tuning.glow;
   }
+
 
   // --- cape (follows torso, sways with velocity) ---
   if (style.cape) {
