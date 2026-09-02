@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { FILTERS } from "@/lib/filters/filterRenderer";
 import { useARCamera } from "@/hooks/useARCamera";
 import FilterThumb from "@/components/ar/FilterThumb";
+import SkinEditorPanel from "@/components/ar/SkinEditorPanel";
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -42,6 +43,7 @@ const ARStudio = () => {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [mode, setMode] = useState<"photo" | "video">("video");
   const [shot, setShot] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [clip, setClip] = useState<string | null>(null);
 
   useEffect(() => () => {
@@ -147,6 +149,19 @@ const ARStudio = () => {
             {ar.stats.coasting && <div className="text-primary">predicting through loss…</div>}
           </div>
         )}
+
+        {/* --- live skin / rig editor --- */}
+        <div className="absolute right-3 top-16 z-10">
+          <SkinEditorPanel
+            open={editorOpen}
+            onOpenChange={setEditorOpen}
+            tuning={ar.tuning}
+            onChange={ar.setTuning}
+            onReset={ar.resetTuning}
+            skinMode={ar.skinMode}
+            onSkinModeChange={ar.setSkinMode}
+          />
+        </div>
 
         {/* --- bottom controls --- */}
         <div className="absolute inset-x-0 bottom-0 space-y-3 bg-gradient-to-t from-background/90 to-transparent p-3 pb-5">
