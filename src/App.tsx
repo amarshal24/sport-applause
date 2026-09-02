@@ -73,7 +73,7 @@ const App = () => (
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/top5-debug" element={<Top5Debug />} />
+                
                 <Route path="/games" element={<Games />} />
                 <Route path="/motivation" element={<MotivationQuotes />} />
                 <Route path="/editor" element={<VideoEditor />} />
