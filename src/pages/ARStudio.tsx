@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FILTERS } from "@/lib/filters/filterRenderer";
 import { useARCamera } from "@/hooks/useARCamera";
+import FilterThumb from "@/components/ar/FilterThumb";
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -174,7 +175,7 @@ const ARStudio = () => {
                     : "border-border/60 bg-background/50 text-muted-foreground"
                 )}
               >
-                <span className="text-xl" aria-hidden>{f.emoji}</span>
+                <FilterThumb filter={f} />
                 <span className="line-clamp-2 text-center leading-tight">{f.label}</span>
               </button>
             ))}
