@@ -136,7 +136,7 @@ const ARStudio = () => {
 
         {/* --- debug panel --- */}
         {ar.debug && (
-          <div className="absolute left-3 top-16 rounded-lg bg-background/75 p-3 font-mono text-[11px] leading-relaxed backdrop-blur">
+          <div className="absolute left-16 top-16 max-w-[60%] rounded-lg bg-background/75 p-3 font-mono text-[11px] leading-relaxed backdrop-blur">
             <div>FPS: {ar.stats.fps}</div>
             <div>Inference: {ar.stats.inferenceMs.toFixed(1)} ms</div>
             <div>Render: {ar.stats.renderMs.toFixed(1)} ms</div>
