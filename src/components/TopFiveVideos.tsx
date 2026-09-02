@@ -513,6 +513,9 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       {/* Video Player Modal */}
       <Dialog open={showVideoPlayer} onOpenChange={setShowVideoPlayer}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedVideo?.title ?? "Highlight video"}</DialogTitle>
+          </DialogHeader>
           {selectedVideo && (
             <div className="relative">
               <div className="bg-black flex items-center justify-center">
@@ -520,6 +523,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                   src={selectedVideo.video_url}
                   controls
                   autoPlay
+                  muted
                   playsInline
                   className="w-full max-h-[80vh] object-contain"
                 />
