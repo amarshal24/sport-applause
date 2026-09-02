@@ -15,6 +15,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Top5Debug = lazy(() => import("./pages/Top5Debug"));
 const Games = lazy(() => import("./pages/Games"));
 const ARStudio = lazy(() => import("./pages/ARStudio"));
 const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
