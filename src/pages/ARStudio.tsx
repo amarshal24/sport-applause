@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FILTERS } from "@/lib/filters/filterRenderer";
 import { useARCamera } from "@/hooks/useARCamera";
+import FilterThumb from "@/components/ar/FilterThumb";
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
