@@ -85,6 +85,15 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
         toast.error("Video must be under 100MB");
         return;
       }
+      // Warn early if this browser can't decode the file (e.g. HEVC .mov
+      // from an iPhone won't play in Chrome/Edge).
+      const probe = document.createElement("video");
+      if (file.type && probe.canPlayType(file.type) === "") {
+        toast.warning(
+          "This video format may not play in all browsers. For best results, upload MP4 (H.264).",
+          { duration: 6000 }
+        );
+      }
       setVideoFile(file);
       toast.success("Video loaded!");
     }
