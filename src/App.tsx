@@ -15,6 +15,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
+
 const Games = lazy(() => import("./pages/Games"));
 const ARStudio = lazy(() => import("./pages/ARStudio"));
 const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
+                
                 <Route path="/games" element={<Games />} />
                 <Route path="/motivation" element={<MotivationQuotes />} />
                 <Route path="/editor" element={<VideoEditor />} />

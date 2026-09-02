@@ -85,6 +85,15 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
         toast.error("Video must be under 100MB");
         return;
       }
+      // Warn early if this browser can't decode the file (e.g. HEVC .mov
+      // from an iPhone won't play in Chrome/Edge).
+      const probe = document.createElement("video");
+      if (file.type && probe.canPlayType(file.type) === "") {
+        toast.warning(
+          "This video format may not play in all browsers. For best results, upload MP4 (H.264).",
+          { duration: 6000 }
+        );
+      }
       setVideoFile(file);
       toast.success("Video loaded!");
     }
@@ -123,11 +132,21 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
           .eq("id", existingVideo.id);
       }
 
-      // Upload new video
-      const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+      // Upload new video — always send an explicit content type so the
+      // stored object serves a playable MIME type (mobile browsers can
+      // report an empty file.type, which would save as octet-stream and
+      // fail to play back).
+      const ext = (videoFile.name.split(".").pop() || "").toLowerCase();
+      const fallbackTypes: Record<string, string> = {
+        mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm",
+        m4v: "video/mp4", avi: "video/x-msvideo", mkv: "video/x-matroska",
+      };
+      const contentType = videoFile.type || fallbackTypes[ext] || "video/mp4";
+
+      const fileName = `${user.id}/${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error: uploadError } = await supabase.storage
         .from("top-five-videos")
-        .upload(fileName, videoFile);
+        .upload(fileName, videoFile, { contentType, cacheControl: "3600", upsert: false });
 
       if (uploadError) throw uploadError;
 
@@ -152,7 +171,8 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       fetchVideos();
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload video");
+      const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
+      toast.error(message ? `Failed to upload video: ${message}` : "Failed to upload video");
     } finally {
       setUploading(false);
     }
@@ -493,6 +513,9 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       {/* Video Player Modal */}
       <Dialog open={showVideoPlayer} onOpenChange={setShowVideoPlayer}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedVideo?.title ?? "Highlight video"}</DialogTitle>
+          </DialogHeader>
           {selectedVideo && (
             <div className="relative">
               <div className="bg-black flex items-center justify-center">
@@ -500,6 +523,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                   src={selectedVideo.video_url}
                   controls
                   autoPlay
+                  muted
                   playsInline
                   className="w-full max-h-[80vh] object-contain"
                 />
