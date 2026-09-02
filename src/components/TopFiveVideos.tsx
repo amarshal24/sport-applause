@@ -123,11 +123,21 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
           .eq("id", existingVideo.id);
       }
 
-      // Upload new video
-      const fileName = `${user.id}/${Date.now()}-${videoFile.name}`;
+      // Upload new video — always send an explicit content type so the
+      // stored object serves a playable MIME type (mobile browsers can
+      // report an empty file.type, which would save as octet-stream and
+      // fail to play back).
+      const ext = (videoFile.name.split(".").pop() || "").toLowerCase();
+      const fallbackTypes: Record<string, string> = {
+        mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm",
+        m4v: "video/mp4", avi: "video/x-msvideo", mkv: "video/x-matroska",
+      };
+      const contentType = videoFile.type || fallbackTypes[ext] || "video/mp4";
+
+      const fileName = `${user.id}/${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error: uploadError } = await supabase.storage
         .from("top-five-videos")
-        .upload(fileName, videoFile);
+        .upload(fileName, videoFile, { contentType, cacheControl: "3600", upsert: false });
 
       if (uploadError) throw uploadError;
 
