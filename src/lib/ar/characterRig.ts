@@ -124,6 +124,90 @@ const px = (l: Landmark | undefined, w: number, h: number): P | null =>
 const mid = (a: P, b: P): P => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
+// ---------- live rig tuning ----------
+
+export type RigAnimationId = "none" | "bounce" | "float" | "breathe" | "sway" | "glitch";
+
+export interface RigTuning {
+  /** Whole-rig scale around the torso pivot. */
+  scale: number;
+  /** Limb / torso thickness multiplier. */
+  bulk: number;
+  /** Head radius multiplier. */
+  headScale: number;
+  /** Pose offset in torso units. */
+  offsetX: number;
+  offsetY: number;
+  /** Static lean in radians. */
+  lean: number;
+  /** Glow strength multiplier. */
+  glow: number;
+  /** Overall opacity multiplier. */
+  opacity: number;
+  animation: RigAnimationId;
+  /** Animation speed multiplier. */
+  animSpeed: number;
+  /** Animation amplitude multiplier. */
+  animAmount: number;
+}
+
+export const DEFAULT_RIG: RigTuning = {
+  scale: 1,
+  bulk: 1,
+  headScale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  lean: 0,
+  glow: 1,
+  opacity: 1,
+  animation: "none",
+  animSpeed: 1,
+  animAmount: 1,
+};
+
+export const RIG_ANIMATIONS: Array<{ id: RigAnimationId; label: string }> = [
+  { id: "none", label: "Locked" },
+  { id: "bounce", label: "Bounce" },
+  { id: "float", label: "Float" },
+  { id: "breathe", label: "Breathe" },
+  { id: "sway", label: "Sway" },
+  { id: "glitch", label: "Glitch" },
+];
+
+/** Per-frame idle animation offsets applied on top of the tracked pose. */
+export const rigAnimation = (t: RigTuning, timeMs: number, unit: number) => {
+  const out = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1 };
+  if (t.animation === "none") return out;
+  const p = (timeMs / 1000) * t.animSpeed * Math.PI * 2;
+  const a = t.animAmount;
+  switch (t.animation) {
+    case "bounce":
+      out.dy = -Math.abs(Math.sin(p)) * unit * 0.12 * a;
+      out.sy = 1 + Math.sin(p * 2) * 0.03 * a;
+      break;
+    case "float":
+      out.dy = Math.sin(p * 0.5) * unit * 0.08 * a;
+      out.rot = Math.sin(p * 0.33) * 0.05 * a;
+      break;
+    case "breathe":
+      out.sx = 1 + Math.sin(p * 0.6) * 0.04 * a;
+      out.sy = 1 + Math.sin(p * 0.6 + 0.4) * 0.05 * a;
+      break;
+    case "sway":
+      out.dx = Math.sin(p * 0.5) * unit * 0.1 * a;
+      out.rot = Math.sin(p * 0.5) * 0.09 * a;
+      break;
+    case "glitch": {
+      const g = Math.sin(p * 7) > 0.75 ? 1 : 0;
+      out.dx = g * unit * 0.05 * a * (Math.random() - 0.5) * 2;
+      out.sx = 1 + g * 0.05 * a;
+      break;
+    }
+  }
+  return out;
+};
+
+
 /**
  * Draws a bone as a tapered quad with rounded caps — a two-triangle
  * mesh strip deformed by its two joints, so it bends and stretches
