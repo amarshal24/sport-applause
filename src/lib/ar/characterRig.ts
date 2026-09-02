@@ -452,3 +452,86 @@ export const drawCharacter = (
   ctx.restore();
   ctx.restore();
 };
+
+/**
+ * Face-only skin mode: paints the character's mask/helmet over the
+ * person's head using the tracked head pose, without touching the body.
+ */
+export const drawSkinFace = (
+  ctx: CanvasRenderingContext2D,
+  target: TrackedTarget,
+  w: number,
+  h: number,
+  style: CharacterStyle,
+  timeMs: number,
+  tuning: RigTuning = DEFAULT_RIG
+) => {
+  const pose = target.pose;
+  const face = target.face;
+  const p = (i: number) => px(pose?.[i], w, h);
+  const nose = px(face?.[1], w, h) ?? p(POSE.nose);
+  const lEar = px(face?.[234], w, h) ?? p(POSE.leftEar);
+  const rEar = px(face?.[454], w, h) ?? p(POSE.rightEar);
+  if (!nose) return;
+
+  const headR =
+    (lEar && rEar ? dist(lEar, rEar) * 0.62 : Math.max(12, target.box.w * w * 0.28)) * tuning.headScale;
+  const roll = target.head?.roll ?? (lEar && rEar ? Math.atan2(lEar.y - rEar.y, lEar.x - rEar.x) : 0);
+  const yaw = target.head?.yaw ?? 0;
+  const anim = rigAnimation(tuning, timeMs, headR * 2);
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0.3, Math.min(1, target.confidence + 0.35)) * tuning.opacity;
+  ctx.translate(nose.x + tuning.offsetX * headR + anim.dx, nose.y + tuning.offsetY * headR + anim.dy);
+  ctx.rotate(roll + tuning.lean + anim.rot);
+  ctx.scale(tuning.scale * anim.sx, tuning.scale * anim.sy);
+  ctx.lineJoin = "round";
+  if (style.glow) {
+    ctx.shadowColor = style.glow;
+    ctx.shadowBlur = headR * 0.5 * tuning.glow;
+  }
+
+  // head shell
+  ctx.beginPath();
+  ctx.ellipse(0, -headR * 0.12, headR * 0.92, headR * 1.12, 0, 0, Math.PI * 2);
+  const g = ctx.createLinearGradient(0, -headR, 0, headR);
+  g.addColorStop(0, style.helmet || style.mask ? style.suit : style.skin);
+  g.addColorStop(1, style.accent);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = Math.max(2, headR * 0.08);
+  ctx.strokeStyle = style.outline;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // visor / eyes follow head yaw
+  const gx = Math.max(-1, Math.min(1, yaw)) * headR * 0.16;
+  if (style.helmet) {
+    ctx.beginPath();
+    ctx.roundRect(-headR * 0.7 + gx, -headR * 0.35, headR * 1.4, headR * 0.42, headR * 0.2);
+    ctx.fillStyle = style.glow ?? "#38bdf8";
+    ctx.fill();
+  } else {
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(s * headR * 0.34 + gx, -headR * 0.2, headR * 0.2, headR * 0.24, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(s * headR * 0.34 + gx * 1.4, -headR * 0.18, headR * 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = style.outline;
+      ctx.fill();
+    }
+  }
+
+  // mouth guard / mask band
+  if (style.mask) {
+    ctx.beginPath();
+    ctx.roundRect(-headR * 0.55, headR * 0.28, headR * 1.1, headR * 0.34, headR * 0.16);
+    ctx.fillStyle = style.accent;
+    ctx.fill();
+    ctx.strokeStyle = style.outline;
+    ctx.stroke();
+  }
+  ctx.restore();
+};
