@@ -34,7 +34,7 @@ const ApplauseButton = ({ postId, className }: ApplauseButtonProps) => {
     load();
 
     const channel = supabase
-      .channel(`applause-${postId}`)
+      .channel(`applause-${postId}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         {
