@@ -17,6 +17,12 @@ import type {
   TrackedTarget,
 } from "@/lib/ar/types";
 import InferenceWorker from "@/lib/ar/inference.worker?worker";
+import { FilesetResolver } from "@mediapipe/tasks-vision";
+import { PoseTracker } from "./poseTracker";
+import { FaceTracker, mergeFaces, mergeHands } from "./faceTracker";
+import { buildLabelMask } from "./segmenter";
+
+const WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
 
 export interface TrackingState {
   targets: TrackedTarget[];
@@ -42,6 +48,9 @@ export class TrackingManager {
   };
 
   private worker: Worker | null = null;
+  private workerReady = false;
+  private localPose: PoseTracker | null = null;
+  private localFace: FaceTracker | null = null;
   private tracker: MultiTargetTracker;
   private video: HTMLVideoElement | null = null;
   private running = false;
