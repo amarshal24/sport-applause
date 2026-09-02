@@ -27,6 +27,12 @@
 - [ ] Runtime audit: cleanup of rAF loops, camera streams, timers, workers
 - [ ] Camera/AR audit: single model init, valid frame dims, resize/orientation, unmount teardown
 
+## AR skin mode (requested)
+- [x] Live skin editor: pose offset, scale, bulk, head size, lean, glow, opacity, idle animations
+- [x] Full-body skin mode via segmentation mask + skeletal retarget
+- [x] Face-only skin mode (mask/helmet locked to head pose)
+- [x] AI Skin Swap presets wired into AR filter carousel
+
 ## Follow-ups
 - [ ] Character copies exact movement: skeletal retargeting of animated superhero / athlete / cartoon rigs
 - [ ] Additional character skins + premium gating reuse
