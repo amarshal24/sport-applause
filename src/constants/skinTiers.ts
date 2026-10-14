@@ -1,5 +1,5 @@
 // Skin swap purchase tiers. Each tier unlocks every skin in it *and* all
-// lower tiers. Pro FX pack / membership owners get every tier.
+// lower tiers. PRO FX (pack or membership) does NOT include skins.
 
 export type SkinTier = "free" | "starter" | "pro" | "elite";
 
