@@ -69,8 +69,8 @@ export const usePremium = () => {
         (sub.status === "canceled" && periodOk && !!sub.current_period_end));
     const premium = hasPack || hasSub;
 
-    // Highest skin tier owned; PRO FX access includes every tier.
-    let tier: SkinTier = premium ? "elite" : "free";
+    // Highest skin tier owned. Skin packs are sold separately from PRO FX.
+    let tier: SkinTier = "free";
     priceIds.forEach((id) => {
       const t = SKIN_TIER_PRICE_IDS[id];
       if (t && SKIN_TIER_RANK[t] > SKIN_TIER_RANK[tier]) tier = t;

@@ -19,7 +19,7 @@ const PLANS = [
     label: "Pro FX Pack",
     price: "$9.99",
     suffix: "one-time",
-    hint: "Unlock every premium skin & filter forever",
+    hint: "Unlock every premium effect & animation forever",
     icon: Zap,
   },
   {
@@ -75,7 +75,7 @@ export const UpgradeProModal = ({ open, onClose }: UpgradeProModalProps) => {
               </div>
               <DialogTitle className="text-center text-2xl">Unlock U⚡️Sportz PRO FX</DialogTitle>
               <DialogDescription className="text-center">
-                Every premium animation skin, filter and one-tap effect.
+                Every premium video effect, filter and one-tap animation. Character skins are sold separately as Skin Packs.
               </DialogDescription>
             </DialogHeader>
 
