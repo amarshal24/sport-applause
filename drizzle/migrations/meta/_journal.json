@@ -8,6 +8,13 @@
       "when": 1792017798584,
       "tag": "0000_restrict_post_story_uploads_to_own_folder",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792018024104,
+      "tag": "0001_marketplace_listing_rules",
+      "breakpoints": true
     }
   ]
 }
