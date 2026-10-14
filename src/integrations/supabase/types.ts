@@ -1603,6 +1603,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_suspensions: {
+        Row: {
+          created_at: string
+          reason: string | null
+          suspended_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          reason?: string | null
+          suspended_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string | null
+          suspended_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_suspensions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_drafts: {
         Row: {
           caption: string | null
@@ -1714,6 +1743,7 @@ export type Database = {
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
+      is_suspended: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
