@@ -20,6 +20,8 @@ import { FILTERS } from "@/lib/filters/filterRenderer";
 import { useARCamera } from "@/hooks/useARCamera";
 import FilterThumb from "@/components/ar/FilterThumb";
 import SkinEditorPanel from "@/components/ar/SkinEditorPanel";
+import { useSearchParams } from "react-router-dom";
+import { toSignedUrl } from "@/lib/signedMedia";
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -40,6 +42,27 @@ const ARStudio = () => {
       meta?.setAttribute("content", prevDesc);
     };
   }, []);
+  const [params] = useSearchParams();
+  const sourceRef = params.get("src");
+  useEffect(() => {
+    if (!sourceRef) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const signed = await toSignedUrl(sourceRef);
+        const res = await fetch(signed || sourceRef);
+        if (!res.ok) throw new Error("download failed");
+        const blob = await res.blob();
+        if (cancelled) return;
+        ar.loadVideoFile(new File([blob], "highlight.mp4", { type: blob.type || "video/mp4" }));
+        toast.success("Your highlight is loaded — pick a filter");
+      } catch {
+        toast.error("Could not load that highlight into the AR camera");
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceRef]);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [mode, setMode] = useState<"photo" | "video">("video");
   const [shot, setShot] = useState<string | null>(null);
