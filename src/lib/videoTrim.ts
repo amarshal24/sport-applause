@@ -4,11 +4,15 @@ export interface TrimOptions {
   start: number;
   end: number;
   square?: boolean;
+  /** Crop shape (overrides `square`): width/height ratio, e.g. 1, 9/16, 16/9. */
+  aspect?: number;
+  /** Text burned into the bottom of every frame. */
+  caption?: string;
   withAudio?: boolean;
   onProgress?: (pct: number) => void;
 }
 
-export const trimVideo = (blob: Blob, { start, end, square, withAudio, onProgress }: TrimOptions): Promise<Blob> =>
+export const trimVideo = (blob: Blob, { start, end, square, aspect, caption, withAudio, onProgress }: TrimOptions): Promise<Blob> =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
     const video = document.createElement("video");
@@ -30,10 +34,12 @@ export const trimVideo = (blob: Blob, { start, end, square, withAudio, onProgres
 
       const vw = video.videoWidth || 720;
       const vh = video.videoHeight || 1280;
-      const size = Math.min(vw, vh);
+      const ratio = aspect ?? (square ? 1 : vw / vh);
+      let cw = vw, ch = vh;
+      if (vw / vh > ratio) cw = Math.round(vh * ratio); else ch = Math.round(vw / ratio);
       const canvas = document.createElement("canvas");
-      canvas.width = square ? size : vw;
-      canvas.height = square ? size : vh;
+      canvas.width = cw;
+      canvas.height = ch;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         cleanup();
@@ -41,8 +47,34 @@ export const trimVideo = (blob: Blob, { start, end, square, withAudio, onProgres
         return;
       }
 
-      const sx = square ? (vw - size) / 2 : 0;
-      const sy = square ? (vh - size) / 2 : 0;
+      const sx = (vw - cw) / 2;
+      const sy = (vh - ch) / 2;
+      const drawCaption = () => {
+        const text = caption?.trim();
+        if (!text) return;
+        const fs = Math.max(16, Math.round(cw * 0.055));
+        ctx.font = `bold ${fs}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        const words = text.split(/\s+/);
+        const lines: string[] = [];
+        let line = "";
+        for (const w of words) {
+          const t = line ? `${line} ${w}` : w;
+          if (ctx.measureText(t).width > cw * 0.9 && line) { lines.push(line); line = w; } else line = t;
+        }
+        if (line) lines.push(line);
+        const lh = fs * 1.25;
+        let y = ch - fs;
+        ctx.lineWidth = Math.max(3, fs / 6);
+        ctx.strokeStyle = "rgba(0,0,0,0.85)";
+        ctx.fillStyle = "#fff";
+        for (const l of lines.slice(-3).reverse()) {
+          ctx.strokeText(l, cw / 2, y);
+          ctx.fillText(l, cw / 2, y);
+          y -= lh;
+        }
+      };
 
       const stream = canvas.captureStream(30);
 
@@ -87,7 +119,8 @@ export const trimVideo = (blob: Blob, { start, end, square, withAudio, onProgres
           if (recorder.state !== "inactive") recorder.stop();
           return;
         }
-        ctx.drawImage(video, sx, sy, square ? size : vw, square ? size : vh, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, sx, sy, cw, ch, 0, 0, cw, ch);
+        drawCaption();
         onProgress?.(Math.min(99, Math.round(((video.currentTime - from) / (to - from)) * 100)));
         raf = requestAnimationFrame(draw);
       };
