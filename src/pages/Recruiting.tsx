@@ -1,3 +1,4 @@
+import ReportButton from "@/components/ReportButton";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -1414,6 +1415,9 @@ const Recruiting = () => {
                       <Share2 className="w-4 h-4 mr-2" />
                       Share
                     </Button>
+                    {user && user.id !== selectedVideo.user_id && (
+                      <ReportButton targetType="recruiting_video" targetId={selectedVideo.id} />
+                    )}
                     <Button variant="outline" size="sm" onClick={() => handleDownload(selectedVideo)}>
                       <Download className="w-4 h-4 mr-2" />
                       Download

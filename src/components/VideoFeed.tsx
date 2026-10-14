@@ -1,3 +1,4 @@
+import ReportButton from "@/components/ReportButton";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -1005,6 +1006,9 @@ const VideoFeed = () => {
                     </span>
                     <span className="text-xs font-medium">Share</span>
                   </button>
+                  {user && user.id !== post.user_id && (
+                    <ReportButton targetType="post" targetId={post.id} iconOnly className="h-11 w-11 rounded-full bg-background/40 backdrop-blur text-white" />
+                  )}
                 </div>
 
                 {/* Bottom caption / meta */}

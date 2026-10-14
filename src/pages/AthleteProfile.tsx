@@ -1,3 +1,4 @@
+import ReportButton from "@/components/ReportButton";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -264,6 +265,9 @@ const AthleteProfile = () => {
                     <Mail className="w-4 h-4 mr-2" />
                     Contact Athlete
                   </Button>
+                )}
+                {!isOwnProfile && user && userId && (
+                  <ReportButton targetType="profile" targetId={userId} />
                 )}
               </div>
             </CardContent>

@@ -1,3 +1,4 @@
+import ReportButton from "@/components/ReportButton";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -151,6 +152,9 @@ const PostComments = ({ postId, open, onCountChange }: PostCommentsProps) => {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
+                  )}
+                  {user && user.id !== c.user_id && (
+                    <ReportButton targetType="comment" targetId={c.id} iconOnly className="ml-auto h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
                 <p className="text-sm text-foreground/90 break-words">{c.content}</p>
