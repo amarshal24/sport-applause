@@ -14,6 +14,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import VideoTrimModal from "@/components/VideoTrimModal";
+import HighlightEditor, { type HighlightEdits } from "@/components/HighlightEditor";
+import { trimVideo as reencodeClip } from "@/lib/videoTrim";
 import { SecureVideo } from "@/components/SecureMedia";
 import { storageRefUrl } from "@/lib/signedMedia";
 
@@ -52,6 +54,9 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const emptyEdits: HighlightEdits = { start: 0, end: 0, duration: 0, aspect: null, caption: "" };
+  const [edits, setEdits] = useState<HighlightEdits>(emptyEdits);
+  const [processPct, setProcessPct] = useState<number | null>(null);
 
   const targetUserId = userId || user?.id;
 
@@ -95,7 +100,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
         );
       }
       setVideoFile(file);
-      toast.success("Video loaded!");
+      setEdits(emptyEdits);
     }
   };
 
@@ -113,6 +118,23 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
     setUploading(true);
 
     try {
+      // Apply trim / crop / caption edits before uploading
+      let uploadFile: File = videoFile;
+      const trimmed = edits.duration > 0 && (edits.start > 0.05 || edits.end < edits.duration - 0.05);
+      if (trimmed || edits.aspect !== null || edits.caption.trim()) {
+        setProcessPct(0);
+        const blob = await reencodeClip(videoFile, {
+          start: edits.start,
+          end: edits.end || edits.duration,
+          aspect: edits.aspect ?? undefined,
+          caption: edits.caption,
+          withAudio: true,
+          onProgress: setProcessPct,
+        });
+        uploadFile = new File([blob], `${videoFile.name.replace(/\.[^.]+$/, "")}-edited.webm`, { type: "video/webm" });
+        setProcessPct(null);
+      }
+
       // Check if position already has a video
       const existingVideo = videos.find(v => v.position === editingPosition);
       
@@ -136,17 +158,17 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       // stored object serves a playable MIME type (mobile browsers can
       // report an empty file.type, which would save as octet-stream and
       // fail to play back).
-      const ext = (videoFile.name.split(".").pop() || "").toLowerCase();
+      const ext = (uploadFile.name.split(".").pop() || "").toLowerCase();
       const fallbackTypes: Record<string, string> = {
         mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm",
         m4v: "video/mp4", avi: "video/x-msvideo", mkv: "video/x-matroska",
       };
-      const contentType = videoFile.type || fallbackTypes[ext] || "video/mp4";
+      const contentType = uploadFile.type || fallbackTypes[ext] || "video/mp4";
 
-      const fileName = `${user.id}/${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const fileName = `${user.id}/${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error: uploadError } = await supabase.storage
         .from("top-five-videos")
-        .upload(fileName, videoFile, { contentType, cacheControl: "3600", upsert: false });
+        .upload(fileName, uploadFile, { contentType, cacheControl: "3600", upsert: false });
 
       if (uploadError) throw uploadError;
 
@@ -175,6 +197,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
       toast.error(message ? `Failed to upload video: ${message}` : "Failed to upload video");
     } finally {
       setUploading(false);
+      setProcessPct(null);
     }
   };
 
@@ -257,6 +280,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
     setVideoFile(null);
     setTitle("");
     setDescription("");
+    setEdits(emptyEdits);
     setEditingPosition(null);
   };
 
@@ -435,7 +459,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
         if (!open) resetForm();
         setShowUploadModal(open);
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
@@ -475,6 +499,10 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
               </div>
             </div>
 
+            {videoFile && (
+              <HighlightEditor file={videoFile} edits={edits} onChange={setEdits} />
+            )}
+
             <div>
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -503,7 +531,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                 Cancel
               </Button>
               <Button onClick={handleUpload} disabled={uploading || !videoFile}>
-                {uploading ? "Uploading..." : "Save Highlight"}
+                {processPct !== null ? `Applying edits ${processPct}%` : uploading ? "Uploading..." : "Save Highlight"}
               </Button>
             </div>
           </div>
