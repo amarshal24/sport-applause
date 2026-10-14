@@ -104,7 +104,7 @@ const Moderation = () => {
     if (report.target_type === "profile") ownerId = report.target_id;
     else {
       const table = report.target_type === "listing" ? "marketplace_listings" : TABLES[report.target_type];
-      const ownerCol = report.target_type === "listing" ? "seller_id" : "user_id";
+      const ownerCol = report.target_type === "listing" ? "user_id" : "user_id";
       const { data } = await (supabase as any).from(table).select(ownerCol).eq("id", report.target_id).maybeSingle();
       ownerId = data?.[ownerCol] ?? null;
     }
