@@ -977,9 +977,9 @@ export const CharacterPinsPanel = ({
 
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-4 min-w-0 max-w-full overflow-x-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium flex items-center gap-1.5">
             <Sparkles className="h-4 w-4 text-primary" />
             Character & Object FX
