@@ -77,6 +77,32 @@ const CheckoutReturn = () => {
     return () => clearTimeout(t);
   }, [isPremium, celebrated]);
 
+  const podcastType = searchParams.get("type");
+  if (podcastType?.startsWith("podcast_")) {
+    const kind = podcastType.replace("podcast_", "");
+    const title =
+      kind === "unlock" ? "Episode unlocked 🎧" : kind === "membership" ? "You're a member 👑" : "Thanks for the tip 💙";
+    const body =
+      kind === "unlock"
+        ? "The episode is ready to play in Podcasts."
+        : kind === "membership"
+          ? "Your monthly membership is active. You'll see a Member badge on the creator's episodes."
+          : "Your tip was sent to the creator.";
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-4 rounded-xl border border-border bg-card/60 p-8">
+          <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
+          <h1 className="text-2xl font-bold">{title}</h1>
+          <p className="text-sm text-muted-foreground">{sessionId ? body : "No checkout session found."}</p>
+          <div className="flex flex-col gap-2">
+            <Button asChild><Link to="/podcasts">Back to Podcasts</Link></Button>
+            <Button asChild variant="ghost"><Link to="/">Back home</Link></Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       {isPremium && celebrated && <Confetti />}
