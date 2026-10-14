@@ -36,6 +36,7 @@ const AthleteProfile = lazy(() => import("./pages/AthleteProfile"));
 const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
 const Search = lazy(() => import("./pages/Search"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Moderation = lazy(() => import("./pages/Moderation"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
