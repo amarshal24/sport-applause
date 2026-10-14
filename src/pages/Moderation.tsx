@@ -8,12 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ShieldCheck, EyeOff, Check, X } from "lucide-react";
+import { ShieldCheck, EyeOff, Check, X, Trash2, Ban } from "lucide-react";
 
 interface Report {
   id: string;
   reporter_id: string;
-  target_type: "listing" | "post" | "profile";
+  target_type: string;
   target_id: string;
   reason: string;
   details: string | null;
@@ -75,6 +75,49 @@ const Moderation = () => {
       toast.error("Could not hide listing");
     } else {
       toast.success("Listing hidden");
+      updateStatus(report.id, "reviewed");
+    }
+  };
+
+  const TABLES: Record<string, string> = {
+    post: "posts",
+    comment: "post_comments",
+    recruiting_video: "recruiting_videos",
+    highlight: "top_five_videos",
+    story: "stories",
+  };
+
+  const removeContent = async (report: Report) => {
+    const table = TABLES[report.target_type];
+    if (!table) return;
+    if (!confirm("Permanently remove this content?")) return;
+    const { error } = await (supabase as any).from(table).delete().eq("id", report.target_id);
+    if (error) toast.error("Could not remove content");
+    else {
+      toast.success("Content removed");
+      updateStatus(report.id, "reviewed");
+    }
+  };
+
+  const suspendOwner = async (report: Report) => {
+    let ownerId: string | null = null;
+    if (report.target_type === "profile") ownerId = report.target_id;
+    else {
+      const table = report.target_type === "listing" ? "marketplace_listings" : TABLES[report.target_type];
+      const ownerCol = report.target_type === "listing" ? "user_id" : "user_id";
+      const { data } = await (supabase as any).from(table).select(ownerCol).eq("id", report.target_id).maybeSingle();
+      ownerId = data?.[ownerCol] ?? null;
+    }
+    if (!ownerId) return toast.error("Could not find the account (content may be gone)");
+    if (!confirm("Suspend this account? They won't be able to post, comment, upload or message.")) return;
+    const { error } = await (supabase as any).from("user_suspensions").upsert({
+      user_id: ownerId,
+      reason: report.reason,
+      suspended_by: user!.id,
+    });
+    if (error) toast.error("Could not suspend account");
+    else {
+      toast.success("Account suspended");
       updateStatus(report.id, "reviewed");
     }
   };
@@ -183,6 +226,14 @@ const Moderation = () => {
                           <EyeOff className="mr-1 h-4 w-4" /> Hide listing
                         </Button>
                       )}
+                      {TABLES[r.target_type] && (
+                        <Button size="sm" variant="destructive" onClick={() => removeContent(r)}>
+                          <Trash2 className="mr-1 h-4 w-4" /> Remove
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => suspendOwner(r)}>
+                        <Ban className="mr-1 h-4 w-4" /> Suspend user
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "reviewed")}>
                         <Check className="mr-1 h-4 w-4" /> Mark reviewed
                       </Button>

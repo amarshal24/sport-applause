@@ -19,16 +19,20 @@ const REASONS = [
   "Scam or fraud",
   "Abusive or hateful content",
   "Spam",
+  "Inappropriate contact with a minor",
+  "Nudity or sexual content",
+  "Bullying or harassment",
   "Other",
 ] as const;
 
 interface ReportButtonProps {
-  targetType: "listing" | "post" | "profile";
+  targetType: "listing" | "post" | "profile" | "comment" | "recruiting_video" | "highlight" | "story";
   targetId: string;
   className?: string;
+  iconOnly?: boolean;
 }
 
-const ReportButton = ({ targetType, targetId, className }: ReportButtonProps) => {
+const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButtonProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -63,19 +67,20 @@ const ReportButton = ({ targetType, targetId, className }: ReportButtonProps) =>
     <>
       <Button
         variant="ghost"
-        size="sm"
+        size={iconOnly ? "icon" : "sm"}
+        aria-label="Report"
         className={className}
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
         }}
       >
-        <Flag className="mr-1 h-4 w-4" /> Report
+        <Flag className={iconOnly ? "h-4 w-4" : "mr-1 h-4 w-4"} />{!iconOnly && " Report"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Report this {targetType}</DialogTitle>
+            <DialogTitle>Report this {targetType.replace("_", " ")}</DialogTitle>
             <DialogDescription>
               Reports are reviewed by our moderation team.
             </DialogDescription>
