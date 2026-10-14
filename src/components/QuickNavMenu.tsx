@@ -63,7 +63,7 @@ const QuickNavMenu = () => {
   });
 
   return (
-    <div className="fixed bottom-20 right-4 z-[90] md:bottom-6">
+    <div className="fixed bottom-20 right-4 z-40 md:bottom-6">
       <AnimatePresence>
         {isOpen && (
           <motion.div
