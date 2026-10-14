@@ -28,7 +28,7 @@ const PodcastCheckoutModal = ({ request, onClose }: Props) => {
         podcastId: request.podcastId,
         creatorId: request.creatorId,
         amountCents: request.amountCents,
-        returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+        returnUrl: `${window.location.origin}/checkout/return?type=podcast_${request.kind}&session_id={CHECKOUT_SESSION_ID}`,
         environment: getStripeEnvironment(),
       },
     });
