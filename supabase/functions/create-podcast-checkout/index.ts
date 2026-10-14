@@ -140,7 +140,11 @@ Deno.serve(async (req) => {
       line_items: [{
         price_data: {
           currency: "usd",
-          product_data: { name: label },
+          product_data: {
+            name: label,
+            // Streamed audio for episode unlocks; general digital goods for tips/memberships.
+            tax_code: kind === "unlock" ? "txcd_10401100" : "txcd_10000000",
+          },
           unit_amount: amountCents,
           ...(isRecurring && { recurring: { interval: "month" } }),
         },
