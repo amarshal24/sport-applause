@@ -95,7 +95,8 @@ const App = () => (
                 <Route path="/athlete/:userId" element={<AthleteProfile />} />
                 <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
                 <Route path="/search" element={<Search />} />
-                <Route path="/marketplace" element={<Marketplace />} />
+<Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/moderation" element={<Moderation />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

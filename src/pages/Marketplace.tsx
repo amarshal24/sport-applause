@@ -26,6 +26,7 @@ import ListingFormModal, { MARKETPLACE_CATEGORIES, type Listing } from "@/compon
 import SavedSearchesDialog, { SaveSearchButton, useSavedSearches } from "@/components/marketplace/SavedSearches";
 import ListingChatDialog from "@/components/marketplace/ListingChatDialog";
 import SafetyDisclaimer from "@/components/marketplace/SafetyDisclaimer";
+import ReportButton from "@/components/ReportButton";
 
 
 const Marketplace = () => {
