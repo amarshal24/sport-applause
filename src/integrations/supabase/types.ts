@@ -184,6 +184,39 @@ export type Database = {
         }
         Relationships: []
       }
+      content_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       creator_memberships: {
         Row: {
           cancel_at_period_end: boolean
@@ -1549,6 +1582,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       video_drafts: {
         Row: {
           caption: string | null
@@ -1658,6 +1712,7 @@ export type Database = {
         Args: { _podcast_id: string; _user_id: string }
         Returns: boolean
       }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
     }
     Enums: {
