@@ -131,7 +131,7 @@ export function AnimationTutorial({ open, onOpenChange }: AnimationTutorialProps
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-md p-0 animate-scale-in max-h-[90dvh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-md p-0 animate-scale-in max-h-[90dvh] overflow-y-auto overflow-x-hidden">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Zap className="w-5 h-5 text-primary" />
