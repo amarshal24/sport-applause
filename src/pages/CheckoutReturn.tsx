@@ -95,7 +95,7 @@ const CheckoutReturn = () => {
           {isPremium && skinOnly
             ? "Your new character skins are ready in the Animation Center and Recruiting editor."
             : isPremium
-            ? "Every premium skin, filter and one-tap effect is now available in the Animation Center and Recruiting editor. Your PRO badge is live on your profile."
+            ? "Every premium effect, filter and animation is now available in the Animation Center and Recruiting editor. Your PRO badge is live on your profile."
             : sessionId
               ? "We're confirming your payment. This usually takes a few seconds."
               : "No checkout session found."}
