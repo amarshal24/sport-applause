@@ -300,7 +300,7 @@ export const FullscreenFiltersEffectsPanel = ({
 
                 {/* --- Characters sub-tab (reuses existing pins component) --- */}
                 <TabsContent value="characters" className="mt-3 flex-1 overflow-hidden">
-                  <ScrollArea className="h-full pr-2">
+                  <ScrollArea className="h-full pr-2 [&>[data-radix-scroll-area-viewport]>div]:!block">
                     <div className="pb-6">
                       <CharacterPinsPanel
                         pins={pins}
