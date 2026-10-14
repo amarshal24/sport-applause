@@ -52,7 +52,10 @@ const Confetti = () => {
 const CheckoutReturn = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
-  const { isPremium, refresh } = usePremium();
+  const { isPremium: hasProFx, skinTier, refresh } = usePremium();
+  // Skin pack buyers own a tier without full PRO FX — still a completed purchase.
+  const skinOnly = !hasProFx && skinTier !== "free";
+  const isPremium = hasProFx || skinOnly;
   const [tries, setTries] = useState(0);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
@@ -86,10 +89,12 @@ const CheckoutReturn = () => {
           <Loader2 className="h-12 w-12 text-primary mx-auto animate-spin" />
         )}
         <h1 className="text-2xl font-bold">
-          {isPremium ? "PRO FX unlocked ⚡️" : "Finishing up…"}
+          {isPremium ? (skinOnly ? "Skin pack unlocked ⚡️" : "PRO FX unlocked ⚡️") : "Finishing up…"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {isPremium
+          {isPremium && skinOnly
+            ? "Your new character skins are ready in the Animation Center and Recruiting editor."
+            : isPremium
             ? "Every premium skin, filter and one-tap effect is now available in the Animation Center and Recruiting editor. Your PRO badge is live on your profile."
             : sessionId
               ? "We're confirming your payment. This usually takes a few seconds."
