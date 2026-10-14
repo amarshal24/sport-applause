@@ -290,15 +290,18 @@ const Marketplace = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      if (!user) return navigate("/auth");
-                      setChatWith({ sellerId: selected.user_id, title: selected.title });
-                    }}
-                  >
-                    <MessageCircle className="mr-1 h-4 w-4" /> Message seller
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        if (!user) return navigate("/auth");
+                        setChatWith({ sellerId: selected.user_id, title: selected.title });
+                      }}
+                    >
+                      <MessageCircle className="mr-1 h-4 w-4" /> Message seller
+                    </Button>
+                    <ReportButton targetType="listing" targetId={selected.id} className="w-full" />
+                  </div>
                 )}
 
               </div>
