@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   User, Mail, Video, Trophy, Calendar, MapPin, 
-  School, Ruler, Weight, Eye, Play, ArrowLeft
+  School, Ruler, Weight, Eye, Play, ArrowLeft, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -52,7 +52,7 @@ interface RecruitingVideo {
 const AthleteProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [videos, setVideos] = useState<RecruitingVideo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,10 +61,13 @@ const AthleteProfile = () => {
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
   useEffect(() => {
-    if (userId) {
+    if (authLoading) return;
+    if (userId && user) {
       fetchAthleteData();
+    } else {
+      setLoading(false);
     }
-  }, [userId]);
+  }, [userId, user, authLoading]);
 
   const fetchAthleteData = async () => {
     if (!userId) return;
@@ -139,6 +142,29 @@ const AthleteProfile = () => {
               <div className="h-48 bg-muted rounded-2xl" />
               <div className="h-32 bg-muted rounded-xl" />
             </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user && !authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <Sidebar />
+        <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
+          <div className="px-4 lg:px-6 py-6">
+            <Card className="glass-effect">
+              <CardContent className="p-12 text-center">
+                <Trophy className="w-16 h-16 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Sign in to view athletes</h3>
+                <p className="text-muted-foreground mb-4">
+                  Athlete pages and Top 5 highlights are only visible to signed-in members.
+                </p>
+                <Button onClick={() => navigate("/auth")}>Sign in</Button>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
@@ -227,6 +253,12 @@ const AthleteProfile = () => {
                   )}
                 </div>
 
+                {isOwnProfile && (
+                  <Button variant="outline" onClick={() => navigate("/ar-studio")}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AR Camera
+                  </Button>
+                )}
                 {!isOwnProfile && user && (
                   <Button onClick={() => setShowContactModal(true)}>
                     <Mail className="w-4 h-4 mr-2" />
@@ -335,15 +367,15 @@ const AthleteProfile = () => {
           )}
 
           {/* Content Tabs */}
-          <Tabs defaultValue="highlights" className="space-y-4">
+          <Tabs defaultValue="top5" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="highlights" className="flex items-center gap-2">
-                <Video className="w-4 h-4" />
-                Highlight Reels
-              </TabsTrigger>
               <TabsTrigger value="top5" className="flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
                 Top 5 Plays
+              </TabsTrigger>
+              <TabsTrigger value="highlights" className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                Highlight Reels
               </TabsTrigger>
             </TabsList>
 

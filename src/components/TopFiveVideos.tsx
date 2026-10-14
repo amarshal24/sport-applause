@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
   Trophy, Plus, Play, Upload, X, Share2, Eye, 
-  Trash2, Edit2, ExternalLink, Repeat2, Wand2
+  Trash2, Edit2, ExternalLink, Repeat2, Wand2, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -390,6 +390,19 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
                                   }}
                                 >
                                   <Repeat2 className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="h-7 w-7"
+                                  title="Apply AR filter"
+                                  aria-label="Apply AR filter"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/ar-studio?src=${encodeURIComponent(video.video_url)}`);
+                                  }}
+                                >
+                                  <Sparkles className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   size="icon"
