@@ -280,6 +280,7 @@ const TopFiveVideos = ({ userId, isOwnProfile = true }: TopFiveVideosProps) => {
     setVideoFile(null);
     setTitle("");
     setDescription("");
+    setEdits(emptyEdits);
     setEditingPosition(null);
   };
 
