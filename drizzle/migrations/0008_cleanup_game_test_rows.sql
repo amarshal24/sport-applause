@@ -1,0 +1,1 @@
+DELETE FROM public.game_scores WHERE game_id = 'zz_test';
