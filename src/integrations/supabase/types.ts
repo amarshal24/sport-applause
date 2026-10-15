@@ -1711,6 +1711,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_daily_challenges: {
+        Args: never
+        Returns: {
+          challenge_date: string
+          challenge_type: string
+          created_at: string
+          description: string
+          game_id: string
+          id: string
+          reward_points: number
+          target_score: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "daily_challenges"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_creator_pricing: {
         Args: { _creator_ids: string[] }
         Returns: {
