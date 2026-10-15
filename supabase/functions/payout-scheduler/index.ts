@@ -155,6 +155,7 @@ Deno.serve(async (req) => {
           amount_cents: owed,
           status: "scheduled",
           scheduled_for: scheduledFor,
+          environment: PAYOUT_ENV,
         })
         .select("id")
         .single();
