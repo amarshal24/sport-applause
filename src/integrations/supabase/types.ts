@@ -804,6 +804,9 @@ export type Database = {
           payer_id: string
           platform_fee_cents: number
           podcast_id: string | null
+          refunded_at: string | null
+          refunded_cents: number
+          stripe_payment_intent_id: string | null
           stripe_session_id: string | null
           stripe_subscription_id: string | null
         }
@@ -819,6 +822,9 @@ export type Database = {
           payer_id: string
           platform_fee_cents?: number
           podcast_id?: string | null
+          refunded_at?: string | null
+          refunded_cents?: number
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           stripe_subscription_id?: string | null
         }
@@ -834,6 +840,9 @@ export type Database = {
           payer_id?: string
           platform_fee_cents?: number
           podcast_id?: string | null
+          refunded_at?: string | null
+          refunded_cents?: number
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
           stripe_subscription_id?: string | null
         }
