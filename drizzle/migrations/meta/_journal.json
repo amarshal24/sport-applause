@@ -64,6 +64,13 @@
       "when": 1792082808204,
       "tag": "0008_cleanup_game_test_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792082972153,
+      "tag": "0009_daily_challenges_rotation",
+      "breakpoints": true
     }
   ]
 }
