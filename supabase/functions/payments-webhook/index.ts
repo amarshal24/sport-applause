@@ -62,6 +62,7 @@ async function recordCreatorPayment(session: any, env: StripeEnv) {
       platform_fee_cents: Number(md.platformFeeCents ?? 0),
       creator_net_cents: Number(md.creatorNetCents ?? 0),
       stripe_session_id: session.id,
+      stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
       stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null,
       environment: env,
     },
@@ -177,6 +178,19 @@ async function handleWebhook(req: Request, env: StripeEnv) {
         },
         { onConflict: "stripe_session_id" },
       );
+      break;
+    }
+
+    case "charge.refunded": {
+      // Refunds reduce creator earnings; payouts subtract the refunded net share.
+      const charge: any = event.data.object;
+      const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : null;
+      if (!pi) break;
+      await getSupabase()
+        .from("podcast_payments")
+        .update({ refunded_cents: Number(charge.amount_refunded ?? 0), refunded_at: new Date().toISOString() })
+        .eq("stripe_payment_intent_id", pi)
+        .eq("environment", env);
       break;
     }
 
