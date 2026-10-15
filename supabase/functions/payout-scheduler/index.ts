@@ -15,6 +15,10 @@ const PERIOD_DAYS: Record<string, number> = {
   monthly: 30,
 };
 
+// Payouts are simulated in test mode only. No real money transfer is wired up,
+// so live payouts stay disabled until a real payout provider is approved.
+const PAYOUT_ENV = "sandbox";
+
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 const addDays = (days: number) => {
   const d = new Date();
@@ -116,17 +120,22 @@ Deno.serve(async (req) => {
 
       const { data: earnings } = await supabase
         .from("podcast_payments")
-        .select("creator_net_cents")
-        .eq("creator_id", userId);
-      const gross = (earnings ?? []).reduce(
-        (sum, row) => sum + (row.creator_net_cents as number),
-        0,
-      );
+        .select("amount_cents, creator_net_cents, refunded_cents")
+        .eq("creator_id", userId)
+        .eq("environment", PAYOUT_ENV);
+      // Net after refunds: refunded share of the creator's net is clawed back.
+      const gross = (earnings ?? []).reduce((sum, row) => {
+        const amt = (row.amount_cents as number) || 0;
+        const net = row.creator_net_cents as number;
+        const refunded = Math.min((row.refunded_cents as number) || 0, amt);
+        return sum + (amt ? Math.round(net * (1 - refunded / amt)) : net);
+      }, 0);
 
       const { data: settled } = await supabase
         .from("payouts")
         .select("amount_cents")
         .eq("user_id", userId)
+        .eq("environment", PAYOUT_ENV)
         .in("status", ["paid", "processing", "scheduled"]);
       const alreadyPaid = (settled ?? []).reduce(
         (sum, row) => sum + (row.amount_cents as number),
@@ -146,6 +155,7 @@ Deno.serve(async (req) => {
           amount_cents: owed,
           status: "scheduled",
           scheduled_for: scheduledFor,
+          environment: PAYOUT_ENV,
         })
         .select("id")
         .single();

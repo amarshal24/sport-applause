@@ -77,6 +77,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Public paid transactions stay off until reconciliation, refunds and payouts pass review.
+    if (environment === "live" && Deno.env.get("PODCAST_LIVE_PAYMENTS_ENABLED") !== "true") {
+      return new Response(JSON.stringify({ error: "Paid podcast features are not open to the public yet" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let creatorId: string | null = null;
     let podcastId: string | null = null;
     let amountCents = 0;
