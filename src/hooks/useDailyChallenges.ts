@@ -30,7 +30,16 @@ export const useDailyChallenges = () => {
     setIsLoading(true);
     
     const today = new Date().toISOString().split('T')[0];
-    
+
+    if (user) {
+      const { data: fresh, error: rpcError } = await supabase.rpc('ensure_daily_challenges');
+      if (!rpcError && fresh && fresh.length > 0) {
+        await processChallenges(fresh);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     const { data: challengesData, error } = await supabase
       .from('daily_challenges')
       .select('*')
@@ -43,15 +52,13 @@ export const useDailyChallenges = () => {
     }
 
     if (!challengesData || challengesData.length === 0) {
-      // If no challenges for today, get all challenges (they're reusable)
-      const { data: allChallenges } = await supabase
+      // Fall back to the most recent day's challenges
+      const { data: latest } = await supabase
         .from('daily_challenges')
-        .select('*');
-      
-      if (allChallenges && allChallenges.length > 0) {
-        // Use existing challenges
-        await processChallenges(allChallenges);
-      }
+        .select('*')
+        .order('challenge_date', { ascending: false })
+        .limit(8);
+      if (latest && latest.length > 0) await processChallenges(latest);
     } else {
       await processChallenges(challengesData);
     }
