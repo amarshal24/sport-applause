@@ -37,6 +37,7 @@ const RecruiterDashboard = lazy(() => import("./pages/RecruiterDashboard"));
 const Search = lazy(() => import("./pages/Search"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const Moderation = lazy(() => import("./pages/Moderation"));
+const AdminPayouts = lazy(() => import("./pages/AdminPayouts"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -97,6 +98,7 @@ const App = () => (
                 <Route path="/search" element={<Search />} />
 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/moderation" element={<Moderation />} />
+                <Route path="/admin/payouts" element={<AdminPayouts />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

@@ -14,6 +14,11 @@ type Payout = {
   scheduled_for: string;
   processed_at: string | null;
   failure_reason: string | null;
+  reference_number: string | null;
+  payment_method: string | null;
+  bank_name: string | null;
+  account_last4: string | null;
+  received_confirmed_at: string | null;
 };
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -31,7 +36,7 @@ const PayoutSchedule = () => {
     if (!user) return;
     const { data } = await supabase
       .from("payouts")
-      .select("id, amount_cents, status, scheduled_for, processed_at, failure_reason")
+      .select("id, amount_cents, status, scheduled_for, processed_at, failure_reason, reference_number, payment_method, bank_name, account_last4, received_confirmed_at")
       .order("scheduled_for", { ascending: false })
       .limit(12);
     setPayouts((data as Payout[]) ?? []);
@@ -63,6 +68,13 @@ const PayoutSchedule = () => {
     setRunning(false);
     if (error) return toast.error("Could not refresh payout schedule");
     toast.success("Payout schedule refreshed");
+    load();
+  };
+
+  const confirmReceived = async (id: string) => {
+    const { error } = await supabase.rpc("confirm_payout_received", { _payout_id: id });
+    if (error) return toast.error("Could not confirm");
+    toast.success("Marked as received");
     load();
   };
 
@@ -105,6 +117,25 @@ const PayoutSchedule = () => {
                     ? `Processed ${new Date(p.processed_at).toLocaleDateString()}`
                     : `Scheduled ${p.scheduled_for}`}
                 </p>
+                {p.status === "paid" && p.reference_number && (
+                  <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                    <p>Ref: <span className="font-mono text-foreground">{p.reference_number}</span></p>
+                    {(p.payment_method || p.bank_name || p.account_last4) && (
+                      <p>
+                        {[p.payment_method, p.bank_name, p.account_last4 ? `account ending ${p.account_last4}` : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    {p.received_confirmed_at ? (
+                      <p className="text-primary">Received {new Date(p.received_confirmed_at).toLocaleDateString()}</p>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-7 mt-1" onClick={() => confirmReceived(p.id)}>
+                        I got this money
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {p.failure_reason && (
                   <p className="text-xs text-destructive mt-0.5">{p.failure_reason}</p>
                 )}
