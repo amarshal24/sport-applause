@@ -78,6 +78,13 @@
       "when": 1792115983123,
       "tag": "0010_gate_premium_podcast_audio",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792128717801,
+      "tag": "0011_payout_paid_tracking",
+      "breakpoints": true
     }
   ]
 }

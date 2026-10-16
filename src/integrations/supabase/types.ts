@@ -759,39 +759,57 @@ export type Database = {
       }
       payouts: {
         Row: {
+          account_last4: string | null
           amount_cents: number
+          bank_name: string | null
           created_at: string
           currency: string
           environment: string
           failure_reason: string | null
           id: string
+          marked_paid_by: string | null
+          payment_method: string | null
           processed_at: string | null
+          received_confirmed_at: string | null
+          reference_number: string | null
           scheduled_for: string
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_last4?: string | null
           amount_cents?: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           environment?: string
           failure_reason?: string | null
           id?: string
+          marked_paid_by?: string | null
+          payment_method?: string | null
           processed_at?: string | null
+          received_confirmed_at?: string | null
+          reference_number?: string | null
           scheduled_for?: string
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_last4?: string | null
           amount_cents?: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           environment?: string
           failure_reason?: string | null
           id?: string
+          marked_paid_by?: string | null
+          payment_method?: string | null
           processed_at?: string | null
+          received_confirmed_at?: string | null
+          reference_number?: string | null
           scheduled_for?: string
           status?: string
           updated_at?: string
@@ -1715,6 +1733,10 @@ export type Database = {
         Args: { _name: string; _user_id: string }
         Returns: boolean
       }
+      confirm_payout_received: {
+        Args: { _payout_id: string }
+        Returns: undefined
+      }
       ensure_daily_challenges: {
         Args: never
         Returns: {
@@ -1784,6 +1806,16 @@ export type Database = {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_suspended: { Args: { _user_id: string }; Returns: boolean }
+      mark_payout_paid: {
+        Args: {
+          _bank_name: string
+          _last4: string
+          _method: string
+          _payout_id: string
+          _reference: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
