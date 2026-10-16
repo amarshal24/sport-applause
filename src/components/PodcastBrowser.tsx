@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { SecureAudio, SecureImage } from "@/components/SecureMedia";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Clock, Headphones, Loader2, Mic, Pause, Play, Search } from "lucide-react";
+import { Clock, Headphones, Loader2, Lock, Mic, Pause, Play, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
+import { useAuth } from "@/hooks/useAuth";
+import { getStripeEnvironment } from "@/lib/stripe";
+import PodcastCheckoutModal, { PodcastCheckoutRequest } from "./podcast/PodcastCheckoutModal";
 import { cn } from "@/lib/utils";
 
 export interface CommunityPodcast {
@@ -20,6 +23,8 @@ export interface CommunityPodcast {
   likes_count: number;
   created_at: string;
   user_id: string;
+  is_premium: boolean;
+  unlock_price_cents: number;
   creator?: {
     username: string | null;
     full_name: string | null;
