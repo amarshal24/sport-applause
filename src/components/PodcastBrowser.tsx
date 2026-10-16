@@ -56,21 +56,34 @@ interface PodcastBrowserProps {
 const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
   const navigate = useNavigate();
   const { preferCaptions } = useDeafAccessibility();
+  const { user } = useAuth();
   const [items, setItems] = useState<CommunityPodcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("latest");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
+  const [memberOf, setMemberOf] = useState<Set<string>>(new Set());
+  const [checkout, setCheckout] = useState<PodcastCheckoutRequest | null>(null);
   const countedPlays = useRef<Set<string>>(new Set());
   const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+
+  const canPlay = useCallback(
+    (p: CommunityPodcast) =>
+      !p.is_premium ||
+      p.user_id === user?.id ||
+      unlocked.has(p.id) ||
+      memberOf.has(p.user_id),
+    [user?.id, unlocked, memberOf]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("podcasts")
       .select(
-        "id, title, description, audio_url, thumbnail_url, duration, plays_count, likes_count, created_at, user_id"
+        "id, title, description, audio_url, thumbnail_url, duration, plays_count, likes_count, created_at, user_id, is_premium, unlock_price_cents"
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -99,6 +112,39 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
       );
     }
 
+    // Purchase access: owned unlocks (not fully refunded) and active memberships.
+    const unlockedIds = new Set<string>();
+    const memberIds = new Set<string>();
+    if (user) {
+      const env = getStripeEnvironment();
+      const [payments, memberships] = await Promise.all([
+        supabase
+          .from("podcast_payments")
+          .select("podcast_id, amount_cents, refunded_cents")
+          .eq("payer_id", user.id)
+          .eq("kind", "unlock")
+          .eq("environment", env),
+        supabase
+          .from("creator_memberships")
+          .select("creator_id, status, current_period_end")
+          .eq("fan_id", user.id)
+          .eq("environment", env),
+      ]);
+      (payments.data ?? []).forEach((r: any) => {
+        if (r.podcast_id && (r.refunded_cents ?? 0) < (r.amount_cents ?? 0)) {
+          unlockedIds.add(r.podcast_id);
+        }
+      });
+      (memberships.data ?? []).forEach((m: any) => {
+        const active = ["active", "trialing", "past_due"].includes(m.status);
+        const notExpired =
+          !m.current_period_end || new Date(m.current_period_end) > new Date();
+        if (active && notExpired) memberIds.add(m.creator_id);
+      });
+    }
+    setUnlocked(unlockedIds);
+    setMemberOf(memberIds);
+
     setItems(
       podcasts.map((p) => ({
         ...p,
@@ -106,7 +152,7 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
       }))
     );
     setLoading(false);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     load();
@@ -114,8 +160,8 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
 
   useEffect(() => {
     if (!focusId || loading || items.length === 0) return;
-    const exists = items.some((p) => p.id === focusId);
-    if (!exists) {
+    const target = items.find((p) => p.id === focusId);
+    if (!target || !canPlay(target)) {
       onFocusConsumed?.();
       return;
     }
@@ -125,7 +171,7 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
       rowRefs.current.get(focusId)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     onFocusConsumed?.();
-  }, [focusId, loading, items, onFocusConsumed]);
+  }, [focusId, loading, items, onFocusConsumed, canPlay]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -161,6 +207,14 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
   };
 
   const togglePlay = (podcast: CommunityPodcast) => {
+    if (!canPlay(podcast)) {
+      setCheckout({
+        kind: "unlock",
+        podcastId: podcast.id,
+        title: `Unlock "${podcast.title}" — $${(podcast.unlock_price_cents / 100).toFixed(2)}`,
+      });
+      return;
+    }
     if (activeId === podcast.id) {
       const el = document.getElementById("podcast-now-playing") as HTMLAudioElement | null;
       if (el) {
@@ -259,7 +313,9 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
                       </div>
                     )}
                     <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isActive && playing ? (
+                      {!canPlay(p) ? (
+                        <Lock className="h-7 w-7 text-white" />
+                      ) : isActive && playing ? (
                         <Pause className="h-7 w-7 text-white" />
                       ) : (
                         <Play className="h-7 w-7 text-white fill-white" />
@@ -279,22 +335,33 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
                           {creatorLabel}
                         </button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={isActive ? "default" : "outline"}
-                        className="shrink-0 gap-1"
-                        onClick={() => togglePlay(p)}
-                      >
-                        {isActive && playing ? (
-                          <>
-                            <Pause className="h-4 w-4" /> Pause
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4" /> Play
-                          </>
-                        )}
-                      </Button>
+                      {!canPlay(p) ? (
+                        <Button
+                          size="sm"
+                          className="shrink-0 gap-1"
+                          onClick={() => togglePlay(p)}
+                        >
+                          <Lock className="h-4 w-4" /> Unlock ${" "}
+                          {(p.unlock_price_cents / 100).toFixed(2)}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant={isActive ? "default" : "outline"}
+                          className="shrink-0 gap-1"
+                          onClick={() => togglePlay(p)}
+                        >
+                          {isActive && playing ? (
+                            <>
+                              <Pause className="h-4 w-4" /> Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-4 w-4" /> Play
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                     {p.description && (
                       <p
@@ -363,6 +430,8 @@ const PodcastBrowser = ({ focusId, onFocusConsumed }: PodcastBrowserProps) => {
           })}
         </ul>
       )}
+
+      <PodcastCheckoutModal request={checkout} onClose={() => setCheckout(null)} />
     </div>
   );
 };
