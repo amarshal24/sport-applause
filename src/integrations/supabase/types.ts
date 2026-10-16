@@ -1711,6 +1711,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_podcast_object: {
+        Args: { _name: string; _user_id: string }
+        Returns: boolean
+      }
       ensure_daily_challenges: {
         Args: never
         Returns: {
