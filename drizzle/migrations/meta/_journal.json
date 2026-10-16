@@ -71,6 +71,13 @@
       "when": 1792082972153,
       "tag": "0009_daily_challenges_rotation",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792115983123,
+      "tag": "0010_gate_premium_podcast_audio",
+      "breakpoints": true
     }
   ]
 }
