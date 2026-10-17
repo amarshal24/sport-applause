@@ -1,12 +1,14 @@
 # Roadmap
 
 ## Creator game store
-- [ ] Prepare paid-game checkout, protected delivery, refund reconciliation, and payout controls; keep public sales blocked pending readiness
+- [x] Add protected test previews, private host keys, single-use authorization, delivery review, and changed-destination invalidation; test signed-in and clean up test game
+- [ ] Complete participating game host integration and verify host-side unpaid access denial (blocked: creator host integration)
+- [ ] Add restricted checkout, purchased games, refund/dispute reconciliation, and game payout allocation (blocked: confirmed game commission and seller-country tax eligibility)
 - [x] Add creator listings, price setting, review, and free game launching
 - [x] Add private creator sales and earnings views
 - [x] Verify signed-in submission, ownership spoof prevention, admin review, disabled paid checkout, persistence, and test cleanup
 - [ ] Verify non-admin reviewer rejection with an authorized non-admin session (no such session available)
-- [ ] Activate paid game sales after protected delivery, reconciliation, refunds, billing compliance and real payout controls pass (blocked by payment readiness)
+- [ ] Activate paid game sales after protected delivery, reconciliation, refunds, billing compliance and real payout controls pass (blocked: Stripe account claim still at step 1 and production controls unverified)
 
 ## Game tier packages
 - [x] Add Rookie, All-Star, and MVP package comparison with accurate availability
