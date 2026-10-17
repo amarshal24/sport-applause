@@ -1,9 +1,10 @@
 # Roadmap
 
 ## Game tier packages
-- [ ] Add Rookie, All-Star, and MVP package comparison with accurate availability
-- [ ] Preserve playable games while unfinished paid packages remain unavailable
-- [ ] Test package prices, included categories, and paid-sales restrictions
+- [x] Add Rookie, All-Star, and MVP package comparison with accurate availability
+- [x] Preserve playable games while unfinished paid packages remain unavailable
+- [x] Test package prices and paid-sales restrictions
+- [ ] Build the missing paid game categories and paid-pass entitlements before selling passes
 
 ## Real-time AR tracking engine (in progress)
 - [x] Shared types / stage contracts (`src/lib/ar/types.ts`)

@@ -9,6 +9,7 @@ import SportsTrivia from "@/components/games/SportsTrivia";
 import GuessTheSport from "@/components/games/GuessTheSport";
 import SportsAnimator from "@/components/games/SportsAnimator";
 import AthleteMatch from "@/components/games/AthleteMatch";
+import GamePackages from "@/components/games/GamePackages";
 
 const Games = () => {
   const { t } = useTranslation();
@@ -69,6 +70,8 @@ const Games = () => {
                   {t("games.subtitle")}
                 </p>
               </div>
+
+              <GamePackages />
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {games.map((game) => {
