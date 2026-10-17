@@ -1,4 +1,4 @@
-import asyncio,json,os
+import asyncio,json,os,time
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -10,15 +10,16 @@ async def main():
   with open(os.path.expanduser('~/.cache/lovable-auth/session.json')) as f: minted=json.load(f)
   await page.goto('http://localhost:8080')
   await page.evaluate('([k,v])=>localStorage.setItem(k,v)',[minted['storage_key'],json.dumps(minted['session'])])
+  test_title='Protected Delivery Test '+str(time.time_ns())
   await page.goto('http://localhost:8080/games')
   await page.get_by_role('button',name='List your game').click()
-  await page.get_by_label('Game title',exact=True).fill('Protected Delivery Test')
+  await page.get_by_label('Game title',exact=True).fill(test_title)
   await page.get_by_label('Description',exact=True).fill('Isolated authorization test; not a real game for sale.')
   await page.get_by_label('Price (USD)').fill('4.99')
   await page.get_by_label('Hosted game URL').fill('https://example.org/game')
   await page.get_by_role('button',name='Submit for review',exact=True).click()
   await page.get_by_role('tab',name='My games',exact=True).click()
-  card=page.get_by_role('article').filter(has=page.get_by_role('heading',name='Protected Delivery Test',exact=True))
+  card=page.get_by_role('article').filter(has=page.get_by_role('heading',name=test_title,exact=True))
   await card.get_by_role('button',name='Protected delivery',exact=True).click()
   await page.get_by_role('button',name='Create host key',exact=True).click()
   await page.get_by_label('Private host key · shown once').wait_for()
@@ -28,9 +29,9 @@ async def main():
    data=await response.json()
    return {'data':data,'error': None if response.ok else {'message':data.get('error','Verification refused')}}
   await page.expose_function('hostVerify',host_verify)
-  result=await page.evaluate('''async (hostKey)=>{
+  result=await page.evaluate('''async ({hostKey,testTitle})=>{
    const {supabase:s}=await import('/src/integrations/supabase/client.ts');
-   const {data:games}=await s.from('creator_games').select('*').eq('title','Protected Delivery Test');
+   const {data:games}=await s.from('creator_games').select('*').eq('title',testTitle);
    const verify=(token,key)=>window.hostVerify({url:s.supabaseUrl+'/functions/v1/verify-game-launch',apikey:s.supabaseKey,key,body:{gameId:games[0].id,token}});
    const g=games[0]; if(!g) throw Error('Test game missing');
    const checks=[];
@@ -54,7 +55,7 @@ async def main():
     const stale=await verify(pendingToken.token,hostKey); if(!stale.error) throw Error('Changed host accepted stale token'); checks.push('Destination edit invalidates review and tokens');
     return checks;
    } finally { const deleted=await s.from('creator_games').delete().eq('id',g.id); if(deleted.error) throw Error('Test cleanup failed'); }
-  }''',hostkey)
+  }''',{'hostKey':hostkey,'testTitle':test_title})
   print('\n'.join(result))
   await page.get_by_role('dialog').get_by_role('button',name='Close',exact=True).click()
   await page.reload()
