@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, Crown, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePremium } from "@/hooks/usePremium";
 import { AnimationTutorial } from "@/components/video-fx/AnimationTutorial";
+import GameCheckoutReturn from "@/components/games/GameCheckoutReturn";
 
 /** Lightweight confetti burst — no extra dependency. */
 const Confetti = () => {
@@ -78,6 +79,7 @@ const CheckoutReturn = () => {
   }, [isPremium, celebrated]);
 
   const podcastType = searchParams.get("type");
+  if (podcastType === "creator_game") return <GameCheckoutReturn sessionId={sessionId} />;
   if (podcastType?.startsWith("podcast_")) {
     const kind = podcastType.replace("podcast_", "");
     const title =

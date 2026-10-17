@@ -2,3 +2,10 @@ project_id = "idcaeqkfrhqgwaprzzvk"
 
 [functions.verify-game-launch]
 verify_jwt = false
+
+[functions.create-game-checkout]
+verify_jwt = false
+[functions.reconcile-game-checkout]
+verify_jwt = false
+[functions.payments-webhook]
+verify_jwt = false

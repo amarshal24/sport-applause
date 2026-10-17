@@ -17,6 +17,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import cover from "@/assets/creator-game-cover.jpg";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { protectedGameUrl, type ProtectedGameLaunch } from "@/lib/gameDelivery";
+import GameCheckoutModal from "./GameCheckoutModal";
 
 type Game = Tables<"creator_games">;
 const initialForm = { title: "", description: "", category: "sports", price: "0", launchUrl: "" };
@@ -41,6 +42,9 @@ export default function CreatorGameStore() {
   const [delivery, setDelivery] = useState<{ configured: boolean; verified_at: string | null; reviewed_at: string | null } | null>(null);
   const [hostKey, setHostKey] = useState<string | null>(null);
   const [deliveryBusy, setDeliveryBusy] = useState(false);
+  const [orders, setOrders] = useState<Tables<"creator_game_orders">[]>([]);
+  const [testBuyable, setTestBuyable] = useState<Set<string>>(new Set());
+  const [checkoutGame, setCheckoutGame] = useState<Game | null>(null);
 
   const load = useCallback(async () => {
     if (!user) { setGames([]); setSales([]); setReviewer(false); return; }
@@ -53,6 +57,11 @@ export default function CreatorGameStore() {
     if (list.error || ledger.error || roles.error) setError("Couldn't load the game store. Please try again.");
     setGames(list.data ?? []); setSales(ledger.data ?? []);
     setReviewer((roles.data ?? []).some(r => ["admin", "moderator"].includes(r.role)));
+    const [purchases, available] = await Promise.all([
+      supabase.from("creator_game_orders").select("*").eq("buyer_id", user.id).eq("environment", getStripeEnvironment()).order("created_at", { ascending: false }),
+      Promise.all((list.data ?? []).filter(g => g.price_cents > 0).map(async g => ({ id: g.id, allowed: (await supabase.rpc("can_purchase_creator_game_test", { _game_id: g.id })).data }))),
+    ]);
+    setOrders(purchases.data ?? []); setTestBuyable(new Set(available.filter(g => g.allowed).map(g => g.id)));
     const ids = [...new Set((list.data ?? []).map(g => g.creator_id))];
     if (ids.length) {
       const profiles = await supabase.from("profiles").select("id,username").in("id", ids);
@@ -94,7 +103,7 @@ export default function CreatorGameStore() {
         const { data, error } = await supabase.rpc("request_creator_game_launch", { _game_id: game.id, _environment: getStripeEnvironment() });
         if (error || !data) throw new Error(error?.message ?? "Game unavailable");
         const launch = data as unknown as ProtectedGameLaunch;
-        setExternal({ title: `${game.title} · Test preview`, url: protectedGameUrl(launch, game.id) });
+        setExternal({ title: `${game.title} · ${launch.preview ? "Test preview" : "Purchased game"}`, url: protectedGameUrl(launch, game.id) });
       } catch (error) { toast.error(error instanceof Error ? error.message : "Game unavailable"); }
       setLaunching(null);
       return;
@@ -152,7 +161,7 @@ export default function CreatorGameStore() {
           <div className="flex flex-wrap gap-2">
             {own || reviewing || game.price_cents === 0
               ? <Button className="flex-1" onClick={() => void launch(game)} disabled={launching === game.id}>{launching === game.id ? <Loader2 className="animate-spin" /> : <ExternalLink />}{own || reviewing ? "Preview game" : "Play free"}</Button>
-              : <Button variant="outline" className="w-full" disabled><Lock /> Sales not open</Button>}
+              : orders.some(o => o.game_id === game.id && o.status === "paid") ? <Button onClick={() => void launch(game)}><ExternalLink />Play purchased</Button> : testBuyable.has(game.id) ? <Button onClick={() => setCheckoutGame(game)}>Buy · test only</Button> : <Button variant="outline" className="w-full" disabled><Lock /> Sales not open</Button>}
             {own && <><Button size="icon" variant="outline" aria-label={`Edit ${game.title}`} title="Edit game" onClick={() => void edit(game)}><Pencil /></Button><Button size="icon" variant="outline" aria-label={`Delete ${game.title}`} title="Delete game" onClick={() => void remove(game)}><Trash2 /></Button></>}
             {(own || reviewing) && game.price_cents > 0 && <Button variant="outline" onClick={() => void loadDelivery(game)}><ShieldCheck />Protected delivery</Button>}
           </div>
@@ -166,15 +175,17 @@ export default function CreatorGameStore() {
   return <section className="mb-10" aria-labelledby="creator-store-heading">
     <div className="flex flex-wrap items-center justify-between gap-4 mb-5"><div><h2 id="creator-store-heading" className="text-2xl font-bold font-display">Creator game store</h2><p className="text-sm text-muted-foreground">Independent games. Fresh competition.</p></div><Button onClick={() => { setEditing(null); setForm(initialForm); setOpen(true); }} disabled={!user}><Plus />List your game</Button></div>
     {!user ? <div className="py-8 text-center border-y border-border"><Button asChild><Link to="/auth">Sign in to browse creator games</Link></Button></div> : <Tabs defaultValue="browse">
-      <TabsList className="max-w-full h-auto flex-wrap mb-4"><TabsTrigger value="browse">Store</TabsTrigger><TabsTrigger value="mine">My games</TabsTrigger><TabsTrigger value="earnings">Earnings</TabsTrigger>{reviewer && <TabsTrigger value="review">Review</TabsTrigger>}</TabsList>
+      <TabsList className="max-w-full h-auto flex-wrap mb-4"><TabsTrigger value="browse">Store</TabsTrigger><TabsTrigger value="purchased">Purchased games</TabsTrigger><TabsTrigger value="mine">My games</TabsTrigger><TabsTrigger value="earnings">Earnings</TabsTrigger>{reviewer && <TabsTrigger value="review">Review</TabsTrigger>}</TabsList>
       {error && <div role="alert" className="mb-4 flex items-center justify-between gap-3 text-destructive"><span>{error}</span><Button variant="outline" onClick={() => void load()}>Retry</Button></div>}
       {loading ? <div className="py-10 flex justify-center"><Loader2 aria-label="Loading game store" className="animate-spin text-primary" /></div> : <>
         <TabsContent value="browse"><div className="flex gap-3 mb-5"><div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Search creator games" placeholder="Search games" className="pl-9" value={query} onChange={e => setQuery(e.target.value)} /></div><Select value={category} onValueChange={setCategory}><SelectTrigger className="w-32" aria-label="Game category"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All genres</SelectItem>{GAME_CATEGORIES.map(c => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent></Select></div>{cards(games.filter(g => g.status === "approved" && (category === "all" || g.category === category) && `${g.title} ${g.description}`.toLowerCase().includes(query.toLowerCase())))}</TabsContent>
         <TabsContent value="mine">{cards(games.filter(g => g.creator_id === user.id), true)}</TabsContent>
+        <TabsContent value="purchased">{orders.length ? orders.map(o => <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-border"><div><h3 className="font-semibold">{o.title}</h3><p className="text-sm text-muted-foreground">{gameMoney(o.amount_cents)} · {o.status} · {o.environment === "sandbox" ? "Test" : "Live"}</p></div>{o.status === "paid" && <Button onClick={() => { const game = games.find(g => g.id === o.game_id); if (game) void launch(game); }}><ExternalLink />Play purchased</Button>}</div>) : <p className="py-8 text-muted-foreground">No game purchases yet.</p>}</TabsContent>
         <TabsContent value="earnings"><div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground"><Lock className="h-4 w-4 shrink-0" />Paid game sales and payouts are not open.</div><div className="grid grid-cols-2 sm:grid-cols-5 gap-4 py-5 border-y border-border">{Object.entries(totals).map(([key, value]) => <div key={key}><p className="text-xs capitalize text-muted-foreground">{key === "paid" ? "Paid out" : key}</p><p className="text-xl font-bold">{gameMoney(value)}</p></div>)}</div><h3 className="font-semibold mt-6 mb-3">Sales history</h3>{sales.length ? <div className="space-y-3">{sales.map(s => <div key={s.id} className="flex flex-wrap justify-between gap-2 border-b border-border py-3 text-sm"><span>{games.find(g => g.id === s.game_id)?.title ?? "Game sale"}<Badge variant="outline" className="ml-2">{s.environment}</Badge></span><span>{gameMoney(s.creator_net_cents)} · {s.payout_status.replace(/_/g, " ")}</span></div>)}</div> : <p className="text-sm text-muted-foreground py-6">No sales yet.</p>}</TabsContent>
         {reviewer && <TabsContent value="review">{cards(games.filter(g => ["pending", "approved"].includes(g.status)), false, true)}</TabsContent>}
       </>}
     </Tabs>}
+    <GameCheckoutModal game={checkoutGame} onClose={() => { setCheckoutGame(null); void load(); }} />
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Edit your game" : "List your game"}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-4">
       <div><Label htmlFor="game-title">Game title</Label><Input id="game-title" required maxLength={80} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
       <div><Label htmlFor="game-description">Description</Label><Textarea id="game-description" required maxLength={2000} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>

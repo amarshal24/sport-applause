@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
+import { reconcileGameSession } from "../_shared/gamePayments.ts";
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
@@ -96,6 +97,10 @@ async function upsertCreatorMembership(subscription: any, env: StripeEnv) {
 }
 
 async function recordOneTimePurchase(session: any, env: StripeEnv) {
+  if (session.metadata?.kind === "creator_game") {
+    await reconcileGameSession(getSupabase(), session.id, env);
+    return;
+  }
   if (await recordCreatorPayment(session, env)) return;
 
   const userId = session.metadata?.userId;
@@ -151,6 +156,14 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "checkout.session.async_payment_succeeded":
       await recordOneTimePurchase(event.data.object, env);
       break;
+    case "checkout.session.async_payment_failed": {
+      const session = event.data.object;
+      if (session.metadata?.kind === "creator_game") {
+        const { error } = await getSupabase().from("creator_game_orders").update({ status: "failed" }).eq("stripe_session_id", session.id).eq("environment", env).eq("status", "pending");
+        if (error) throw error;
+      }
+      break;
+    }
     case "invoice.paid": {
       // Membership renewals: log creator earnings for each recurring charge.
       const invoice: any = event.data.object;
@@ -186,11 +199,24 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       const charge: any = event.data.object;
       const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : null;
       if (!pi) break;
+      const gameRefund = await getSupabase().rpc("refund_creator_game_order", { _payment_intent: pi, _refunded: Number(charge.amount_refunded ?? 0), _environment: env });
+      if (gameRefund.error) throw gameRefund.error;
       await getSupabase()
         .from("podcast_payments")
         .update({ refunded_cents: Number(charge.amount_refunded ?? 0), refunded_at: new Date().toISOString() })
         .eq("stripe_payment_intent_id", pi)
         .eq("environment", env);
+      break;
+    }
+
+    case "charge.dispute.created":
+    case "charge.dispute.closed": {
+      const dispute = event.data.object;
+      const pi = typeof dispute.payment_intent === "string" ? dispute.payment_intent : null;
+      if (pi) {
+        const { error } = await getSupabase().rpc("dispute_creator_game_order", { _payment_intent: pi, _open: dispute.status !== "won", _environment: env });
+        if (error) throw error;
+      }
       break;
     }
 
