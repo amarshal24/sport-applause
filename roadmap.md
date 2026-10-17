@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Creator game store
+- [ ] Prepare paid-game checkout, protected delivery, refund reconciliation, and payout controls; keep public sales blocked pending readiness
 - [x] Add creator listings, price setting, review, and free game launching
 - [x] Add private creator sales and earnings views
 - [x] Verify signed-in submission, ownership spoof prevention, admin review, disabled paid checkout, persistence, and test cleanup
