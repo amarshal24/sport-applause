@@ -1,5 +1,11 @@
 # Roadmap
 
+## Creator game store
+- [ ] Add creator listings, price setting, review, and free game launching
+- [ ] Add private creator sales and earnings views
+- [ ] Verify listing ownership, review controls, and paid-sales lock
+- [ ] Activate paid game sales after protected delivery, reconciliation, refunds, billing compliance and real payout controls pass (blocked by payment readiness)
+
 ## Game tier packages
 - [x] Add Rookie, All-Star, and MVP package comparison with accurate availability
 - [x] Preserve playable games while unfinished paid packages remain unavailable
