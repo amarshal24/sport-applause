@@ -325,6 +325,97 @@ export type Database = {
           },
         ]
       }
+      creator_game_orders: {
+        Row: {
+          amount_cents: number
+          buyer_id: string
+          created_at: string
+          creator_id: string
+          currency: string
+          delivery_revision: string
+          environment: string
+          game_id: string
+          id: string
+          payment_intent_id: string | null
+          platform_fee_cents: number
+          reconciled_at: string | null
+          refunded_cents: number
+          settled_at: string | null
+          status: string
+          stripe_session_id: string | null
+          title: string
+        }
+        Insert: {
+          amount_cents: number
+          buyer_id: string
+          created_at?: string
+          creator_id: string
+          currency?: string
+          delivery_revision: string
+          environment: string
+          game_id: string
+          id?: string
+          payment_intent_id?: string | null
+          platform_fee_cents: number
+          reconciled_at?: string | null
+          refunded_cents?: number
+          settled_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          title: string
+        }
+        Update: {
+          amount_cents?: number
+          buyer_id?: string
+          created_at?: string
+          creator_id?: string
+          currency?: string
+          delivery_revision?: string
+          environment?: string
+          game_id?: string
+          id?: string
+          payment_intent_id?: string | null
+          platform_fee_cents?: number
+          reconciled_at?: string | null
+          refunded_cents?: number
+          settled_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_orders_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_game_sale_controls: {
+        Row: {
+          game_id: string
+          test_sales_enabled: boolean
+        }
+        Insert: {
+          game_id: string
+          test_sales_enabled?: boolean
+        }
+        Update: {
+          game_id?: string
+          test_sales_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_sale_controls_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_game_sales: {
         Row: {
           amount_cents: number
@@ -333,12 +424,16 @@ export type Database = {
           creator_id: string
           creator_net_cents: number
           currency: string
+          dispute_open: boolean
           environment: string
           game_id: string
           id: string
+          order_id: string | null
           payment_reference: string
+          payout_id: string | null
           payout_status: string
           platform_fee_cents: number
+          reconciled_at: string | null
           refunded_cents: number
         }
         Insert: {
@@ -348,12 +443,16 @@ export type Database = {
           creator_id: string
           creator_net_cents: number
           currency?: string
+          dispute_open?: boolean
           environment: string
           game_id: string
           id?: string
+          order_id?: string | null
           payment_reference: string
+          payout_id?: string | null
           payout_status?: string
           platform_fee_cents: number
+          reconciled_at?: string | null
           refunded_cents?: number
         }
         Update: {
@@ -363,12 +462,16 @@ export type Database = {
           creator_id?: string
           creator_net_cents?: number
           currency?: string
+          dispute_open?: boolean
           environment?: string
           game_id?: string
           id?: string
+          order_id?: string | null
           payment_reference?: string
+          payout_id?: string | null
           payout_status?: string
           platform_fee_cents?: number
+          reconciled_at?: string | null
           refunded_cents?: number
         }
         Relationships: [
@@ -377,6 +480,20 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_game_sales_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "creator_game_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_game_sales_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "payouts"
             referencedColumns: ["id"]
           },
         ]
@@ -1932,6 +2049,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      begin_creator_game_order: {
+        Args: { _buyer_id: string; _game_id: string }
+        Returns: Json
+      }
+      can_purchase_creator_game_test: {
+        Args: { _game_id: string }
+        Returns: boolean
+      }
       can_read_podcast_object: {
         Args: { _name: string; _user_id: string }
         Returns: boolean
@@ -1942,6 +2067,10 @@ export type Database = {
       }
       confirm_payout_received: {
         Args: { _payout_id: string }
+        Returns: undefined
+      }
+      dispute_creator_game_order: {
+        Args: { _environment: string; _open: boolean; _payment_intent: string }
         Returns: undefined
       }
       ensure_daily_challenges: {
@@ -2036,6 +2165,14 @@ export type Database = {
         Args: { _game_id: string; _host_key: string; _token: string }
         Returns: Json
       }
+      refund_creator_game_order: {
+        Args: {
+          _environment: string
+          _payment_intent: string
+          _refunded: number
+        }
+        Returns: undefined
+      }
       request_creator_game_launch: {
         Args: { _environment: string; _game_id: string }
         Returns: Json
@@ -2046,6 +2183,17 @@ export type Database = {
       }
       review_creator_game_delivery: {
         Args: { _game_id: string }
+        Returns: undefined
+      }
+      settle_creator_game_order: {
+        Args: {
+          _amount: number
+          _currency: string
+          _environment: string
+          _order_id: string
+          _payment_intent: string
+          _session_id: string
+        }
         Returns: undefined
       }
     }
