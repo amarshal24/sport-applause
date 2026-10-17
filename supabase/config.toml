@@ -1,1 +1,4 @@
 project_id = "idcaeqkfrhqgwaprzzvk"
+
+[functions.verify-game-launch]
+verify_jwt = false
