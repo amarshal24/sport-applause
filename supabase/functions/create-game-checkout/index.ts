@@ -27,7 +27,7 @@ Deno.serve(async req => {
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded_page", mode: "payment", customer,
       return_url: parsed.data.returnUrl,
-      line_items: [{ quantity: 1, price_data: { currency: order.currency, unit_amount: order.amount_cents, tax_behavior: "inclusive", product_data: { name: order.title, tax_code: "txcd_10202000" } } }],
+      line_items: [{ quantity: 1, price_data: { currency: order.currency, unit_amount: order.amount_cents, tax_behavior: "inclusive", product_data: { name: order.title, tax_code: "txcd_10201000" } } }],
       payment_intent_data: { description: order.title, metadata: { kind: "creator_game", orderId: order.id } },
       metadata: { kind: "creator_game", orderId: order.id, userId: auth.user.id, managed_payments: "true" },
       managed_payments: { enabled: true },
