@@ -217,6 +217,127 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_game_builds: {
+        Row: {
+          creator_id: string
+          game_id: string
+          launch_url: string
+        }
+        Insert: {
+          creator_id?: string
+          game_id: string
+          launch_url: string
+        }
+        Update: {
+          creator_id?: string
+          game_id?: string
+          launch_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_builds_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_game_sales: {
+        Row: {
+          amount_cents: number
+          buyer_id: string
+          created_at: string
+          creator_id: string
+          creator_net_cents: number
+          currency: string
+          environment: string
+          game_id: string
+          id: string
+          payment_reference: string
+          payout_status: string
+          platform_fee_cents: number
+          refunded_cents: number
+        }
+        Insert: {
+          amount_cents: number
+          buyer_id: string
+          created_at?: string
+          creator_id: string
+          creator_net_cents: number
+          currency?: string
+          environment: string
+          game_id: string
+          id?: string
+          payment_reference: string
+          payout_status?: string
+          platform_fee_cents: number
+          refunded_cents?: number
+        }
+        Update: {
+          amount_cents?: number
+          buyer_id?: string
+          created_at?: string
+          creator_id?: string
+          creator_net_cents?: number
+          currency?: string
+          environment?: string
+          game_id?: string
+          id?: string
+          payment_reference?: string
+          payout_status?: string
+          platform_fee_cents?: number
+          refunded_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_sales_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_games: {
+        Row: {
+          category: string
+          created_at: string
+          creator_id: string
+          currency: string
+          description: string
+          id: string
+          price_cents: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          creator_id?: string
+          currency?: string
+          description: string
+          id?: string
+          price_cents?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          creator_id?: string
+          currency?: string
+          description?: string
+          id?: string
+          price_cents?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       creator_memberships: {
         Row: {
           cancel_at_period_end: boolean
@@ -1806,6 +1927,7 @@ export type Database = {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_suspended: { Args: { _user_id: string }; Returns: boolean }
+      launch_creator_game: { Args: { _game_id: string }; Returns: string }
       mark_payout_paid: {
         Args: {
           _bank_name: string
@@ -1814,6 +1936,10 @@ export type Database = {
           _payout_id: string
           _reference: string
         }
+        Returns: undefined
+      }
+      review_creator_game: {
+        Args: { _approve: boolean; _game_id: string }
         Returns: undefined
       }
     }
