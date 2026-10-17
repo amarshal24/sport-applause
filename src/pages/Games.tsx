@@ -73,7 +73,7 @@ const Games = () => {
 
               <GamePackages />
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div id="games-library" className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 scroll-mt-24">
                 {games.map((game) => {
                   const Icon = game.icon;
                   return (

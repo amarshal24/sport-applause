@@ -39,9 +39,11 @@ const GamePackages = () => (
                   </li>
                 ))}
               </ul>
-              <Button disabled={paid} variant={paid ? "outline" : "default"} className="w-full">
-                {paid ? <><Lock /> Not available yet</> : "Free for everyone"}
-              </Button>
+              {paid ? (
+                <Button disabled variant="outline" className="w-full"><Lock /> Not available yet</Button>
+              ) : (
+                <Button asChild className="w-full"><a href="#games-library">Play free games</a></Button>
+              )}
             </CardContent>
           </Card>
         );
