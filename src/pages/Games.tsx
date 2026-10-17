@@ -10,6 +10,7 @@ import GuessTheSport from "@/components/games/GuessTheSport";
 import SportsAnimator from "@/components/games/SportsAnimator";
 import AthleteMatch from "@/components/games/AthleteMatch";
 import GamePackages from "@/components/games/GamePackages";
+import CreatorGameStore from "@/components/games/CreatorGameStore";
 
 const Games = () => {
   const { t } = useTranslation();
@@ -59,7 +60,7 @@ const Games = () => {
       <MobileNav />
       
       <main className="pt-20 pb-20 lg:pb-6 lg:pl-64">
-        <div className="px-4 lg:px-6 py-6">
+        <div className="px-4 lg:px-6 py-6 max-w-5xl mx-auto">
           {!selectedGame ? (
             <>
               <div className="mb-8 text-center">
@@ -71,6 +72,7 @@ const Games = () => {
                 </p>
               </div>
 
+              <CreatorGameStore />
               <GamePackages />
 
               <div id="games-library" className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 scroll-mt-24">
