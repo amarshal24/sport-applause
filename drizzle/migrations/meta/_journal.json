@@ -85,6 +85,13 @@
       "when": 1792128717801,
       "tag": "0011_payout_paid_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792198868376,
+      "tag": "0012_creator_game_store",
+      "breakpoints": true
     }
   ]
 }
