@@ -10,6 +10,7 @@ import DeafAccessibilityBridge from "@/components/DeafAccessibilityBridge";
 import QuickNavMenu from "@/components/QuickNavMenu";
 import { DeafAccessibilityProvider } from "@/hooks/useDeafAccessibility";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
+import { PageLoadBoundary } from "@/components/PageLoadBoundary";
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
@@ -69,6 +70,7 @@ const App = () => (
           <Sonner />
           <DeafAccessibilityBridge />
           <BrowserRouter>
+            <PageLoadBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -104,6 +106,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </PageLoadBoundary>
             <QuickNavMenu />
             <AccessibilityToolbar />
           </BrowserRouter>

@@ -13,12 +13,17 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
   return lazy(async () => {
     try {
       const module = await factory();
-      window.sessionStorage.removeItem(RELOAD_KEY);
       return module;
     } catch (error) {
-      const alreadyReloaded = window.sessionStorage.getItem(RELOAD_KEY) === "true";
+      let alreadyReloaded = true;
+      try {
+        const lastAttempt = Number(window.sessionStorage.getItem(RELOAD_KEY));
+        alreadyReloaded = Date.now() - lastAttempt < 60_000;
+        if (!alreadyReloaded) window.sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+      } catch {
+        // Restricted browser storage must not turn a load failure into a reload loop.
+      }
       if (!alreadyReloaded) {
-        window.sessionStorage.setItem(RELOAD_KEY, "true");
         window.location.reload();
         // Keep the promise pending while the page reloads.
         return new Promise<{ default: T }>(() => {});
