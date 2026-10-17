@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Gamepad2, Loader2, Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { ExternalLink, Gamepad2, KeyRound, Loader2, Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GAME_CATEGORIES, gameListingSchema, gameMoney, summarizeGameSales } from "@/lib/creatorGames";
 import type { Tables } from "@/integrations/supabase/types";
 import cover from "@/assets/creator-game-cover.jpg";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { protectedGameUrl, type ProtectedGameLaunch } from "@/lib/gameDelivery";
 
 type Game = Tables<"creator_games">;
 const initialForm = { title: "", description: "", category: "sports", price: "0", launchUrl: "" };
@@ -35,6 +37,10 @@ export default function CreatorGameStore() {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState<string | null>(null);
   const [external, setExternal] = useState<{ title: string; url: string } | null>(null);
+  const [deliveryGame, setDeliveryGame] = useState<Game | null>(null);
+  const [delivery, setDelivery] = useState<{ configured: boolean; verified_at: string | null; reviewed_at: string | null } | null>(null);
+  const [hostKey, setHostKey] = useState<string | null>(null);
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) { setGames([]); setSales([]); setReviewer(false); return; }
@@ -83,10 +89,44 @@ export default function CreatorGameStore() {
   };
   const launch = async (game: Game) => {
     setLaunching(game.id);
+    if (game.price_cents > 0) {
+      try {
+        const { data, error } = await supabase.rpc("request_creator_game_launch", { _game_id: game.id, _environment: getStripeEnvironment() });
+        if (error || !data) throw new Error(error?.message ?? "Game unavailable");
+        const launch = data as unknown as ProtectedGameLaunch;
+        setExternal({ title: `${game.title} · Test preview`, url: protectedGameUrl(launch, game.id) });
+      } catch (error) { toast.error(error instanceof Error ? error.message : "Game unavailable"); }
+      setLaunching(null);
+      return;
+    }
     const { data, error } = await supabase.rpc("launch_creator_game", { _game_id: game.id });
     setLaunching(null);
     if (error || !data) { toast.error(error?.message ?? "Game unavailable"); return; }
     setExternal({ title: game.title, url: data });
+  };
+  const loadDelivery = async (game: Game) => {
+    setDeliveryGame(game); setHostKey(null); setDelivery(null); setDeliveryBusy(true);
+    const { data, error } = await supabase.rpc("get_creator_game_delivery", { _game_id: game.id });
+    setDeliveryBusy(false);
+    if (error) toast.error(error.message);
+    else setDelivery(data?.[0] ?? { configured: false, verified_at: null, reviewed_at: null });
+  };
+  const configureHost = async () => {
+    if (!deliveryGame) return;
+    if (delivery?.configured && !window.confirm("Replace the host key? Existing authorizations and delivery approval will be invalidated.")) return;
+    setDeliveryBusy(true);
+    const { data, error } = await supabase.rpc("configure_creator_game_host", { _game_id: deliveryGame.id });
+    setDeliveryBusy(false);
+    if (error) toast.error(error.message);
+    else { setHostKey(data); setDelivery({ configured: true, verified_at: null, reviewed_at: null }); await load(); }
+  };
+  const approveDelivery = async () => {
+    if (!deliveryGame) return;
+    setDeliveryBusy(true);
+    const { error } = await supabase.rpc("review_creator_game_delivery", { _game_id: deliveryGame.id });
+    setDeliveryBusy(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Protected delivery reviewed"); await loadDelivery(deliveryGame); }
   };
   const review = async (game: Game, approve: boolean) => {
     const { error } = await supabase.rpc("review_creator_game", { _game_id: game.id, _approve: approve });
@@ -114,6 +154,7 @@ export default function CreatorGameStore() {
               ? <Button className="flex-1" onClick={() => void launch(game)} disabled={launching === game.id}>{launching === game.id ? <Loader2 className="animate-spin" /> : <ExternalLink />}{own || reviewing ? "Preview game" : "Play free"}</Button>
               : <Button variant="outline" className="w-full" disabled><Lock /> Sales not open</Button>}
             {own && <><Button size="icon" variant="outline" aria-label={`Edit ${game.title}`} title="Edit game" onClick={() => void edit(game)}><Pencil /></Button><Button size="icon" variant="outline" aria-label={`Delete ${game.title}`} title="Delete game" onClick={() => void remove(game)}><Trash2 /></Button></>}
+            {(own || reviewing) && game.price_cents > 0 && <Button variant="outline" onClick={() => void loadDelivery(game)}><ShieldCheck />Protected delivery</Button>}
           </div>
           {reviewing && <div className="flex gap-2"><Button variant="secondary" className="flex-1" onClick={() => void review(game, true)}><ShieldCheck />Approve</Button><Button variant="outline" onClick={() => void review(game, false)}>Reject</Button></div>}
         </div>
@@ -143,6 +184,16 @@ export default function CreatorGameStore() {
       <p className="text-xs text-muted-foreground">Review required before publication. Paid sales are not open.</p>
       <Button type="submit" className="w-full" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <ShieldCheck />}Submit for review</Button>
     </form></DialogContent></Dialog>
+    <Dialog open={!!deliveryGame} onOpenChange={value => { if (!value) { setDeliveryGame(null); setHostKey(null); } }}><DialogContent><DialogHeader><DialogTitle>Protected delivery · {deliveryGame?.title}</DialogTitle></DialogHeader>
+      {deliveryBusy ? <Loader2 className="animate-spin text-primary" aria-label="Loading protected delivery" /> : <>
+        <dl className="space-y-2 text-sm"><div className="flex justify-between gap-3"><dt>Host connection</dt><dd>{delivery?.configured ? "Configured" : "Not configured"}</dd></div><div className="flex justify-between gap-3"><dt>Test authorization</dt><dd>{delivery?.verified_at ? "Verified" : "Not verified"}</dd></div><div className="flex justify-between gap-3"><dt>Delivery review</dt><dd>{delivery?.reviewed_at ? "Reviewed" : "Pending"}</dd></div><div className="flex justify-between gap-3"><dt>Paid sales</dt><dd>Closed</dd></div></dl>
+        {deliveryGame?.creator_id === user?.id && <Button variant="outline" onClick={() => void configureHost()}><KeyRound />{delivery?.configured ? "Replace host key" : "Create host key"}</Button>}
+        {hostKey && <div className="space-y-2"><Label htmlFor="game-host-key">Private host key · shown once</Label><Input id="game-host-key" type="password" value={hostKey} readOnly autoComplete="off" /><Button variant="outline" onClick={() => { void navigator.clipboard.writeText(hostKey).then(() => toast.success("Host key copied")).catch(() => toast.error("Could not copy host key")); }}>Copy host key</Button><p className="text-xs text-muted-foreground">Keep this key on the game host’s server, never in a public game or browser.</p></div>}
+        {deliveryGame && delivery?.configured && <Button variant="outline" onClick={() => void launch(deliveryGame)} disabled={launching === deliveryGame.id}><ExternalLink />Test protected preview</Button>}
+        {reviewer && <Button onClick={() => void approveDelivery()} disabled={!delivery?.verified_at || !!delivery?.reviewed_at}><ShieldCheck />Confirm delivery review</Button>}
+        {deliveryGame && <Button variant="ghost" onClick={() => void loadDelivery(deliveryGame)}>Refresh status</Button>}
+      </>}
+    </DialogContent></Dialog>
     <Dialog open={!!external} onOpenChange={v => { if (!v) setExternal(null); }}><DialogContent><DialogHeader><DialogTitle>{external?.title}</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">This game opens on an independent creator’s website. U⚡️Sportz account and payment protections do not extend to that website.</p>{external && <><p className="text-sm break-all">{new URL(external.url).hostname}</p><Button asChild><a href={external.url} target="_blank" rel="noopener noreferrer"><ExternalLink />Open game</a></Button></>}</DialogContent></Dialog>
   </section>;
 }

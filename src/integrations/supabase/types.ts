@@ -243,6 +243,88 @@ export type Database = {
           },
         ]
       }
+      creator_game_delivery: {
+        Row: {
+          game_id: string
+          host_key_hash: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          game_id: string
+          host_key_hash: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          game_id?: string
+          host_key_hash?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_delivery_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_game_launch_tokens: {
+        Row: {
+          buyer_id: string
+          consumed_at: string | null
+          delivery_revision: string
+          environment: string
+          expires_at: string
+          game_id: string
+          id: string
+          preview: boolean
+          token_hash: string
+        }
+        Insert: {
+          buyer_id: string
+          consumed_at?: string | null
+          delivery_revision: string
+          environment: string
+          expires_at?: string
+          game_id: string
+          id?: string
+          preview?: boolean
+          token_hash: string
+        }
+        Update: {
+          buyer_id?: string
+          consumed_at?: string | null
+          delivery_revision?: string
+          environment?: string
+          expires_at?: string
+          game_id?: string
+          id?: string
+          preview?: boolean
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_launch_tokens_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_game_sales: {
         Row: {
           amount_cents: number
@@ -1854,6 +1936,10 @@ export type Database = {
         Args: { _name: string; _user_id: string }
         Returns: boolean
       }
+      configure_creator_game_host: {
+        Args: { _game_id: string }
+        Returns: string
+      }
       confirm_payout_received: {
         Args: { _payout_id: string }
         Returns: undefined
@@ -1876,6 +1962,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_creator_game_delivery: {
+        Args: { _game_id: string }
+        Returns: {
+          configured: boolean
+          reviewed_at: string
+          verified_at: string
+        }[]
       }
       get_creator_pricing: {
         Args: { _creator_ids: string[] }
@@ -1938,8 +2032,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      redeem_creator_game_launch: {
+        Args: { _game_id: string; _host_key: string; _token: string }
+        Returns: Json
+      }
+      request_creator_game_launch: {
+        Args: { _environment: string; _game_id: string }
+        Returns: Json
+      }
       review_creator_game: {
         Args: { _approve: boolean; _game_id: string }
+        Returns: undefined
+      }
+      review_creator_game_delivery: {
+        Args: { _game_id: string }
         Returns: undefined
       }
     }
