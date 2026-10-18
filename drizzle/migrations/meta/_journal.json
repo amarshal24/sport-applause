@@ -113,6 +113,13 @@
       "when": 1792322144829,
       "tag": "0015_game_host_access_recheck",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792322252711,
+      "tag": "0016_game_payout_allocation",
+      "breakpoints": true
     }
   ]
 }
