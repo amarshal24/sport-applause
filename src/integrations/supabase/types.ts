@@ -1093,6 +1093,7 @@ export type Database = {
           received_confirmed_at: string | null
           reference_number: string | null
           scheduled_for: string
+          source: string
           status: string
           updated_at: string
           user_id: string
@@ -1112,6 +1113,7 @@ export type Database = {
           received_confirmed_at?: string | null
           reference_number?: string | null
           scheduled_for?: string
+          source?: string
           status?: string
           updated_at?: string
           user_id: string
@@ -1131,6 +1133,7 @@ export type Database = {
           received_confirmed_at?: string | null
           reference_number?: string | null
           scheduled_for?: string
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string
@@ -2061,6 +2064,16 @@ export type Database = {
         Args: { _name: string; _user_id: string }
         Returns: boolean
       }
+      check_creator_game_host_access: {
+        Args: {
+          _game_id: string
+          _host_key: string
+          _preview: boolean
+          _revision: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       configure_creator_game_host: {
         Args: { _game_id: string }
         Returns: string
@@ -2184,6 +2197,10 @@ export type Database = {
       review_creator_game_delivery: {
         Args: { _game_id: string }
         Returns: undefined
+      }
+      schedule_creator_game_test_payout: {
+        Args: { _creator_id: string }
+        Returns: string
       }
       settle_creator_game_order: {
         Args: {

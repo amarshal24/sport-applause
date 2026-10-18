@@ -23,7 +23,9 @@ Deno.serve(async (req) => {
       _game_id: parsed.data.gameId, _host_key: hostKey, _token: parsed.data.token,
     });
     if (error) return respond({ error: "Launch authorization invalid or expired" }, 403);
-    return respond({ authorized: true, ...data }, 200);
+    const { data: delivery } = await client.from("creator_game_delivery").select("revision").eq("game_id", parsed.data.gameId).single();
+    if (!delivery) return respond({ error: "Delivery unavailable" }, 403);
+    return respond({ authorized: true, ...data, revision: delivery.revision }, 200);
   } catch {
     return respond({ error: "Invalid launch request" }, 400);
   }

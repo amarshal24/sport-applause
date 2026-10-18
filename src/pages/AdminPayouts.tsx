@@ -24,6 +24,7 @@ type Payout = {
   account_last4: string | null;
   received_confirmed_at: string | null;
   environment: string;
+  source: string;
 };
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -43,7 +44,7 @@ const AdminPayouts = () => {
     setLoading(true);
     const { data } = await supabase
       .from("payouts")
-      .select("id, user_id, amount_cents, status, scheduled_for, processed_at, reference_number, payment_method, bank_name, account_last4, received_confirmed_at, environment")
+      .select("id, user_id, amount_cents, status, scheduled_for, processed_at, reference_number, payment_method, bank_name, account_last4, received_confirmed_at, environment, source")
       .order("scheduled_for", { ascending: false })
       .limit(200);
     const rows = (data as Payout[]) ?? [];
@@ -109,6 +110,7 @@ const AdminPayouts = () => {
                 <p className="font-medium">{money(p.amount_cents)} · @{names[p.user_id] ?? "unknown"}</p>
                 <p className="text-xs text-muted-foreground">
                   Scheduled {p.scheduled_for}{p.environment !== "live" ? " · test" : ""}
+                  {p.source === "creator_game" ? " · Games" : " · Podcasts"}
                 </p>
                 {p.reference_number && (
                   <p className="text-xs text-muted-foreground">

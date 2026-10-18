@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
         .from("payouts")
         .select("id, amount_cents, scheduled_for, status")
         .eq("user_id", userId)
+        .eq("source", "podcast")
         .eq("status", "scheduled")
         .lte("scheduled_for", today);
 
@@ -115,6 +116,7 @@ Deno.serve(async (req) => {
         .from("payouts")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
+        .eq("source", "podcast")
         .eq("status", "scheduled");
       if ((pending ?? 0) > 0) continue;
 
@@ -135,6 +137,7 @@ Deno.serve(async (req) => {
         .from("payouts")
         .select("amount_cents")
         .eq("user_id", userId)
+        .eq("source", "podcast")
         .eq("environment", PAYOUT_ENV)
         .in("status", ["paid", "processing", "scheduled"]);
       const alreadyPaid = (settled ?? []).reduce(
