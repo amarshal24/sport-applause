@@ -7,3 +7,4 @@
 - Creator games use moderated listings with separately protected launch URLs and a distinct service-written sales ledger; external games never execute inside the app, and paid launch stays server-blocked until protected delivery and payment readiness pass.
 - Paid-game authorization uses hashed host credentials and atomic single-use revision-bound tokens; immutable service-written orders reconcile provider settlement/refunds before access, and purchases stay restricted to explicitly enabled test games and admin buyers until production safeguards pass.
 - Shared game payment reconciliation is used by webhooks and buyer confirmation; failed ledger writes throw for retry, so returning from checkout alone never grants access.
+- Game payout allocations are atomic, source/environment-scoped and manually recorded; the podcast scheduler must exclude game payouts so it cannot simulate sending game earnings.
