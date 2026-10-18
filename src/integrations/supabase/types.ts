@@ -2061,6 +2061,16 @@ export type Database = {
         Args: { _name: string; _user_id: string }
         Returns: boolean
       }
+      check_creator_game_host_access: {
+        Args: {
+          _game_id: string
+          _host_key: string
+          _preview: boolean
+          _revision: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       configure_creator_game_host: {
         Args: { _game_id: string }
         Returns: string
