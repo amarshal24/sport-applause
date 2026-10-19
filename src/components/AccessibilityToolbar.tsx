@@ -117,7 +117,7 @@ const AccessibilityToolbar = () => {
     <>
       {/* Floating accessibility button - positioned top-left for easy access */}
       <motion.div
-        className={location.pathname === "/motion-studio" ? "fixed top-1 left-1 z-40 scale-75 origin-top-left" : "fixed bottom-24 left-4 md:bottom-auto md:top-20 z-40"}
+        className={["/motion-studio", "/timeline-editor"].includes(location.pathname) ? "fixed top-1 left-1 z-40 scale-75 origin-top-left" : "fixed bottom-24 left-4 md:bottom-auto md:top-20 z-40"}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.8, type: "spring" }}
