@@ -15,3 +15,7 @@ test("summary reflects real ratings without invented scores", () => {
   assert.deepEqual(summarizeGameReviews([{ rating: 5 }, { rating: 3 }]), { count: 2, average: 4 });
   assert.deepEqual(summarizeGameReviews([]), { count: 0, average: 0 });
 });
+test("review spam links and repeated characters are rejected", () => {
+  for (const body of ["Visit https://spam.example", "www.spam.example", "a".repeat(20)]) assert.equal(gameReviewSchema.safeParse({rating:5,body}).success,false);
+  assert.equal(gameReviewSchema.safeParse({rating:5,body:"Enjoyed the passing challenges"}).success,true);
+});

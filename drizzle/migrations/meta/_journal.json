@@ -141,6 +141,20 @@
       "when": 1792392259312,
       "tag": "0019_verified_buyer_game_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792394192940,
+      "tag": "0020_public_subscriptions_and_review_safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792394744965,
+      "tag": "0021_allow_original_game_review_edits",
+      "breakpoints": true
     }
   ]
 }

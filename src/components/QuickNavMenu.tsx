@@ -62,6 +62,8 @@ const QuickNavMenu = () => {
     return label.includes(searchQuery.toLowerCase());
   });
 
+  if (["/welcome", "/unsubscribe"].includes(location.pathname)) return null;
+
   return (
     <div className="fixed bottom-20 right-4 z-40 md:bottom-6">
       <AnimatePresence>

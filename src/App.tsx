@@ -16,6 +16,8 @@ import { PageLoadBoundary } from "@/components/PageLoadBoundary";
 const Index = lazy(() => import("./pages/Index"));
 const Landing = lazy(() => import("./pages/Landing"));
 const AdminFounders = lazy(() => import("./pages/AdminFounders"));
+const AdminSubscribers = lazy(() => import("./pages/AdminSubscribers"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
 
@@ -78,6 +80,8 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/welcome" element={<Landing />} />
                 <Route path="/admin/founders" element={<AdminFounders />} />
+                <Route path="/admin/subscribers" element={<AdminSubscribers />} />
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />

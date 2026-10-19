@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUpRight, Gamepad2, GraduationCap, Mic, Video, Zap } fro
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FoundersClubForm from "@/components/FoundersClubForm";
+import PublicSubscriptionForm from "@/components/PublicSubscriptionForm";
 import court from "@/assets/founders-court.jpg";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -56,7 +57,8 @@ export default function Landing() {
         <div><p className="text-secondary uppercase text-xs font-semibold mb-4">Founders Club</p><h2 className="text-4xl sm:text-5xl leading-tight">Be part of<br />what comes next.</h2><p className="mt-5 text-muted-foreground leading-relaxed">Sports are better when everyone has a place. Bring your passion, your perspective and your connection to the game.</p><p className="mt-5 text-muted-foreground leading-relaxed">Apply as an athlete, fan, creator, podcaster, gamer or coach. Tell us why you want to be part of the U⚡️Sportz community.</p><div className="mt-8 border-t border-border pt-5 flex items-center gap-3 text-sm"><Zap className="h-5 w-5 text-secondary" /> Different roles. Same love of the game.</div></div>
         <FoundersClubForm />
       </section>
+      <section id="updates" className="border-t border-border"><div className="max-w-5xl mx-auto px-5 py-16 grid md:grid-cols-2 gap-10"><div><p className="text-secondary text-xs uppercase font-semibold mb-4">Stay connected</p><h2 className="text-4xl">Your sports.<br />Your updates.</h2><p className="text-muted-foreground mt-5">Newsletters and event invitations from U⚡️Sportz.</p></div><PublicSubscriptionForm /></div></section>
     </main>
-    <footer className="border-t border-border"><div className="max-w-5xl mx-auto px-5 py-8 flex flex-wrap items-center justify-between gap-5"><span className="text-sm text-muted-foreground">© {new Date().getFullYear()} U⚡️Sportz</span><div className="flex gap-5 text-sm text-muted-foreground"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link>{user && <Link to="/admin/founders">Application review</Link>}</div></div></footer>
+    <footer className="border-t border-border"><div className="max-w-5xl mx-auto px-5 py-8 flex flex-wrap items-center justify-between gap-5"><span className="text-sm text-muted-foreground">© {new Date().getFullYear()} U⚡️Sportz</span><div className="flex flex-wrap gap-5 text-sm text-muted-foreground"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link><Link to="/unsubscribe">Unsubscribe</Link>{user && <><Link to="/admin/founders">Application review</Link><Link to="/admin/subscribers">Subscribers</Link></>}</div></div></footer>
   </div>;
 }

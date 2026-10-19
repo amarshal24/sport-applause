@@ -26,7 +26,7 @@ const REASONS = [
 ] as const;
 
 interface ReportButtonProps {
-  targetType: "listing" | "post" | "profile" | "comment" | "recruiting_video" | "highlight" | "story";
+  targetType: "listing" | "post" | "profile" | "comment" | "recruiting_video" | "highlight" | "story" | "game_review";
   targetId: string;
   className?: string;
   iconOnly?: boolean;
@@ -36,7 +36,7 @@ const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButto
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<string>(REASONS[0]);
+  const [reason, setReason] = useState<string>(targetType === "game_review" ? "Spam" : REASONS[0]);
   const [details, setDetails] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -46,7 +46,7 @@ const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButto
       return;
     }
     setSending(true);
-    const { error } = await supabase.from("content_reports").insert({
+    const { error } = targetType === "game_review" ? await supabase.rpc("report_creator_game_review", { _review_id: targetId, _reason: reason, _details: details.trim() }) : await supabase.from("content_reports").insert({
       reporter_id: user.id,
       target_type: targetType,
       target_id: targetId,
@@ -80,15 +80,15 @@ const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButto
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Report this {targetType.replace("_", " ")}</DialogTitle>
+            <DialogTitle>Report this {targetType.replace(/_/g, " ")}</DialogTitle>
             <DialogDescription>
               Reports are reviewed by our moderation team.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
-              {REASONS.map((r) => (
-                <button
+              {REASONS.filter(r => targetType !== "game_review" || ["Spam", "Abusive or hateful content", "Bullying or harassment", "Other"].includes(r)).map((r) => (
+                <Button type="button" variant={reason === r ? "default" : "outline"}
                   key={r}
                   onClick={() => setReason(r)}
                   className={`rounded-full px-3 py-1.5 text-sm border transition-colors ${
@@ -98,7 +98,7 @@ const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButto
                   }`}
                 >
                   {r}
-                </button>
+                </Button>
               ))}
             </div>
             <Textarea
@@ -106,6 +106,7 @@ const ReportButton = ({ targetType, targetId, className, iconOnly }: ReportButto
               onChange={(e) => setDetails(e.target.value)}
               placeholder="Add details (optional)"
               rows={3}
+              maxLength={2000}
             />
             <Button className="w-full" onClick={submit} disabled={sending}>
               {sending ? "Sending..." : "Send report"}

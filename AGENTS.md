@@ -2,6 +2,9 @@
 
 - Keep Founders Club public submission in a validated, rate-limited edge function with service-only inserts and admin-only application reads/review; store applications separately so landing changes never alter existing app records.
 - Keep the public landing available at /welcome and use it for signed-out home only; preserve the signed-in home experience.
+- Public subscriptions use service-only writes, an immutable consent-event history and hashed private unsubscribe tokens; email alone must never change an existing subscriber's consent or expose their unsubscribe link.
+- Review safety uses a database spam guard and dedicated report/moderation RPCs; hiding a review excludes it from public summaries and cannot be reversed by buyer edits.
+- Generic digital-product live checkout requires a server-side explicit approval flag before any payment-provider call; test checkout remains separate from launch approval.
 
 - Dynamically load the app at bootstrap and wrap lazy pages in a load-error boundary; stale or unavailable dependency chunks must show a retry screen instead of blanking the app.
 
