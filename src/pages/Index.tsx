@@ -3,7 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import Stories from "@/components/Stories";
 import VideoFeed from "@/components/VideoFeed";
-import Landing from "@/pages/Landing";
+import MarketingHome from "@/pages/MarketingHome";
 import MusicRecommendations from "@/components/MusicRecommendations";
 import UnifiedComposer from "@/components/UnifiedComposer";
 import LiveNowFeed from "@/components/LiveNowFeed";
@@ -40,7 +40,7 @@ const Index = () => {
   }
 
   if (!user) {
-    return <Landing />;
+    return <MarketingHome />;
   }
 
   return (

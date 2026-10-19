@@ -14,7 +14,11 @@ import { PageLoadBoundary } from "@/components/PageLoadBoundary";
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
-const Landing = lazy(() => import("./pages/Landing"));
+const MarketingHome = lazy(() => import("./pages/MarketingHome"));
+const Founding100 = lazy(() => import("./pages/Founding100"));
+const Updates = lazy(() => import("./pages/Updates"));
+const ThankYou = lazy(() => import("./pages/ThankYou"));
+const AdminFounding100 = lazy(() => import("./pages/AdminFounding100"));
 const AdminFounders = lazy(() => import("./pages/AdminFounders"));
 const AdminSubscribers = lazy(() => import("./pages/AdminSubscribers"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
@@ -80,7 +84,11 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/welcome" element={<Landing />} />
+                <Route path="/welcome" element={<MarketingHome />} />
+                <Route path="/founding100" element={<Founding100 />} />
+                <Route path="/updates" element={<Updates />} />
+                <Route path="/thank-you" element={<ThankYou />} />
+                <Route path="/admin/founding100" element={<AdminFounding100 />} />
                 <Route path="/admin/founders" element={<AdminFounders />} />
                 <Route path="/admin/subscribers" element={<AdminSubscribers />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
