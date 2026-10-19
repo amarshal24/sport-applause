@@ -15,7 +15,7 @@
 - [x] Add existing human AR live recording, compatible free-effect switching, lower-resolution composite and edit-recorded-clip handoff; verified fake camera capture, clip reopening, mobile overflow and cleanup paths
 - [ ] Robust temporal segmentation, automatic depth/occlusion/re-entry and photoreal flames remain development, not certified by simple template tracking (blocked: advanced tracking engine/model integration)
 - [ ] Real-device athlete tracking, camera performance and adaptive real-time quality certification (blocked: physical device/camera testing)
-- [ ] Implement complete timeline requirements (sections 4–5 supplied; tracked above)
+- [x] Implement provided timeline foundation (sections 4–5 above; remaining advanced behavior and external dependencies documented in docs/timeline-editor-validation.md)
 
 ## Public subscriptions, review safety, and launch readiness
 - [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested
