@@ -134,6 +134,13 @@
       "when": 1792368016269,
       "tag": "0018_founders_club_applications",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792392259312,
+      "tag": "0019_verified_buyer_game_reviews",
+      "breakpoints": true
     }
   ]
 }
