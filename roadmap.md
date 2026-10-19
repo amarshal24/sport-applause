@@ -1,5 +1,12 @@
 # Roadmap
 
+## AI Motion FX Studio
+- [ ] Confirm complete studio brief (blocked: upload ends at “Trim,” in section 4)
+- [ ] Integrate non-destructive uploaded-video object selection, independent tracking and manual correction
+- [ ] Add timed Flaming Ball effects, trails and synchronized edited export; validate occlusion limitations
+- [ ] Integrate live effects recording and device-performance fallback while preserving entitlements
+- [ ] Implement and verify complete timeline requirements after receiving remaining brief
+
 ## Public subscriptions, review safety, and launch readiness
 - [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested
 - [ ] Verified game review safety: buyer submit/edit, report/hide, spam/direct/live/refund denials tested; non-admin moderation and cross-game duplicate tests await test-account access
