@@ -693,6 +693,60 @@ export type Database = {
           },
         ]
       }
+      founders_club_applications: {
+        Row: {
+          admin_notes: string
+          applicant_type: string
+          confirmation_status: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          reason: string
+          status: string
+        }
+        Insert: {
+          admin_notes?: string
+          applicant_type: string
+          confirmation_status?: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          reason: string
+          status?: string
+        }
+        Update: {
+          admin_notes?: string
+          applicant_type?: string
+          confirmation_status?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          reason?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      founders_club_rate_limits: {
+        Row: {
+          attempts: number
+          key_hash: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key_hash: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key_hash?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           accepted_at: string | null
@@ -2081,6 +2135,10 @@ export type Database = {
       confirm_payout_received: {
         Args: { _payout_id: string }
         Returns: undefined
+      }
+      consume_founders_club_limit: {
+        Args: { _key_hash: string }
+        Returns: boolean
       }
       dispute_creator_game_order: {
         Args: { _environment: string; _open: boolean; _payment_intent: string }
