@@ -1,4 +1,6 @@
-import {test,expect} from 'bun:test';
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+const expect=(actual:unknown)=>({toBe:(expected:unknown)=>assert.equal(actual,expected),toEqual:(expected:unknown)=>assert.deepEqual(actual,expected),toMatchObject:(expected:unknown)=>{for(const [key,value] of Object.entries(expected as Record<string,unknown>))assert.equal((actual as Record<string,unknown>)[key],value);},toHaveLength:(length:number)=>assert.equal((actual as unknown[]).length,length)});
 import {newProject,newClip,frameAt,sampleTransform,addKey,splitClip,volumeAt,mediaSchema,activeClip,moveClip} from './model';
 test('frame accurate scrubbing uses integer frame grid',()=>{expect(frameAt(1.05,30)).toBe(32);});
 test('keyframes interpolate position scale rotation opacity and intensity',()=>{const p=newProject(),c=newClip(p.tracks[0],0,90,'clip');c.keys=[{frame:0,x:0,y:10,scale:1,rotation:0,opacity:0,intensity:0},{frame:60,x:100,y:90,scale:3,rotation:180,opacity:1,intensity:1}];expect(sampleTransform(c,30)).toMatchObject({x:50,y:50,scale:2,rotation:90,opacity:.5,intensity:.5});});
