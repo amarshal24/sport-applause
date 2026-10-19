@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUpRight, Gamepad2, GraduationCap, Mic, Video, Zap } from "lucide-react";
+import { ArrowDown, ArrowUpRight, CheckCircle2, Gamepad2, GraduationCap, Mic, Video, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FoundersClubForm from "@/components/FoundersClubForm";
@@ -54,7 +54,22 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto px-5"><div className="flex flex-wrap items-end justify-between gap-3 mb-7"><h2 className="text-4xl">On and off the court.</h2><span className="text-xs uppercase text-secondary font-semibold">U⚡️Sportz film · Preview coming soon</span></div><img src={court} alt="The U⚡️Sportz sports community film cover" width={1536} height={1024} loading="lazy" className="w-full aspect-video object-cover rounded-lg" /></div>
       </section>
       <section id="apply" className="max-w-5xl mx-auto px-5 py-16 sm:py-24 grid md:grid-cols-2 gap-10 md:gap-16 scroll-mt-6">
-        <div><p className="text-secondary uppercase text-xs font-semibold mb-4">Founders Club</p><h2 className="text-4xl sm:text-5xl leading-tight">Be part of<br />what comes next.</h2><p className="mt-5 text-muted-foreground leading-relaxed">Sports are better when everyone has a place. Bring your passion, your perspective and your connection to the game.</p><p className="mt-5 text-muted-foreground leading-relaxed">Apply as an athlete, fan, creator, podcaster, gamer or coach. Tell us why you want to be part of the U⚡️Sportz community.</p><div className="mt-8 border-t border-border pt-5 flex items-center gap-3 text-sm"><Zap className="h-5 w-5 text-secondary" /> Different roles. Same love of the game.</div></div>
+        <div><p className="text-secondary uppercase text-xs font-semibold mb-4">Founders Club</p><h2 className="text-4xl sm:text-5xl leading-tight">Be part of<br />what comes next.</h2><p className="mt-5 text-muted-foreground leading-relaxed">Sports are better when everyone has a place. Bring your passion, your perspective and your connection to the game.</p><p className="mt-5 text-muted-foreground leading-relaxed">Apply as an athlete, fan, creator, podcaster, gamer or coach. Tell us why you want to be part of the U⚡️Sportz community.</p>
+          <div className="mt-8 border-t border-border pt-6">
+            <p className="text-sm font-semibold uppercase tracking-wide mb-4 flex items-center gap-2"><Zap className="h-4 w-4 text-secondary" /> The First 100 perks</p>
+            <ul className="space-y-3 text-sm">
+              {[
+                "Founding member badge on your profile — yours forever",
+                "First access to new features before public release",
+                "A direct line to the team: your feedback shapes the app",
+                "Locked-in founder pricing on future premium features",
+                "Featured spot for your highlights, podcasts or games",
+                "Invitations to private founder-only events and drops",
+              ].map(perk => <li key={perk} className="flex items-start gap-3"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground leading-relaxed">{perk}</span></li>)}
+            </ul>
+            <p className="text-xs text-muted-foreground mt-4">The First 100: the first hundred applications set the tone for everything that follows.</p>
+          </div>
+          <div className="mt-6 border-t border-border pt-5 flex items-center gap-3 text-sm"><Zap className="h-5 w-5 text-secondary" /> Different roles. Same love of the game.</div></div>
         <FoundersClubForm />
       </section>
       <section id="updates" className="border-t border-border"><div className="max-w-5xl mx-auto px-5 py-16 grid md:grid-cols-2 gap-10"><div><p className="text-secondary text-xs uppercase font-semibold mb-4">Stay connected</p><h2 className="text-4xl">Your sports.<br />Your updates.</h2><p className="text-muted-foreground mt-5">Newsletters and event invitations from U⚡️Sportz.</p></div><PublicSubscriptionForm /></div></section>
