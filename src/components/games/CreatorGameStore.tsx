@@ -57,7 +57,7 @@ export default function CreatorGameStore() {
       supabase.from("creator_games").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("creator_game_sales").select("*").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(1000),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
-      supabase.from("creator_game_reviews").select("game_id,rating").eq("environment", getStripeEnvironment()),
+      supabase.from("creator_game_reviews").select("game_id,rating").eq("environment", getStripeEnvironment()).is("hidden_at", null),
     ]);
     if (list.error || ledger.error || roles.error) setError("Couldn't load the game store. Please try again.");
     setGames(list.data ?? []); setSales(ledger.data ?? []);

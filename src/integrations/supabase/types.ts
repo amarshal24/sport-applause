@@ -393,6 +393,44 @@ export type Database = {
           },
         ]
       }
+      creator_game_review_reports: {
+        Row: {
+          created_at: string
+          details: string
+          id: string
+          reason: string
+          reporter_id: string
+          review_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          review_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          review_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_review_reports_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "creator_game_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_game_reviews: {
         Row: {
           body: string
@@ -400,6 +438,8 @@ export type Database = {
           created_at: string
           environment: string
           game_id: string
+          hidden_at: string | null
+          hidden_by: string | null
           id: string
           rating: number
           updated_at: string
@@ -410,6 +450,8 @@ export type Database = {
           created_at?: string
           environment: string
           game_id: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           rating: number
           updated_at?: string
@@ -420,6 +462,8 @@ export type Database = {
           created_at?: string
           environment?: string
           game_id?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           rating?: number
           updated_at?: string
@@ -1603,6 +1647,45 @@ export type Database = {
         }
         Relationships: []
       }
+      public_subscriptions: {
+        Row: {
+          consent_version: string
+          consented_at: string
+          created_at: string
+          email: string
+          events_consent: boolean
+          id: string
+          interests: string[]
+          newsletter_consent: boolean
+          unsubscribe_hash: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email: string
+          events_consent?: boolean
+          id?: string
+          interests: string[]
+          newsletter_consent?: boolean
+          unsubscribe_hash: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          events_consent?: boolean
+          id?: string
+          interests?: string[]
+          newsletter_consent?: boolean
+          unsubscribe_hash?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       recruiter_interests: {
         Row: {
           athlete_id: string
@@ -1847,6 +1930,41 @@ export type Database = {
             columns: ["stream_id"]
             isOneToOne: false
             referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_consent_events: {
+        Row: {
+          action: string
+          events_consent: boolean
+          id: string
+          newsletter_consent: boolean
+          recorded_at: string
+          subscription_id: string
+        }
+        Insert: {
+          action: string
+          events_consent: boolean
+          id?: string
+          newsletter_consent: boolean
+          recorded_at?: string
+          subscription_id: string
+        }
+        Update: {
+          action?: string
+          events_consent?: boolean
+          id?: string
+          newsletter_consent?: boolean
+          recorded_at?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_consent_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "public_subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -2185,6 +2303,16 @@ export type Database = {
         Args: { _key_hash: string }
         Returns: boolean
       }
+      create_public_subscription: {
+        Args: {
+          _email: string
+          _events: boolean
+          _hash: string
+          _interests: string[]
+          _newsletter: boolean
+        }
+        Returns: string
+      }
       dispute_creator_game_order: {
         Args: { _environment: string; _open: boolean; _payment_intent: string }
         Returns: undefined
@@ -2277,6 +2405,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      moderate_creator_game_review: {
+        Args: { _action: string; _report_id: string }
+        Returns: undefined
+      }
       redeem_creator_game_launch: {
         Args: { _game_id: string; _host_key: string; _token: string }
         Returns: Json
@@ -2287,6 +2419,10 @@ export type Database = {
           _payment_intent: string
           _refunded: number
         }
+        Returns: undefined
+      }
+      report_creator_game_review: {
+        Args: { _details: string; _reason: string; _review_id: string }
         Returns: undefined
       }
       request_creator_game_launch: {
@@ -2324,6 +2460,10 @@ export type Database = {
           _rating: number
         }
         Returns: string
+      }
+      unsubscribe_public_subscription: {
+        Args: { _hash: string; _scope: string }
+        Returns: boolean
       }
     }
     Enums: {

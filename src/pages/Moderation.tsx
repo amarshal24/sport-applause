@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ShieldCheck, EyeOff, Check, X, Trash2, Ban } from "lucide-react";
+import GameReviewModeration from "@/components/games/GameReviewModeration";
 
 interface Report {
   id: string;
@@ -100,6 +101,7 @@ const Moderation = () => {
   };
 
   const suspendOwner = async (report: Report) => {
+    if (!user) return;
     let ownerId: string | null = null;
     if (report.target_type === "profile") ownerId = report.target_id;
     else {
@@ -113,7 +115,7 @@ const Moderation = () => {
     const { error } = await (supabase as any).from("user_suspensions").upsert({
       user_id: ownerId,
       reason: report.reason,
-      suspended_by: user!.id,
+      suspended_by: user.id,
     });
     if (error) toast.error("Could not suspend account");
     else {
@@ -179,6 +181,7 @@ const Moderation = () => {
             </div>
           </header>
 
+          <GameReviewModeration />
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (

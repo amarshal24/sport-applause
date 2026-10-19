@@ -1,5 +1,11 @@
 # Roadmap
 
+## Public subscriptions, review safety, and launch readiness
+- [ ] Public newsletter/events signup with multiple interests, separate consent, secure unsubscribe, and admin visibility
+- [ ] Verified game review spam protection, reporting and moderation; test authorized and unauthorized flows
+- [ ] Prepare THE FIRST 100 cinematic sports-commercial concept (30–45 seconds, narrator, music, authentic app screenshots; no desk presenter)
+- [ ] Deliver evidence-based launch-readiness report; real-money sales remain off without approval
+
 ## Founders Club landing page
 - [x] Add branded public landing and application form without changing existing signed-in app
 - [x] Securely store applications and add admin review; verified public submission, persisted admin acceptance/notes, private reads and denied direct inserts; removed test application

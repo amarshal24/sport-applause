@@ -1,6 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
+import { isPublicCheckoutAllowed } from "../_shared/paymentApproval.ts";
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -99,6 +100,9 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const environment = body.environment === "live" ? "live" : "sandbox";
+    if (!isPublicCheckoutAllowed(environment, Deno.env.get("PUBLIC_LIVE_PAYMENTS_APPROVED"))) {
+      return new Response(JSON.stringify({ error: "Real-money purchases require launch approval" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (typeof body.priceId !== "string" || typeof body.returnUrl !== "string") {
       return new Response(JSON.stringify({ error: "priceId and returnUrl are required" }), {
         status: 400,

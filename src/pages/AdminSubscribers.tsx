@@ -1,0 +1,9 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+export default function AdminSubscribers(){const {user,loading}=useAuth();const [rows,setRows]=useState<Tables<"public_subscriptions">[]>([]),[state,setState]=useState("Loading…");
+  useEffect(()=>{let active=true;void(async()=>{if(loading)return;if(!user){setState("Admins only");return;}const role=await supabase.rpc("has_role",{_user_id:user.id,_role:"admin"});if(!role.data){setState("Admins only");return;}const result=await supabase.from("public_subscriptions").select("*").order("created_at",{ascending:false}).limit(1000);if(active){setRows(result.data??[]);setState(result.error?"Could not load subscribers":"");}})();return()=>{active=false;};},[user,loading]);
+  return <main className="min-h-screen bg-background px-5 py-20"><div className="max-w-5xl mx-auto space-y-6"><Link to="/welcome" className="text-primary">U⚡️Sportz</Link><h1 className="text-3xl">Public subscribers</h1>{state?<p>{state}</p>:<><p className="text-sm text-muted-foreground">{rows.length} subscribers · latest 1,000</p><div className="divide-y divide-border">{rows.map(r=><article key={r.id} className="py-4 space-y-2"><p className="font-medium break-all">{r.email}</p><p className="text-sm capitalize">{r.interests.join(", ")}</p><p className="text-sm text-muted-foreground">Newsletter: {r.newsletter_consent?"consented":"off"} · Events: {r.events_consent?"consented":"off"}</p><p className="text-xs text-muted-foreground">Consent recorded {new Date(r.consented_at).toLocaleString()} · {r.unsubscribed_at?"Unsubscribed":"Active"}</p></article>)}</div></>}</div></main>;
+}

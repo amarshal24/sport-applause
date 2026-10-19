@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION public.guard_game_review_spam() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN
+IF TG_OP='UPDATE' AND NEW.hidden_at IS NOT NULL AND (NEW.rating,NEW.body) IS DISTINCT FROM (OLD.rating,OLD.body) THEN RAISE EXCEPTION 'Moderated review cannot be edited'; END IF;
+IF NEW.body ~* '(https?://|www\.)' OR NEW.body ~ '(.)\1{19,}' THEN RAISE EXCEPTION 'Reviews cannot contain links or repeated-character spam'; END IF;
+IF EXISTS(SELECT 1 FROM public.creator_game_reviews r WHERE r.buyer_id=NEW.buyer_id AND r.id<>NEW.id AND (r.game_id,r.environment) IS DISTINCT FROM (NEW.game_id,NEW.environment) AND lower(regexp_replace(btrim(r.body),'\s+',' ','g'))=lower(regexp_replace(btrim(NEW.body),'\s+',' ','g'))) THEN RAISE EXCEPTION 'Write an original review for each game'; END IF;
+RETURN NEW; END $$;

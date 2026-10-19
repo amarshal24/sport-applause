@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { Tables } from "@/integrations/supabase/types";
 import { gameReviewSchema, summarizeGameReviews } from "@/lib/gameReviews";
+import ReportButton from "@/components/ReportButton";
 
 export default function GameReviews({ gameId, environment, onChanged }: { gameId: string; environment: string; onChanged: () => void }) {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function GameReviews({ gameId, environment, onChanged }: { gameId
   const load = useCallback(async () => {
     setLoading(true); setError(""); setEligible(false);
     const [list, access] = await Promise.all([
-      supabase.from("creator_game_reviews").select("*").eq("game_id", gameId).eq("environment", environment).order("created_at", { ascending: false }),
+      supabase.from("creator_game_reviews").select("*").eq("game_id", gameId).eq("environment", environment).is("hidden_at", null).order("created_at", { ascending: false }),
       supabase.rpc("can_review_creator_game", { _game_id: gameId, _environment: environment }),
     ]);
     if (list.error || access.error) setError("Couldn’t load reviews. Please try again.");
@@ -56,6 +57,6 @@ export default function GameReviews({ gameId, environment, onChanged }: { gameId
       <Button type="submit" disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}{reviews.some(r => r.buyer_id === user?.id) ? "Update review" : "Submit review"}</Button>
       {saved && <p role="status" className="text-sm text-primary">Review saved</p>}
     </form> : <p className="flex gap-2 text-sm text-muted-foreground"><Lock className="h-4 w-4 shrink-0 mt-0.5" />Only verified buyers with current game access can submit a review.</p>}
-    <div className="divide-y divide-border">{reviews.map(r => <article key={r.id} className="py-4 space-y-2"><div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold">{r.rating} / 5 ★</span><Badge variant="outline">Verified purchase</Badge>{r.buyer_id === user?.id && <span className="text-muted-foreground">Your review</span>}<time className="text-xs text-muted-foreground">{new Date(r.updated_at).toLocaleDateString()}</time></div><p className="text-sm whitespace-pre-wrap break-words">{r.body}</p></article>)}</div>
+    <div className="divide-y divide-border">{reviews.map(r => <article key={r.id} className="py-4 space-y-2"><div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold">{r.rating} / 5 ★</span><Badge variant="outline">Verified purchase</Badge>{r.buyer_id === user?.id && <span className="text-muted-foreground">Your review</span>}<time className="text-xs text-muted-foreground">{new Date(r.updated_at).toLocaleDateString()}</time><ReportButton targetType="game_review" targetId={r.id} /></div><p className="text-sm whitespace-pre-wrap break-words">{r.body}</p></article>)}</div>
   </div>;
 }
