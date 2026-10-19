@@ -8,7 +8,7 @@
 - [ ] Provide generated-scenes app-explainer sample promotional video (blocked: script/look approval)
 
 ## Creator game store
-- [ ] Add game ratings and written reviews with server-enforced verified-buyer access; test eligibility, submissions, and access revocation
+- [x] Add game ratings and written reviews with server-enforced verified-buyer access; tested pending denial, settled submission/edit persistence, direct-write/live spoofing denial, refund and stale-revision denial; removed isolated test records
 - [x] Add protected test previews, private host keys, single-use authorization, delivery review, and changed-destination invalidation; test signed-in and clean up test game
 - [ ] Complete participating game host integration and verify host-side unpaid access denial (blocked: creator host integration)
 - [x] Add admin-only, explicitly enabled test-game checkout and Purchased games; verified $4.99 Stripe test-card settlement, fresh-session persistence, 75-cent commission, partial/full refunds, and host access revocation; removed test records
