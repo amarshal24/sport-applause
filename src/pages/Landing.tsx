@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUpRight, Gamepad2, GraduationCap, Mic, Video, Zap } from "lucide-react";
+import { ArrowDown, ArrowUpRight, CheckCircle2, Gamepad2, GraduationCap, Mic, Video, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FoundersClubForm from "@/components/FoundersClubForm";
