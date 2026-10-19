@@ -14,6 +14,8 @@ import { PageLoadBoundary } from "@/components/PageLoadBoundary";
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
+const Landing = lazy(() => import("./pages/Landing"));
+const AdminFounders = lazy(() => import("./pages/AdminFounders"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
 
@@ -74,6 +76,8 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/welcome" element={<Landing />} />
+                <Route path="/admin/founders" element={<AdminFounders />} />
                 <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
