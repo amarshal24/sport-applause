@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Complete Video Editor and Sports FX (sections 4–5)
-- [ ] Edit a real sports clip through the timeline, export, and compare original/preview/export without altering creator records
+- [x] Edit credited Randy Chiu free-throw footage through actual authenticated timeline; trim, separated audio, animated title, timed Rim explosion/synthetic swish; export/reopen/recover verified, 90 frames and visually matching preview/export; H.264 unsupported in test browser so source-compatible VP9 copy used; creator records unchanged
 - [x] Add /timeline-editor: unlimited video/audio/text/FX tracks, drag arrangement, 30 FPS frame stepping, transform/opacity/intensity keyframes, PIP/split, masks/blends, green-screen and AI person removal, local autosave/recovery; verified in browser
 - [x] Add personal audio, voiceover, audio separation, trim/fades/mix/ducking/normalization/basic noise filter, frame-timed original sport sounds and mixed export; verified separation, voiceover and export
 - [x] Add animated titles/stickers, sports labels/stats, editable caption text/style/timing, motion-following overlays and speech captions; verified captions with spoken audio
