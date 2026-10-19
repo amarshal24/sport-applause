@@ -1,5 +1,12 @@
 # Roadmap
 
+## Complete Video Editor and Sports FX (sections 4–5)
+- [ ] Add additive multitrack project editor with frame grid, drag arrangement, transforms/keyframes, compositions, masks/blending and recovery
+- [ ] Add personal audio, voiceover, source separation, fades/mixing/ducking/normalization/noise controls and synchronized audio rendering
+- [ ] Add animated text, captions, sports overlays and motion-following text; integrate speech captions when service verified
+- [ ] Add dedicated categorized Sports FX with timing/intensity and deterministic preview/export
+- [ ] Verify real project recovery, rendered layered clips/audio and mobile layout; document licensing and AI limitations
+
 ## AI Motion FX Studio
 - [x] Scope studio to sections 1–3; complete multi-track timeline deferred by user
 - [x] Add authenticated /motion-studio from existing editor: on-device click segmentation, independent template tracks, timestamp corrections, scale/visibility keyframes; verified moving local ball, two independent effects and manual fallback
@@ -7,7 +14,7 @@
 - [x] Add existing human AR live recording, compatible free-effect switching, lower-resolution composite and edit-recorded-clip handoff; verified fake camera capture, clip reopening, mobile overflow and cleanup paths
 - [ ] Robust temporal segmentation, automatic depth/occlusion/re-entry and photoreal flames remain development, not certified by simple template tracking (blocked: advanced tracking engine/model integration)
 - [ ] Real-device athlete tracking, camera performance and adaptive real-time quality certification (blocked: physical device/camera testing)
-- [ ] Implement complete timeline requirements (deferred: remaining brief not provided; sections 1–3 authorized)
+- [ ] Implement complete timeline requirements (sections 4–5 supplied; tracked above)
 
 ## Public subscriptions, review safety, and launch readiness
 - [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested
