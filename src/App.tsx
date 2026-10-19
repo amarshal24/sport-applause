@@ -26,6 +26,7 @@ const ARStudio = lazy(() => import("./pages/ARStudio"));
 const MotivationQuotes = lazy(() => import("./pages/MotivationQuotes"));
 const VideoEditor = lazy(() => import("./pages/VideoEditor"));
 const MotionStudio = lazy(() => import("./pages/MotionStudio"));
+const TimelineEditor = lazy(() => import("./pages/TimelineEditor"));
 const Recruiting = lazy(() => import("./pages/Recruiting"));
 const Podcasts = lazy(() => import("./pages/Podcasts"));
 const LiveStreams = lazy(() => import("./pages/LiveStreams"));
@@ -91,6 +92,7 @@ const App = () => (
                 <Route path="/motivation" element={<MotivationQuotes />} />
                 <Route path="/editor" element={<VideoEditor />} />
                 <Route path="/motion-studio" element={<MotionStudio />} />
+                <Route path="/timeline-editor" element={<TimelineEditor />} />
                 <Route path="/animation-center" element={<VideoEditor />} />
                 <Route path="/recruiting" element={<Recruiting />} />
                 <Route path="/podcasts" element={<Podcasts />} />

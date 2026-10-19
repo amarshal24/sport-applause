@@ -1,0 +1,38 @@
+import { audioWav } from "./audio";
+import type { Asset } from "./model";
+export function sportsSound(kind: "swish" | "impact" | "whistle"): Asset {
+  const sr = 48000,
+    duration = kind === "whistle" ? 0.5 : 0.3,
+    buffer = new AudioBuffer({
+      length: Math.round(sr * duration),
+      sampleRate: sr,
+      numberOfChannels: 1,
+    }),
+    data = buffer.getChannelData(0);
+  let seed = 12345;
+  for (let i = 0; i < data.length; i++) {
+    seed = (seed * 16807) % 2147483647;
+    const t = i / sr,
+      envelope = Math.sin((i / data.length) * Math.PI);
+    data[i] =
+      kind === "whistle"
+        ? Math.sin(t * 2 * Math.PI * 2100) * envelope * 0.25
+        : kind === "impact"
+          ? (Math.sin(t * 2 * Math.PI * (90 - t * 100)) * 0.6 +
+              ((seed / 2147483647) * 2 - 1) * 0.3) *
+            Math.exp(-t * 14)
+          : ((seed / 2147483647) * 2 - 1) * envelope * 0.25;
+  }
+  return {
+    id: crypto.randomUUID(),
+    name: {
+      swish: "Hoop swish",
+      impact: "Sports impact",
+      whistle: "Referee whistle",
+    }[kind],
+    kind: "audio",
+    blob: audioWav(buffer),
+    duration,
+    license: "Procedurally synthesized by U⚡️Sportz; no third-party recording",
+  };
+}

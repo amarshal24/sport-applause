@@ -1,5 +1,13 @@
 # Roadmap
 
+## Complete Video Editor and Sports FX (sections 4–5)
+- [x] Add /timeline-editor: unlimited video/audio/text/FX tracks, drag arrangement, 30 FPS frame stepping, transform/opacity/intensity keyframes, PIP/split, masks/blends, green-screen and AI person removal, local autosave/recovery; verified in browser
+- [x] Add personal audio, voiceover, audio separation, trim/fades/mix/ducking/normalization/basic noise filter, frame-timed original sport sounds and mixed export; verified separation, voiceover and export
+- [x] Add animated titles/stickers, sports labels/stats, editable caption text/style/timing, motion-following overlays and speech captions; verified captions with spoken audio
+- [x] Add 25-effect categorized Sports FX library with timing/intensity and shared preview/export
+- [ ] Licensed music library (blocked: rights-cleared catalog and license records)
+- [ ] Automatic athlete-action sound timing and word-level caption timing (blocked: action-detection model; current captions service returns text only)
+
 ## AI Motion FX Studio
 - [x] Scope studio to sections 1–3; complete multi-track timeline deferred by user
 - [x] Add authenticated /motion-studio from existing editor: on-device click segmentation, independent template tracks, timestamp corrections, scale/visibility keyframes; verified moving local ball, two independent effects and manual fallback
@@ -7,7 +15,7 @@
 - [x] Add existing human AR live recording, compatible free-effect switching, lower-resolution composite and edit-recorded-clip handoff; verified fake camera capture, clip reopening, mobile overflow and cleanup paths
 - [ ] Robust temporal segmentation, automatic depth/occlusion/re-entry and photoreal flames remain development, not certified by simple template tracking (blocked: advanced tracking engine/model integration)
 - [ ] Real-device athlete tracking, camera performance and adaptive real-time quality certification (blocked: physical device/camera testing)
-- [ ] Implement complete timeline requirements (deferred: remaining brief not provided; sections 1–3 authorized)
+- [x] Implement provided timeline foundation (sections 4–5 above; remaining advanced behavior and external dependencies documented in docs/timeline-editor-validation.md)
 
 ## Public subscriptions, review safety, and launch readiness
 - [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested

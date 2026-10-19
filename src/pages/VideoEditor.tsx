@@ -846,6 +846,7 @@ const VideoEditor = () => {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate("/timeline-editor")}>Complete Video Editor</Button>
               <Button variant="secondary" size="sm" onClick={() => navigate("/motion-studio")}>
                 <Crosshair className="mr-1 h-4 w-4" /> Motion FX Studio
               </Button>
