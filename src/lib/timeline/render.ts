@@ -1,15 +1,21 @@
 import {
   Output,
-  WebMOutputFormat,
+  Mp4OutputFormat,
   BufferTarget,
   CanvasSource,
   AudioBufferSource,
+  Input,
+  BlobSource,
+  ALL_FORMATS,
+  EncodedPacketSink,
+  EncodedVideoPacketSource,
 } from "mediabunny";
 import { activeClip, endFrame, sampleTransform, type Project } from "./model";
 import { TimelineMedia } from "./media";
 import { paintSportsFx } from "./sportsFx";
 import { sampleTrack } from "../objectTracker";
 import { mixAudio } from "./audio";
+import { mp4Settings, prepareMp4 } from "./mp4";
 const color = (token: string) =>
   `hsl(${getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim()})`;
 export async function renderFrame(
@@ -158,21 +164,34 @@ export async function exportTimeline(
   signal: AbortSignal,
   progress: (n: number) => void,
 ): Promise<Blob> {
-  if (typeof VideoEncoder === "undefined")
-    throw new Error(
-      "Frame export requires a browser with WebCodecs (recent Chrome or Edge).",
-    );
+  const nativeVideo = await prepareMp4(p.width, p.height, p.fps);
+  if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
   const canvas = document.createElement("canvas"),
     media = new TimelineMedia(),
     target = new BufferTarget(),
-    output = new Output({ format: new WebMOutputFormat(), target });
-  const video = new CanvasSource(canvas, { codec: "vp9", bitrate: 4_000_000 });
-  const audio = new AudioBufferSource({ codec: "opus", bitrate: 128000 });
+    output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target });
+  const video = nativeVideo
+    ? new CanvasSource(canvas, { codec: mp4Settings.videoCodec, bitrate: 4_000_000 })
+    : new EncodedVideoPacketSource(mp4Settings.videoCodec);
+  const audio = new AudioBufferSource({ codec: mp4Settings.audioCodec, bitrate: mp4Settings.audioBitrate });
+  let software: import("h264-mp4-encoder").H264MP4Encoder | undefined;
+  let encodedInput: Input | undefined;
   canvas.width = p.width;
   canvas.height = p.height;
   output.addVideoTrack(video, { frameRate: p.fps });
   output.addAudioTrack(audio);
   try {
+    if (!nativeVideo) {
+      const { createH264MP4Encoder } = await import("h264-mp4-encoder");
+      software = await createH264MP4Encoder();
+      software.width = p.width;
+      software.height = p.height;
+      software.frameRate = p.fps;
+      software.kbps = 4000;
+      software.speed = 10;
+      software.groupOfPictures = p.fps;
+      software.initialize();
+    }
     const mixed = await mixAudio(p, media);
     if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
     await output.start();
@@ -182,17 +201,48 @@ export async function exportTimeline(
     for (let frame = 0; frame < total; frame++) {
       if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
       await renderFrame(canvas, p, frame, media);
-      await video.add(frame / p.fps, 1 / p.fps);
-      progress(Math.round(((frame + 1) / total) * 100));
+      if (video instanceof CanvasSource) {
+        await video.add(frame / p.fps, 1 / p.fps);
+      } else if (software) {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas unavailable");
+        software.addFrameRgba(ctx.getImageData(0, 0, p.width, p.height).data);
+      }
+      progress(Math.round(((frame + 1) / total) * 95));
+      // Yield so cancellation and progress remain usable during software encoding.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+    if (software && video instanceof EncodedVideoPacketSource) {
+      if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
+      software.finalize();
+      const bytes = software.FS.readFile(software.outputFilename);
+      encodedInput = new Input({
+        source: new BlobSource(new Blob([new Uint8Array(bytes)], { type: mp4Settings.mimeType })),
+        formats: ALL_FORMATS,
+      });
+      const track = await encodedInput.getPrimaryVideoTrack();
+      const decoderConfig = await track?.getDecoderConfig();
+      if (!track || !decoderConfig) throw new Error("MP4 video encoding produced no track");
+      let first = true;
+      // Copy H.264 packets, without transcoding; AAC is muxed into the same final MP4.
+      for await (const packet of new EncodedPacketSink(track).packets()) {
+        if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
+        await video.add(packet, first ? { decoderConfig } : undefined);
+        first = false;
+      }
     }
     video.close();
     await output.finalize();
+    if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
     if (!target.buffer) throw new Error("Export produced no file");
-    return new Blob([target.buffer], { type: "video/webm" });
+    progress(100);
+    return new Blob([target.buffer], { type: mp4Settings.mimeType });
   } catch (e) {
-    await output.cancel();
+    await output.cancel().catch(() => undefined);
     throw e;
   } finally {
     media.dispose();
+    encodedInput?.dispose();
+    software?.delete();
   }
 }

@@ -1038,10 +1038,10 @@ export default function TimelineEditor() {
             <Button asChild>
               <a
                 href={output}
-                download={`${p.name.replace(/[^a-z0-9]/gi, "-")}.webm`}
+                download={`${p.name.replace(/[^a-z0-9]/gi, "-")}.mp4`}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download highlight
+                Download MP4
               </a>
             </Button>
           </section>
