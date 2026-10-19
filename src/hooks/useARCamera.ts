@@ -3,6 +3,7 @@ import { TrackingManager } from "@/lib/vision/trackingManager";
 import { getFilter, renderARFrame } from "@/lib/filters/filterRenderer";
 import { DEFAULT_RIG, type RigTuning } from "@/lib/ar/characterRig";
 import type { EngineStats } from "@/lib/ar/types";
+import fixWebmDuration from "fix-webm-duration";
 
 export type CameraFacing = "user" | "environment";
 export type SourceKind = "camera" | "file";
@@ -26,6 +27,7 @@ export const useARCamera = () => {
 
   const managerRef = useRef<TrackingManager | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileUrlRef = useRef<string | null>(null);
   const rafRef = useRef<number | null>(null);
   const filterRef = useRef("head-flame");
   const debugRef = useRef(true);
@@ -39,6 +41,7 @@ export const useARCamera = () => {
   });
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const recordStartedRef = useRef(0);
   const timerRef = useRef<number | null>(null);
 
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
@@ -55,6 +58,9 @@ export const useARCamera = () => {
   const [elapsed, setElapsed] = useState(0);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  const [previewQuality, setPreviewQuality] = useState<"standard" | "low">("standard");
+  const qualityRef = useRef(previewQuality);
+  qualityRef.current = previewQuality;
   const [stats, setStats] = useState<DebugSnapshot>({
     fps: 0,
     inferenceMs: 0,
@@ -99,8 +105,11 @@ export const useARCamera = () => {
       const manager = managerRef.current;
       if (!video || !canvas || !manager || video.readyState < 2) return;
 
-      const vw = video.videoWidth || 720;
-      const vh = video.videoHeight || 1280;
+      const sourceW = video.videoWidth || 720;
+      const sourceH = video.videoHeight || 1280;
+      const previewScale = Math.min(1, (qualityRef.current === "low" ? 480 : 1280) / Math.max(sourceW, sourceH));
+      const vw = Math.round(sourceW * previewScale);
+      const vh = Math.round(sourceH * previewScale);
       if (canvas.width !== vw || canvas.height !== vh) {
         canvas.width = vw;
         canvas.height = vh;
@@ -169,6 +178,7 @@ export const useARCamera = () => {
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (fileUrlRef.current) { URL.revokeObjectURL(fileUrlRef.current); fileUrlRef.current = null; }
     setTorchAvailable(false);
     setTorchOn(false);
   }, []);
@@ -245,7 +255,8 @@ export const useARCamera = () => {
       const video = videoRef.current;
       if (!video) return;
       video.srcObject = null;
-      video.src = URL.createObjectURL(file);
+      fileUrlRef.current = URL.createObjectURL(file);
+      video.src = fileUrlRef.current;
       video.loop = true;
       video.muted = true;
       video.playsInline = true;
@@ -281,21 +292,23 @@ export const useARCamera = () => {
 
   const startRecording = useCallback(() => {
     if (recorderRef.current) return;
+    if (!videoRef.current || videoRef.current.readyState < 2 || typeof MediaRecorder === "undefined") throw new Error("Recording is not available yet on this device.");
     if (!recordCanvasRef.current) recordCanvasRef.current = document.createElement("canvas");
     const rec = recordCanvasRef.current;
     const video = videoRef.current;
-    rec.width = video?.videoWidth || 720;
-    rec.height = video?.videoHeight || 1280;
+    rec.width = canvasRef.current?.width || video?.videoWidth || 720;
+    rec.height = canvasRef.current?.height || video?.videoHeight || 1280;
     const stream = rec.captureStream(30);
     const audio = streamRef.current?.getAudioTracks?.()[0];
-    if (audio) stream.addTrack(audio);
-    const mime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((m) =>
+    if (audio) stream.addTrack(audio.clone());
+    const mime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/mp4", "video/webm"].find((m) =>
       MediaRecorder.isTypeSupported(m)
     );
     const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     chunksRef.current = [];
     recorder.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
     recorder.start(200);
+    recordStartedRef.current = performance.now();
     recorderRef.current = recorder;
     setRecording(true);
     setElapsed(0);
@@ -304,7 +317,7 @@ export const useARCamera = () => {
 
   const stopRecording = useCallback(
     () =>
-      new Promise<Blob | null>((resolve) => {
+      new Promise<Blob | null>((resolve, reject) => {
         const recorder = recorderRef.current;
         if (!recorder) return resolve(null);
         recorder.onstop = () => {
@@ -313,7 +326,9 @@ export const useARCamera = () => {
           chunksRef.current = [];
           setRecording(false);
           if (timerRef.current) window.clearInterval(timerRef.current);
-          resolve(blob);
+          recorder.stream.getTracks().forEach(track => track.stop());
+          if (blob.type.includes("webm")) fixWebmDuration(blob, performance.now() - recordStartedRef.current, { logger: false }).then(resolve, reject);
+          else resolve(blob);
         };
         recorder.stop();
       }),
@@ -322,6 +337,10 @@ export const useARCamera = () => {
 
   useEffect(
     () => () => {
+      const recorder = recorderRef.current;
+      if (recorder && recorder.state !== "inactive") { recorder.onstop = null; recorder.stop(); }
+      recorder?.stream.getTracks().forEach(track => track.stop());
+      recorderRef.current = null;
       stopStream();
       if (timerRef.current) window.clearInterval(timerRef.current);
     },
@@ -353,6 +372,8 @@ export const useARCamera = () => {
     stats,
     torchAvailable,
     torchOn,
+    previewQuality,
+    setPreviewQuality,
     toggleTorch,
     startCamera,
     stopCamera,

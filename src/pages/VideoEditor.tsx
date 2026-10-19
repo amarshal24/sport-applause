@@ -15,7 +15,7 @@ import {
   Share2, Trash2, Send, Image as ImageIcon, Wand2,
   Sun, Contrast, Palette, Volume2, VolumeX, Timer,
   FlipHorizontal, FlipVertical, RotateCw, Layers,
-  Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle
+  Blend, Droplets, Focus, Maximize, Move, Star, HelpCircle, Crosshair
 } from "lucide-react";
 import { useAnimationTutorialAutoOpen } from "@/components/video-fx/useAnimationTutorial";
 const AnimationTutorial = lazy(() =>
@@ -846,6 +846,9 @@ const VideoEditor = () => {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => navigate("/motion-studio")}>
+                <Crosshair className="mr-1 h-4 w-4" /> Motion FX Studio
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setTutorialOpen(true)}>
                 <HelpCircle className="mr-1 h-4 w-4" />
                 Tutorial

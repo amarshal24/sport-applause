@@ -1,11 +1,13 @@
 # Roadmap
 
 ## AI Motion FX Studio
-- [ ] Confirm complete studio brief (blocked: upload ends at “Trim,” in section 4)
-- [ ] Integrate non-destructive uploaded-video object selection, independent tracking and manual correction
-- [ ] Add timed Flaming Ball effects, trails and synchronized edited export; validate occlusion limitations
-- [ ] Integrate live effects recording and device-performance fallback while preserving entitlements
-- [ ] Implement and verify complete timeline requirements after receiving remaining brief
+- [x] Scope studio to sections 1–3; complete multi-track timeline deferred by user
+- [x] Add authenticated /motion-studio from existing editor: on-device click segmentation, independent template tracks, timestamp corrections, scale/visibility keyframes; verified moving local ball, two independent effects and manual fallback
+- [x] Add timed particle Flaming Ball/electric/trails, optional timestamped hoop sound, original download and separate audio-preserving export; verified finite duration and audible audio
+- [x] Add existing human AR live recording, compatible free-effect switching, lower-resolution composite and edit-recorded-clip handoff; verified fake camera capture, clip reopening, mobile overflow and cleanup paths
+- [ ] Robust temporal segmentation, automatic depth/occlusion/re-entry and photoreal flames remain development, not certified by simple template tracking (blocked: advanced tracking engine/model integration)
+- [ ] Real-device athlete tracking, camera performance and adaptive real-time quality certification (blocked: physical device/camera testing)
+- [ ] Implement complete timeline requirements (deferred: remaining brief not provided; sections 1–3 authorized)
 
 ## Public subscriptions, review safety, and launch readiness
 - [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested

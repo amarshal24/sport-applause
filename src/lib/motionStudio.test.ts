@@ -1,0 +1,10 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { correctMotionPoint, motionSample, motionRangeSchema, motionUploadSchema, type MotionObject } from "./motionStudio";
+const object: MotionObject = { id: "ball", label: "Ball", effect: "flame", x: 10, y: 20, size: 8, start: 1, end: 3, intensity: 1, track: [{ t: 1, x: 10, y: 20 }, { t: 3, x: 30, y: 20 }], corrections: [] };
+test("effects start and stop at selected timestamps", () => { assert.equal(motionSample(object, 0.9), null); assert.equal(motionSample(object, 3.1), null); assert.equal(motionSample(object, 2)?.x, 20); });
+test("manual correction preserves movement and interpolates size", () => { const corrected = { ...object, corrections: [{ t: 1, x: 15, y: 25, size: 8, visible: true }, { t: 3, x: 35, y: 25, size: 16, visible: true }] }; assert.deepEqual(motionSample(corrected, 2), { x: 25, y: 25, c: 1, size: 12 }); assert.equal(motionSample(object, 2)?.x, 20); });
+test("occluded object stays hidden until a visible correction", () => { const corrected = { ...object, corrections: [{ t: 1, x: 10, y: 20, size: 8, visible: false }, { t: 2, x: 20, y: 20, size: 8, visible: true }] }; assert.equal(motionSample(corrected, 1.5), null); assert.equal(motionSample(corrected, 2)?.x, 20); });
+test("correction replaces only the same timestamp", () => { const point = { t: 2, x: 15, y: 15, size: 8, visible: true }; assert.equal(correctMotionPoint([point], { ...point, x: 30 }).length, 1); assert.equal(correctMotionPoint([point], { ...point, t: 3 }).length, 2); });
+test("uploads retain the 100MB video limit", () => { assert.equal(motionUploadSchema.safeParse({ type: "video/webm", size: 100 * 1024 * 1024 }).success, true); assert.equal(motionUploadSchema.safeParse({ type: "video/webm", size: 100 * 1024 * 1024 + 1 }).success, false); assert.equal(motionUploadSchema.safeParse({ type: "text/plain", size: 1 }).success, false); });
+test("effect range rejects reversed endpoints", () => { assert.equal(motionRangeSchema.safeParse({ start: 4, end: 2 }).success, false); });
