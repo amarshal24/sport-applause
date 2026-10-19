@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Gamepad2, KeyRound, Loader2, Lock, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { ExternalLink, Gamepad2, KeyRound, Loader2, Lock, Pencil, Plus, Search, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,8 @@ import cover from "@/assets/creator-game-cover.jpg";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { protectedGameUrl, type ProtectedGameLaunch } from "@/lib/gameDelivery";
 import GameCheckoutModal from "./GameCheckoutModal";
+import GameReviews from "./GameReviews";
+import { summarizeGameReviews } from "@/lib/gameReviews";
 
 type Game = Tables<"creator_games">;
 const initialForm = { title: "", description: "", category: "sports", price: "0", launchUrl: "" };
@@ -45,17 +47,23 @@ export default function CreatorGameStore() {
   const [orders, setOrders] = useState<Tables<"creator_game_orders">[]>([]);
   const [testBuyable, setTestBuyable] = useState<Set<string>>(new Set());
   const [checkoutGame, setCheckoutGame] = useState<Game | null>(null);
+  const [reviewsGame, setReviewsGame] = useState<Game | null>(null);
+  const [ratings, setRatings] = useState<Record<string, { count: number; average: number }>>({});
 
   const load = useCallback(async () => {
-    if (!user) { setGames([]); setSales([]); setReviewer(false); return; }
+    if (!user) { setGames([]); setSales([]); setOrders([]); setRatings({}); setReviewsGame(null); setReviewer(false); return; }
     setLoading(true); setError("");
-    const [list, ledger, roles] = await Promise.all([
+    const [list, ledger, roles, reviews] = await Promise.all([
       supabase.from("creator_games").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("creator_game_sales").select("*").eq("creator_id", user.id).order("created_at", { ascending: false }).limit(1000),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
+      supabase.from("creator_game_reviews").select("game_id,rating").eq("environment", getStripeEnvironment()),
     ]);
     if (list.error || ledger.error || roles.error) setError("Couldn't load the game store. Please try again.");
     setGames(list.data ?? []); setSales(ledger.data ?? []);
+    const grouped: Record<string, { rating: number }[]> = {};
+    for (const r of reviews.data ?? []) (grouped[r.game_id] ??= []).push(r);
+    setRatings(Object.fromEntries(Object.entries(grouped).map(([id, rows]) => [id, summarizeGameReviews(rows)])));
     setReviewer((roles.data ?? []).some(r => ["admin", "moderator"].includes(r.role)));
     const [purchases, available] = await Promise.all([
       supabase.from("creator_game_orders").select("*").eq("buyer_id", user.id).eq("environment", getStripeEnvironment()).order("created_at", { ascending: false }),
@@ -156,6 +164,7 @@ export default function CreatorGameStore() {
         <div className="p-4 flex flex-1 flex-col gap-3">
           <div className="flex items-start justify-between gap-2"><h3 className="font-display text-xl font-bold break-words min-w-0">{game.title}</h3><span className="shrink-0 font-semibold text-secondary">{game.price_cents === 0 ? "Free" : gameMoney(game.price_cents)}</span></div>
           <p className="text-xs text-muted-foreground">by {names[game.creator_id] ?? "Creator"}</p>
+          {game.status === "approved" && <Button variant="link" className="self-start p-0 h-auto text-sm" onClick={() => setReviewsGame(game)}><Star className="h-4 w-4 text-secondary" />{ratings[game.id]?.count ? `${ratings[game.id].average.toFixed(1)} · ${ratings[game.id].count} reviews` : "Ratings & reviews"}{getStripeEnvironment() === "sandbox" && ratings[game.id]?.count ? " · Test" : ""}</Button>}
           <p className="text-sm text-muted-foreground line-clamp-3 break-words flex-1">{game.description}</p>
           {(own || reviewing) && <Badge className="self-start capitalize" variant="outline">{game.status}</Badge>}
           <div className="flex flex-wrap gap-2">
@@ -186,6 +195,7 @@ export default function CreatorGameStore() {
       </>}
     </Tabs>}
     <GameCheckoutModal game={checkoutGame} onClose={() => { setCheckoutGame(null); void load(); }} />
+    <Dialog open={!!reviewsGame} onOpenChange={value => { if (!value) setReviewsGame(null); }}><DialogContent className="max-h-[85dvh] overflow-y-auto"><DialogHeader><DialogTitle>Ratings & reviews · {reviewsGame?.title}</DialogTitle></DialogHeader>{reviewsGame && <GameReviews gameId={reviewsGame.id} environment={getStripeEnvironment()} onChanged={() => void load()} />}</DialogContent></Dialog>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Edit your game" : "List your game"}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-4">
       <div><Label htmlFor="game-title">Game title</Label><Input id="game-title" required maxLength={80} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
       <div><Label htmlFor="game-description">Description</Label><Textarea id="game-description" required maxLength={2000} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>

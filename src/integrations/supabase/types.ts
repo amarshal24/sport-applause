@@ -393,6 +393,47 @@ export type Database = {
           },
         ]
       }
+      creator_game_reviews: {
+        Row: {
+          body: string
+          buyer_id: string
+          created_at: string
+          environment: string
+          game_id: string
+          id: string
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          buyer_id: string
+          created_at?: string
+          environment: string
+          game_id: string
+          id?: string
+          rating: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          buyer_id?: string
+          created_at?: string
+          environment?: string
+          game_id?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_game_reviews_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_game_sale_controls: {
         Row: {
           game_id: string
@@ -2118,6 +2159,10 @@ export type Database = {
         Args: { _name: string; _user_id: string }
         Returns: boolean
       }
+      can_review_creator_game: {
+        Args: { _environment: string; _game_id: string }
+        Returns: boolean
+      }
       check_creator_game_host_access: {
         Args: {
           _game_id: string
@@ -2270,6 +2315,15 @@ export type Database = {
           _session_id: string
         }
         Returns: undefined
+      }
+      submit_creator_game_review: {
+        Args: {
+          _body: string
+          _environment: string
+          _game_id: string
+          _rating: number
+        }
+        Returns: string
       }
     }
     Enums: {
