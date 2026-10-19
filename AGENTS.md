@@ -4,6 +4,7 @@
 - Tap-selected object masks use a disposable on-device MediaPipe legacy interactive segmenter; arbitrary-object temporal tracking remains separate from the human AR pipeline and must expose correction/failure states.
 - Repair duration metadata on MediaRecorder WebM outputs before reuse or download so live clips can reopen in the editor; keep browser-selected recording formats and original audio separate from source files.
 - The multitrack editor stores per-user local project snapshots and source Blobs in IndexedDB; a shared compositing renderer drives frame-grid preview and MP4 H.264/AAC export, with lazily loaded on-device encoders when browser codecs are absent, so export remains compatible without changing originals or entitlements.
+- Timeline AVC capability checks and native encoding share an explicit Constrained Baseline profile with resolution/frame-rate-aware levels and even-dimension validation to avoid browser-selected High-profile compatibility surprises.
 
 - Keep Founders Club public submission in a validated, rate-limited edge function with service-only inserts and admin-only application reads/review; store applications separately so landing changes never alter existing app records.
 - Keep the public landing available at /welcome and use it for signed-out home only; preserve the signed-in home experience.

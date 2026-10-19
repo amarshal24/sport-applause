@@ -15,7 +15,7 @@ import { TimelineMedia } from "./media";
 import { paintSportsFx } from "./sportsFx";
 import { sampleTrack } from "../objectTracker";
 import { mixAudio } from "./audio";
-import { mp4Settings, prepareMp4 } from "./mp4";
+import { mp4Settings, mp4VideoOptions, prepareMp4 } from "./mp4";
 const color = (token: string) =>
   `hsl(${getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim()})`;
 export async function renderFrame(
@@ -171,7 +171,7 @@ export async function exportTimeline(
     target = new BufferTarget(),
     output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target });
   const video = nativeVideo
-    ? new CanvasSource(canvas, { codec: mp4Settings.videoCodec, bitrate: 4_000_000 })
+    ? new CanvasSource(canvas, mp4VideoOptions(p.width, p.height, p.fps))
     : new EncodedVideoPacketSource(mp4Settings.videoCodec);
   const audio = new AudioBufferSource({ codec: mp4Settings.audioCodec, bitrate: mp4Settings.audioBitrate });
   let software: import("h264-mp4-encoder").H264MP4Encoder | undefined;

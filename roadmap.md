@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Complete Video Editor and Sports FX (sections 4–5)
+- [x] Fix native AVC profile compatibility (Constrained Baseline, frame-rate-aware levels, even-dimension validation); 23 tests pass, fresh authenticated sports export plays in codec-capable Google Chrome with no player/runtime/independent-decoder errors.
+- [ ] Certify exported MP4 playback on physical iPhone/Safari and Android devices (blocked: physical devices unavailable).
 - [x] Edit credited Randy Chiu free-throw footage through actual authenticated timeline; trim, separated audio, animated title, timed Rim explosion/synthetic swish; export/reopen/recover verified, 90 frames and visually matching preview/export; H.264 unsupported in test browser so source-compatible VP9 copy used; creator records unchanged
 - [x] Replace timeline WebM export with direct H.264/AAC MP4 (lazy on-device fallback encoders); authenticated real sports edit/export and cancellation verified, 90 frames/30 FPS and non-silent AAC independently decoded without warnings or post-export conversion; 19 tests pass. Sandbox lacks MP4 playback codecs; native-device playback remains unverified.
 - [x] Add /timeline-editor: unlimited video/audio/text/FX tracks, drag arrangement, 30 FPS frame stepping, transform/opacity/intensity keyframes, PIP/split, masks/blends, green-screen and AI person removal, local autosave/recovery; verified in browser
