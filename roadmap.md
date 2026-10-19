@@ -1,11 +1,11 @@
 # Roadmap
 
 ## Founders Club landing page
-- [ ] Add branded public landing and application form without changing existing signed-in app
-- [ ] Securely store applications and add admin review; verify public submission and admin-only access
+- [x] Add branded public landing and application form without changing existing signed-in app
+- [x] Securely store applications and add admin review; verified public submission, persisted admin acceptance/notes, private reads and denied direct inserts; removed test application
 - [ ] Integrate supplied HTML design (blocked: HTML attachment missing)
 - [ ] Send applicant confirmation emails (blocked: no verified sending domain)
-- [ ] Provide generated-scenes sample promotional video (awaiting creative approval)
+- [ ] Provide generated-scenes app-explainer sample promotional video (blocked: script/look approval)
 
 ## Creator game store
 - [x] Add protected test previews, private host keys, single-use authorization, delivery review, and changed-destination invalidation; test signed-in and clean up test game
