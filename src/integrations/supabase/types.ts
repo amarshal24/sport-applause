@@ -832,6 +832,69 @@ export type Database = {
         }
         Relationships: []
       }
+      founding100_applications: {
+        Row: {
+          admin_notes: string
+          beta_interest: boolean
+          created_at: string
+          email: string
+          id: string
+          name: string
+          newsletter_consent: boolean
+          role: string
+          social_username: string
+          sport: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          beta_interest?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          newsletter_consent?: boolean
+          role: string
+          social_username?: string
+          sport: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          beta_interest?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          newsletter_consent?: boolean
+          role?: string
+          social_username?: string
+          sport?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      founding100_rate_limits: {
+        Row: {
+          attempts: number
+          key_hash: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key_hash: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key_hash?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           accepted_at: string | null
@@ -2303,6 +2366,10 @@ export type Database = {
         Args: { _key_hash: string }
         Returns: boolean
       }
+      consume_founding100_limit: {
+        Args: { _key_hash: string }
+        Returns: boolean
+      }
       create_public_subscription: {
         Args: {
           _email: string
@@ -2336,6 +2403,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      founding100_approved_count: { Args: never; Returns: number }
       get_creator_game_delivery: {
         Args: { _game_id: string }
         Returns: {
