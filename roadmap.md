@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Complete Video Editor and Sports FX (sections 4–5)
+- [ ] Edit a real sports clip through the timeline, export, and compare original/preview/export without altering creator records
 - [x] Add /timeline-editor: unlimited video/audio/text/FX tracks, drag arrangement, 30 FPS frame stepping, transform/opacity/intensity keyframes, PIP/split, masks/blends, green-screen and AI person removal, local autosave/recovery; verified in browser
 - [x] Add personal audio, voiceover, audio separation, trim/fades/mix/ducking/normalization/basic noise filter, frame-timed original sport sounds and mixed export; verified separation, voiceover and export
 - [x] Add animated titles/stickers, sports labels/stats, editable caption text/style/timing, motion-following overlays and speech captions; verified captions with spoken audio
