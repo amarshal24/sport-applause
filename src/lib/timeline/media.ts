@@ -1,12 +1,113 @@
-import { Input,BlobSource,ALL_FORMATS,CanvasSink,AudioBufferSink } from 'mediabunny';
-import type { Asset } from './model';
-import {PersonBackground} from './background';
+import {
+  Input,
+  BlobSource,
+  ALL_FORMATS,
+  CanvasSink,
+  AudioBufferSink,
+} from "mediabunny";
+import type { Asset } from "./model";
+import { PersonBackground } from "./background";
 export class TimelineMedia {
- readonly background=new PersonBackground();
- private inputs=new Map<string,Input>(); private sinks=new Map<string,CanvasSink>(); private pictures=new Map<string,ImageBitmap>(); private audio=new Map<string,AudioBuffer>();
- async input(a:Asset){let input=this.inputs.get(a.id);if(!input){input=new Input({source:new BlobSource(a.blob),formats:ALL_FORMATS});this.inputs.set(a.id,input);}return input;}
- async frame(a:Asset,t:number):Promise<CanvasImageSource|null>{if(a.kind==='image'){let image=this.pictures.get(a.id);if(!image){image=await createImageBitmap(a.blob);this.pictures.set(a.id,image);}return image;}if(a.kind!=='video')return null;let sink=this.sinks.get(a.id);if(!sink){const track=await (await this.input(a)).getPrimaryVideoTrack();if(!track)throw new Error(`No video in ${a.name}`);sink=new CanvasSink(track,{poolSize:2});this.sinks.set(a.id,sink);}return (await sink.getCanvas(Math.max(0,t)))?.canvas??null;}
- async sound(a:Asset):Promise<AudioBuffer|null>{if(a.kind==='image')return null;const cached=this.audio.get(a.id);if(cached)return cached;const input=await this.input(a),track=await input.getPrimaryAudioTrack();if(!track)return null;const pieces=[];for await(const part of new AudioBufferSink(track).buffers())pieces.push(part);if(!pieces.length)return null;const sr=pieces[0].buffer.sampleRate,channels=pieces[0].buffer.numberOfChannels,length=Math.ceil(a.duration*sr);const result=new AudioBuffer({length,numberOfChannels:channels,sampleRate:sr});for(const part of pieces){const at=Math.max(0,Math.round(part.timestamp*sr));for(let ch=0;ch<channels;ch++){const dst=result.getChannelData(ch),src=part.buffer.getChannelData(ch);if(at<dst.length)dst.set(src.subarray(0,dst.length-at),at);}}this.audio.set(a.id,result);return result;}
- dispose(){this.background.dispose();this.inputs.forEach(i=>i.dispose());this.pictures.forEach(p=>p.close());this.inputs.clear();this.sinks.clear();this.pictures.clear();this.audio.clear();}
+  readonly background = new PersonBackground();
+  private inputs = new Map<string, Input>();
+  private sinks = new Map<string, CanvasSink>();
+  private pictures = new Map<string, ImageBitmap>();
+  private audio = new Map<string, AudioBuffer>();
+  async input(a: Asset) {
+    let input = this.inputs.get(a.id);
+    if (!input) {
+      input = new Input({
+        source: new BlobSource(a.blob),
+        formats: ALL_FORMATS,
+      });
+      this.inputs.set(a.id, input);
+    }
+    return input;
+  }
+  async frame(a: Asset, t: number): Promise<CanvasImageSource | null> {
+    if (a.kind === "image") {
+      let image = this.pictures.get(a.id);
+      if (!image) {
+        image = await createImageBitmap(a.blob);
+        this.pictures.set(a.id, image);
+      }
+      return image;
+    }
+    if (a.kind !== "video") return null;
+    let sink = this.sinks.get(a.id);
+    if (!sink) {
+      const track = await (await this.input(a)).getPrimaryVideoTrack();
+      if (!track) throw new Error(`No video in ${a.name}`);
+      sink = new CanvasSink(track, { poolSize: 2 });
+      this.sinks.set(a.id, sink);
+    }
+    return (await sink.getCanvas(Math.max(0, t)))?.canvas ?? null;
+  }
+  async sound(a: Asset): Promise<AudioBuffer | null> {
+    if (a.kind === "image") return null;
+    const cached = this.audio.get(a.id);
+    if (cached) return cached;
+    const input = await this.input(a),
+      track = await input.getPrimaryAudioTrack();
+    if (!track) return null;
+    const pieces = [];
+    for await (const part of new AudioBufferSink(track).buffers())
+      pieces.push(part);
+    if (!pieces.length) return null;
+    const sr = pieces[0].buffer.sampleRate,
+      channels = pieces[0].buffer.numberOfChannels,
+      length = Math.ceil(a.duration * sr);
+    const result = new AudioBuffer({
+      length,
+      numberOfChannels: channels,
+      sampleRate: sr,
+    });
+    for (const part of pieces) {
+      const at = Math.max(0, Math.round(part.timestamp * sr));
+      for (let ch = 0; ch < channels; ch++) {
+        const dst = result.getChannelData(ch),
+          src = part.buffer.getChannelData(ch);
+        if (at < dst.length) dst.set(src.subarray(0, dst.length - at), at);
+      }
+    }
+    this.audio.set(a.id, result);
+    return result;
+  }
+  dispose() {
+    this.background.dispose();
+    this.inputs.forEach((i) => i.dispose());
+    this.pictures.forEach((p) => p.close());
+    this.inputs.clear();
+    this.sinks.clear();
+    this.pictures.clear();
+    this.audio.clear();
+  }
 }
-export async function importAsset(file:File):Promise<Asset>{const kind=file.type.startsWith('video/')?'video':file.type.startsWith('audio/')?'audio':'image';let duration=5;if(kind!=='image'){const input=new Input({source:new BlobSource(file),formats:ALL_FORMATS});try{duration=await input.computeDuration();if(!Number.isFinite(duration)||duration<=0)throw new Error('Media has no usable duration');}finally{input.dispose();}}return {id:crypto.randomUUID(),name:file.name,blob:file,kind,duration};}
+export async function importAsset(file: File): Promise<Asset> {
+  const kind = file.type.startsWith("video/")
+    ? "video"
+    : file.type.startsWith("audio/")
+      ? "audio"
+      : "image";
+  let duration = 5;
+  if (kind !== "image") {
+    const input = new Input({
+      source: new BlobSource(file),
+      formats: ALL_FORMATS,
+    });
+    try {
+      duration = await input.computeDuration();
+      if (!Number.isFinite(duration) || duration <= 0)
+        throw new Error("Media has no usable duration");
+    } finally {
+      input.dispose();
+    }
+  }
+  return {
+    id: crypto.randomUUID(),
+    name: file.name,
+    blob: file,
+    kind,
+    duration,
+  };
+}
