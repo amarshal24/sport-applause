@@ -28,6 +28,16 @@
 - [ ] Render commercial after reference, script/plan and scene-image approvals (blocked: creative approval)
 - [x] Deliver evidence-based launch-readiness report; generic real-money checkout server-blocked without explicit approval
 
+## Marketing website (Founding 100)
+- [x] Marketing home at signed-out `/` and `/welcome` (hero "YOUR GAME. YOUR PLATFORM.", 7 feature sections, film placeholder, app preview placeholders, download "coming soon" placeholders, newsletter form); signed-in home unchanged
+- [x] /founding100 application page (name, email, role, sport, optional social username, beta interest, separate newsletter consent) with real approved counter capped at 100; /updates newsletter page; /thank-you confirmation
+- [x] founding100_applications table (statuses applied/selected/waitlisted/rejected, unique email), rate-limited service-only submit function, duplicate-email handling, count-only public RPC; 6 unit tests pass
+- [x] Admin /admin/founding100 dashboard with review statuses, remaining spots, subscriber count, CSV export; verified end-to-end (submit → thank-you, duplicate, admin select, counter 1/100, anon reads denied, mobile layout); test rows removed
+- [ ] Founding 100 confirmation/welcome emails (blocked: no verified sending domain)
+- [ ] Brevo marketing connection for opted-in email (blocked: user must link Brevo account via connect card)
+- [ ] Real app screenshots to replace preview placeholders (blocked: needs approved screenshots)
+- [ ] Custom domain deployment per docs/deployment-checklist.md (blocked: domain choice + publish approval)
+
 ## Founders Club landing page
 - [x] Add branded public landing and application form without changing existing signed-in app
 - [x] Securely store applications and add admin review; verified public submission, persisted admin acceptance/notes, private reads and denied direct inserts; removed test application
