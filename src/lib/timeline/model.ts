@@ -7,7 +7,7 @@ export interface Clip {
  id:string; trackId:string; name:string; assetId?:string; start:number; duration:number; offset:number;
  transform:Transform; keys:Keyframe[]; text:string; effect:string; fontSize:number; color:string;
  animation:'none'|'fade'|'slide'|'pulse'; mask:'none'|'circle'|'rectangle'; blend:GlobalCompositeOperation;
- chroma:boolean; volume:number; fadeIn:number; fadeOut:number; duck:boolean; normalize:boolean; denoise:boolean;
+ chroma:boolean; personRemoval?:boolean; composition?:'fit'|'left'|'right'; volume:number; fadeIn:number; fadeOut:number; duck:boolean; normalize:boolean; denoise:boolean;
  muted:boolean; motion:TrackPoint[]; motionAssetId?:string; motionOffset?:number;
 }
 export interface Track { id:string; name:string; kind:TrackKind; muted:boolean; hidden:boolean }
