@@ -1,11 +1,12 @@
 # Roadmap
 
 ## Complete Video Editor and Sports FX (sections 4–5)
-- [ ] Add additive multitrack project editor with frame grid, drag arrangement, transforms/keyframes, compositions, masks/blending and recovery
-- [ ] Add personal audio, voiceover, source separation, fades/mixing/ducking/normalization/noise controls and synchronized audio rendering
-- [ ] Add animated text, captions, sports overlays and motion-following text; integrate speech captions when service verified
-- [ ] Add dedicated categorized Sports FX with timing/intensity and deterministic preview/export
-- [ ] Verify real project recovery, rendered layered clips/audio and mobile layout; document licensing and AI limitations
+- [x] Add /timeline-editor: unlimited video/audio/text/FX tracks, drag arrangement, 30 FPS frame stepping, transform/opacity/intensity keyframes, PIP/split, masks/blends, green-screen and AI person removal, local autosave/recovery; verified in browser
+- [x] Add personal audio, voiceover, audio separation, trim/fades/mix/ducking/normalization/basic noise filter, frame-timed original sport sounds and mixed export; verified separation, voiceover and export
+- [x] Add animated titles/stickers, sports labels/stats, editable caption text/style/timing, motion-following overlays and speech captions; verified captions with spoken audio
+- [x] Add 25-effect categorized Sports FX library with timing/intensity and shared preview/export
+- [ ] Licensed music library (blocked: rights-cleared catalog and license records)
+- [ ] Automatic athlete-action sound timing and word-level caption timing (blocked: action-detection model; current captions service returns text only)
 
 ## AI Motion FX Studio
 - [x] Scope studio to sections 1–3; complete multi-track timeline deferred by user
