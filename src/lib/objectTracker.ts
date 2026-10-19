@@ -66,7 +66,8 @@ const seekTo = (video: HTMLVideoElement, t: number) =>
       if (done) return;
       done = true;
       video.removeEventListener("seeked", finish);
-      resolve();
+      // Let the newly decoded frame reach the canvas source before sampling.
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     };
     video.addEventListener("seeked", finish);
     video.currentTime = Math.max(0, t);

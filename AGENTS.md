@@ -1,5 +1,8 @@
 # Architecture rules
 
+- Motion FX Studio is an additive authenticated editor; source files remain local and unchanged, shared deterministic source-time effect rendering drives preview/export, and manual corrections/visibility intervals supplement browser tracking without claiming automatic depth occlusion.
+- Tap-selected object masks use a disposable on-device MediaPipe legacy interactive segmenter; arbitrary-object temporal tracking remains separate from the human AR pipeline and must expose correction/failure states.
+
 - Keep Founders Club public submission in a validated, rate-limited edge function with service-only inserts and admin-only application reads/review; store applications separately so landing changes never alter existing app records.
 - Keep the public landing available at /welcome and use it for signed-out home only; preserve the signed-in home experience.
 - Public subscriptions use service-only writes, an immutable consent-event history and hashed private unsubscribe tokens; email alone must never change an existing subscriber's consent or expose their unsubscribe link.

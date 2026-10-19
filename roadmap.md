@@ -1,7 +1,7 @@
 # Roadmap
 
 ## AI Motion FX Studio
-- [ ] Confirm complete studio brief (blocked: upload ends at “Trim,” in section 4)
+- [x] Scope studio to sections 1–3; complete multi-track timeline deferred by user
 - [ ] Integrate non-destructive uploaded-video object selection, independent tracking and manual correction
 - [ ] Add timed Flaming Ball effects, trails and synchronized edited export; validate occlusion limitations
 - [ ] Integrate live effects recording and device-performance fallback while preserving entitlements
