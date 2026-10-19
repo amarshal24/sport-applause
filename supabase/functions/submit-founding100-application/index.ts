@@ -28,7 +28,8 @@ Deno.serve(async req => {
       if (error) return reply(503, { error: "Applications are temporarily unavailable. Please try later." });
       if (!data) return reply(429, { error: "Too many applications. Please try again in an hour." });
     }
-    const { website: _website, newsletter_consent, ...application } = parsed.data;
+    const { website: _website, ...application } = parsed.data;
+    const { newsletter_consent } = application;
     const { data, error } = await db.from("founding100_applications").insert(application).select("id").single();
     if (error?.code === "23505") return reply(200, { alreadyApplied: true });
     if (error || !data) return reply(503, { error: "Your application could not be saved. Please try again." });
