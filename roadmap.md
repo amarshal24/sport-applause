@@ -1,17 +1,18 @@
 # Roadmap
 
 ## Public subscriptions, review safety, and launch readiness
-- [ ] Public newsletter/events signup with multiple interests, separate consent, secure unsubscribe, and admin visibility
-- [ ] Verified game review spam protection, reporting and moderation; test authorized and unauthorized flows
-- [ ] Prepare THE FIRST 100 cinematic sports-commercial concept (30–45 seconds, narrator, music, authentic app screenshots; no desk presenter)
-- [ ] Deliver evidence-based launch-readiness report; real-money sales remain off without approval
+- [x] Public newsletter/events signup with multiple interests, separate consent/history, hashed private unsubscribe, and admin visibility; signed-out submission, independent/all unsubscribe and private reads tested
+- [ ] Verified game review safety: buyer submit/edit, report/hide, spam/direct/live/refund denials tested; non-admin moderation and cross-game duplicate tests await test-account access
+- [x] Prepare THE FIRST 100 cinematic concept and reference pack; 30–45 seconds, narrator/music, authentic application screenshot, no desk presenter
+- [ ] Render commercial after reference, script/plan and scene-image approvals (blocked: creative approval)
+- [x] Deliver evidence-based launch-readiness report; generic real-money checkout server-blocked without explicit approval
 
 ## Founders Club landing page
 - [x] Add branded public landing and application form without changing existing signed-in app
 - [x] Securely store applications and add admin review; verified public submission, persisted admin acceptance/notes, private reads and denied direct inserts; removed test application
 - [ ] Integrate supplied HTML design (blocked: HTML attachment missing)
 - [ ] Send applicant confirmation emails (blocked: no verified sending domain)
-- [ ] Provide generated-scenes app-explainer sample promotional video (blocked: script/look approval)
+- [ ] Provide THE FIRST 100 cinematic sports commercial (blocked: reference/script/image approvals; replaces desk-presenter direction)
 
 ## Creator game store
 - [x] Add game ratings and written reviews with server-enforced verified-buyer access; tested pending denial, settled submission/edit persistence, direct-write/live spoofing denial, refund and stale-revision denial; removed isolated test records
