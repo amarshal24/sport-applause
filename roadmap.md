@@ -1,5 +1,9 @@
 # Roadmap
 
+## Live payment audit (2026-10-20)
+- [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
+- [ ] Successful live payment/renewal/refund/payout checks (blocked: live Lovable app install, automatic key provisioning/readiness, documented launch safeguards, and separately approved real-charge test).
+
 ## Complete Video Editor and Sports FX (sections 4–5)
 - [x] Fix native AVC profile compatibility (Constrained Baseline, frame-rate-aware levels, even-dimension validation); 23 tests pass, fresh authenticated sports export plays in codec-capable Google Chrome with no player/runtime/independent-decoder errors.
 - [ ] Certify exported MP4 playback on physical iPhone/Safari and Android devices (blocked: physical devices unavailable).
@@ -56,7 +60,7 @@
 - [x] Add private creator sales and earnings views
 - [x] Verify signed-in submission, ownership spoof prevention, admin review, disabled paid checkout, persistence, and test cleanup
 - [x] Verify non-admin reviewer rejection and admin rejection using the test creator account (completed in earlier test)
-- [ ] Activate paid game sales after protected delivery, reconciliation, refunds, billing compliance and real payout controls pass (blocked: Stripe account claim still at step 1 and production controls unverified)
+- [ ] Activate paid game sales after protected delivery, reconciliation, refunds, billing compliance and real payout controls pass (blocked: live Lovable app installation/key provisioning/readiness and production controls unverified)
 
 ## Game tier packages
 - [x] Add Rookie, All-Star, and MVP package comparison with accurate availability
