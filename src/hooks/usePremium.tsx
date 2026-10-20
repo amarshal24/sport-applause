@@ -48,12 +48,14 @@ export const usePremium = () => {
         .from("fx_purchases")
         .select("price_id")
         .eq("user_id", user.id)
-        .eq("environment", environment),
+        .eq("environment", environment)
+        .is("refunded_at", null),
       supabase
         .from("subscriptions")
         .select("status,current_period_end")
         .eq("user_id", user.id)
         .eq("environment", environment)
+        .eq("price_id", "fx_pro_monthly")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),

@@ -2,6 +2,9 @@
 
 ## Live payment audit (2026-10-20)
 - [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
+- [x] Fix FX/skin buyer validation, refund revocation, webhook recording errors, FX subscription separation.
+- [ ] Buy domain + install Lovable app on live Stripe (blocked: user action), then readiness check and approval flag.
+- [ ] Podcast return page confirms settlement before success copy.
 - [ ] Successful live payment/renewal/refund/payout checks (blocked: live Lovable app install, automatic key provisioning/readiness, documented launch safeguards, and separately approved real-charge test).
 
 ## Complete Video Editor and Sports FX (sections 4–5)

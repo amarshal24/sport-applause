@@ -2,6 +2,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { isPublicCheckoutAllowed } from "../_shared/paymentApproval.ts";
+import { isCheckoutPriceAllowed, isTrustedReturnUrl } from "../_shared/checkoutCatalog.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -97,25 +99,29 @@ Deno.serve(async (req) => {
     });
   }
 
+  const json = (b: unknown, status: number) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
     const body = await req.json();
-    const environment = body.environment === "live" ? "live" : "sandbox";
+    if (body.environment !== "sandbox" && body.environment !== "live") return json({ error: "Invalid environment" }, 400);
+    const environment: StripeEnv = body.environment;
     if (!isPublicCheckoutAllowed(environment, Deno.env.get("PUBLIC_LIVE_PAYMENTS_APPROVED"))) {
-      return new Response(JSON.stringify({ error: "Real-money purchases require launch approval" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return json({ error: "Real-money purchases require launch approval" }, 403);
     }
-    if (typeof body.priceId !== "string" || typeof body.returnUrl !== "string") {
-      return new Response(JSON.stringify({ error: "priceId and returnUrl are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!isCheckoutPriceAllowed(body.priceId)) return json({ error: "Product not available" }, 400);
+    if (!isTrustedReturnUrl(body.returnUrl, req.headers.get("origin"))) return json({ error: "Invalid return address" }, 400);
+
+    // Buyer comes from the signed-in session, never from the request body.
+    const token = req.headers.get("Authorization")?.replace(/^Bearer /, "") ?? "";
+    const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: auth, error: authError } = await db.auth.getUser(token);
+    if (authError || !auth.user) return json({ error: "Sign in required" }, 401);
 
     const clientSecret = await createCheckoutSession({
       priceId: body.priceId,
-      customerEmail: body.customerEmail,
-      userId: body.userId,
+      customerEmail: auth.user.email ?? undefined,
+      userId: auth.user.id,
       returnUrl: body.returnUrl,
-      environment: environment as StripeEnv,
+      environment,
     });
 
     return new Response(JSON.stringify({ clientSecret }), {
@@ -123,7 +129,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("create-checkout error:", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    return new Response(JSON.stringify({ error: "Could not start checkout" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

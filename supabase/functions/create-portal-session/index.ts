@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const environment: StripeEnv = body.environment === "live" ? "live" : "sandbox";
-    const returnUrl = typeof body.returnUrl === "string" ? body.returnUrl : undefined;
+    const origin = req.headers.get("origin");
+    let returnUrl: string | undefined;
+    try { if (origin && typeof body.returnUrl === "string" && new URL(body.returnUrl).origin === origin) returnUrl = body.returnUrl; } catch { /* ignore untrusted */ }
 
     const { data: sub } = await supabase
       .from("subscriptions")

@@ -12,4 +12,9 @@ verify_jwt = false
 [functions.check-game-host-access]
 verify_jwt = false
 [functions.refund-test-game]
+verify_jwt = false[functions.create-checkout]
+verify_jwt = false
+[functions.create-podcast-checkout]
+verify_jwt = false
+[functions.create-portal-session]
 verify_jwt = false
