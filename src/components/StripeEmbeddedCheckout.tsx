@@ -19,8 +19,6 @@ export function StripeEmbeddedCheckout({
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         priceId,
-        customerEmail,
-        userId,
         returnUrl: returnUrl ?? `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
         environment: getStripeEnvironment(),
       },

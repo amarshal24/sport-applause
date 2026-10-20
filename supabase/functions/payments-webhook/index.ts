@@ -1,6 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
 import { reconcileGameSession } from "../_shared/gamePayments.ts";
+import { isCheckoutPriceAllowed, isFullyRefunded } from "../_shared/checkoutCatalog.ts";
+
+function must(res: { error: unknown }) { if (res.error) throw res.error; }
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
@@ -29,7 +32,7 @@ async function upsertSubscription(subscription: any, env: StripeEnv) {
   const periodStart = item?.current_period_start ?? subscription.current_period_start;
   const periodEnd = item?.current_period_end ?? subscription.current_period_end;
 
-  await getSupabase().from("subscriptions").upsert(
+  must(await getSupabase().from("subscriptions").upsert(
     {
       user_id: userId,
       stripe_subscription_id: subscription.id,
@@ -44,7 +47,7 @@ async function upsertSubscription(subscription: any, env: StripeEnv) {
       updated_at: new Date().toISOString(),
     },
     { onConflict: "stripe_subscription_id" },
-  );
+  ));
 }
 
 async function recordCreatorPayment(session: any, env: StripeEnv) {
@@ -53,7 +56,7 @@ async function recordCreatorPayment(session: any, env: StripeEnv) {
   if (!["tip", "unlock", "membership"].includes(kind)) return false;
   if (!md.userId || !md.creatorId) return true;
 
-  await getSupabase().from("podcast_payments").upsert(
+  must(await getSupabase().from("podcast_payments").upsert(
     {
       payer_id: md.userId,
       creator_id: md.creatorId,
@@ -68,7 +71,7 @@ async function recordCreatorPayment(session: any, env: StripeEnv) {
       environment: env,
     },
     { onConflict: "stripe_session_id" },
-  );
+  ));
   return true;
 }
 
@@ -78,7 +81,7 @@ async function upsertCreatorMembership(subscription: any, env: StripeEnv) {
   const item = subscription.items?.data?.[0];
   const periodEnd = item?.current_period_end ?? subscription.current_period_end;
 
-  await getSupabase().from("creator_memberships").upsert(
+  must(await getSupabase().from("creator_memberships").upsert(
     {
       fan_id: md.userId,
       creator_id: md.creatorId,
@@ -92,7 +95,7 @@ async function upsertCreatorMembership(subscription: any, env: StripeEnv) {
       updated_at: new Date().toISOString(),
     },
     { onConflict: "stripe_subscription_id" },
-  );
+  ));
   return true;
 }
 
@@ -110,17 +113,22 @@ async function recordOneTimePurchase(session: any, env: StripeEnv) {
     return;
   }
   if (session.mode !== "payment") return;
+  if (!isCheckoutPriceAllowed(priceId)) {
+    console.error("Unknown FX/skin price on session; not granting", priceId);
+    return;
+  }
 
-  await getSupabase().from("fx_purchases").upsert(
+  must(await getSupabase().from("fx_purchases").upsert(
     {
       user_id: userId,
       price_id: priceId,
       stripe_session_id: session.id,
       stripe_customer_id: typeof session.customer === "string" ? session.customer : null,
+      stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
       environment: env,
     },
     { onConflict: "stripe_session_id" },
-  );
+  ));
 }
 
 
@@ -137,11 +145,11 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "customer.subscription.deleted": {
       const sub = event.data.object;
       if (!(await upsertCreatorMembership({ ...sub, status: "canceled" }, env))) {
-        await getSupabase()
+        must(await getSupabase()
           .from("subscriptions")
           .update({ status: "canceled", updated_at: new Date().toISOString() })
           .eq("stripe_subscription_id", sub.id)
-          .eq("environment", env);
+          .eq("environment", env));
       }
       break;
     }
@@ -169,15 +177,17 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       const invoice: any = event.data.object;
       const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
       if (!subId || invoice.billing_reason === "subscription_create") break;
-      const { data: membership } = await getSupabase()
+      const { data: membership, error: memberError } = await getSupabase()
         .from("creator_memberships")
         .select("fan_id, creator_id")
         .eq("stripe_subscription_id", subId)
+        .eq("environment", env)
         .maybeSingle();
+      if (memberError) throw memberError;
       if (!membership) break;
       const amount = Number(invoice.amount_paid ?? 0);
       const fee = Math.round(amount * 0.05);
-      await getSupabase().from("podcast_payments").upsert(
+      must(await getSupabase().from("podcast_payments").upsert(
         {
           payer_id: membership.fan_id,
           creator_id: membership.creator_id,
@@ -190,7 +200,7 @@ async function handleWebhook(req: Request, env: StripeEnv) {
           environment: env,
         },
         { onConflict: "stripe_session_id" },
-      );
+      ));
       break;
     }
 
@@ -201,11 +211,20 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       if (!pi) break;
       const gameRefund = await getSupabase().rpc("refund_creator_game_order", { _payment_intent: pi, _refunded: Number(charge.amount_refunded ?? 0), _environment: env });
       if (gameRefund.error) throw gameRefund.error;
-      await getSupabase()
+      must(await getSupabase()
         .from("podcast_payments")
         .update({ refunded_cents: Number(charge.amount_refunded ?? 0), refunded_at: new Date().toISOString() })
         .eq("stripe_payment_intent_id", pi)
-        .eq("environment", env);
+        .eq("environment", env));
+      // FX / skin one-time purchases lose access after a full refund.
+      if (isFullyRefunded(Number(charge.amount_refunded ?? 0), Number(charge.amount_captured ?? charge.amount ?? 0))) {
+        must(await getSupabase()
+          .from("fx_purchases")
+          .update({ refunded_at: new Date().toISOString() })
+          .eq("stripe_payment_intent_id", pi)
+          .eq("environment", env)
+          .is("refunded_at", null));
+      }
       break;
     }
 
