@@ -2,6 +2,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { isPublicCheckoutAllowed } from "../_shared/paymentApproval.ts";
+import { isCheckoutPriceAllowed, isTrustedReturnUrl } from "../_shared/checkoutCatalog.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -127,7 +129,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("create-checkout error:", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    return new Response(JSON.stringify({ error: "Could not start checkout" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
