@@ -183,6 +183,13 @@
       "when": 1792498278163,
       "tag": "0025_app_content_signed_in_only",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792498398732,
+      "tag": "0026_uploads_own_folder_only",
+      "breakpoints": true
     }
   ]
 }
