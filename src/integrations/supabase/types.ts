@@ -928,7 +928,9 @@ export type Database = {
           environment: string
           id: string
           price_id: string
+          refunded_at: string | null
           stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
           stripe_session_id: string
           user_id: string
         }
@@ -937,7 +939,9 @@ export type Database = {
           environment?: string
           id?: string
           price_id: string
+          refunded_at?: string | null
           stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
           stripe_session_id: string
           user_id: string
         }
@@ -946,7 +950,9 @@ export type Database = {
           environment?: string
           id?: string
           price_id?: string
+          refunded_at?: string | null
           stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string
           user_id?: string
         }
