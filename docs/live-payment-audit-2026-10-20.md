@@ -43,3 +43,10 @@ Aggregate reads showed zero creator-game orders, no FX purchases or payouts, and
 
 ## Next steps
 Install the Lovable app on the LIVE Stripe account from Lovable's Payments tab, wait for automatic live provisioning, then run readiness. Fix the listed launch blockers and rerun isolated test-environment purchase/settlement/refund workflows. Actual live-charge testing needs separate, explicit approval of the item, amount, buyer, and refund plan; this audit does not enable public sales. Native billing and external game-host delivery require their own checks.
+## Fixes applied — 2026-10-20
+- Blocker 1: Pro FX access now counts only the Pro FX pack or the Pro FX monthly price (server and app), and ignores refunded packs.
+- Blocker 2: Generic checkout requires sign-in and takes the buyer from the session; only FX/skin products are sellable; return address must be the same site's /checkout/return.
+- Blocker 3: Webhook database writes now throw on failure so the payment provider retries instead of losing purchases/earnings.
+- Blocker 5/6: Payment functions explicitly configured; portal return address limited to the caller's site.
+- Blocker 7: Full refunds of FX/skin one-time purchases revoke access (refund recorded on the purchase).
+- Verified: signed-out, unknown product, foreign return address refused; signed-in test checkout created; live checkout still refused pending approval flag.
