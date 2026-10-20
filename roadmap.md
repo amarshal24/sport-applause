@@ -1,5 +1,8 @@
 # Roadmap
 
+## Live payment audit (2026-10-20)
+- [ ] Check Stripe activation and every payment section without real charges or creator-data changes; report live blockers separately from test-environment checks.
+
 ## Complete Video Editor and Sports FX (sections 4–5)
 - [x] Fix native AVC profile compatibility (Constrained Baseline, frame-rate-aware levels, even-dimension validation); 23 tests pass, fresh authenticated sports export plays in codec-capable Google Chrome with no player/runtime/independent-decoder errors.
 - [ ] Certify exported MP4 playback on physical iPhone/Safari and Android devices (blocked: physical devices unavailable).
