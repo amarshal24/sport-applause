@@ -1,11 +1,12 @@
 # Roadmap
 
 ## Live payment audit (2026-10-20)
+- [ ] Enable approved live FX/skin checkout after Stripe readiness completion; verify all five live checkout products without charging, keep podcasts/games restricted (2026-10-27).
 - [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
 - [x] Fix FX/skin buyer validation, refund revocation, webhook recording errors, FX subscription separation.
-- [ ] Buy domain + install Lovable app on live Stripe (blocked: user action), then readiness check and approval flag.
+- [x] Stripe live app installed, live keys provisioned, readiness completed; FX/skin approval flag enabled with explicit user approval (2026-10-27).
 - [ ] Podcast return page confirms settlement before success copy.
-- [ ] Successful live payment/renewal/refund/payout checks (blocked: live Lovable app install, automatic key provisioning/readiness, documented launch safeguards, and separately approved real-charge test).
+- [ ] Successful live payment/renewal/refund/payout checks (blocked: separately approved real-charge test; podcast/game launch safeguards remain separate).
 
 ## Complete Video Editor and Sports FX (sections 4–5)
 - [x] Fix native AVC profile compatibility (Constrained Baseline, frame-rate-aware levels, even-dimension validation); 23 tests pass, fresh authenticated sports export plays in codec-capable Google Chrome with no player/runtime/independent-decoder errors.
