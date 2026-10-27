@@ -163,3 +163,6 @@
 
 ## Remove AR Studio and Purchases homepage cards (2026-10-27)
 - [x] Delete the "AR Studio & skins" and "Purchases & memberships" cards from the public homepage grid (12 cards remain); unused ar-studio still import removed. Verified 12 cards render with neither card present, build clean. Not published.
+
+## Remove marketplace showcase section from landing page (2026-10-27)
+- [x] Delete the "Own a piece of the game" marketplace memorabilia section from the public homepage and its unused image import; page sections are now hero, features, film, app, Founding 100, updates. The Marketplace card in the feature grid stays. Verified section absent, 12 cards intact, build clean. Not published.
