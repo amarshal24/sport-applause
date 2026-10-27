@@ -2407,6 +2407,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_reference_game_payout: {
+        Args: { _run_id: string }
+        Returns: string
+      }
       begin_creator_game_order: {
         Args: { _buyer_id: string; _game_id: string }
         Returns: Json
