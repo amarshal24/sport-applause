@@ -51,6 +51,7 @@ const Moderation = lazy(() => import("./pages/Moderation"));
 const AdminPayouts = lazy(() => import("./pages/AdminPayouts"));
 const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
 const Purchases = lazy(() => import("./pages/Purchases"));
+const PodcastThankYou = lazy(() => import('./pages/PodcastThankYou'));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const CheckoutReturn = lazy(() => import("./pages/CheckoutReturn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -125,6 +126,7 @@ const App = () => (
                 <Route path="/admin/payouts" element={<AdminPayouts />} />
                 <Route path="/admin/revenue" element={<AdminRevenue />} />
                 <Route path="/purchases" element={<Purchases />} />
+                <Route path="/podcasts/thank-you" element={<PodcastThankYou />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

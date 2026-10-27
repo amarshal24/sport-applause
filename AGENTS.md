@@ -15,6 +15,7 @@
 - Founding benefits are derived by a self-only RPC matching confirmed Auth email to selected applications; do not create fake purchase ledger rows, and recheck selection so revocation follows admin review.
 - Admin revenue is read-only, admin-checked server-side and environment-filtered; Stripe charge pagination and bounded local ledgers must disclose their scope, never imply lifetime totals.
 - Pure commerce rules shared by client and edge functions stay in the functions shared directory; checkout return screens verify authenticated session ownership and Stripe settlement before success messaging.
+- Podcast confirmations and webhooks share Stripe-backed reconciliation; production audio grants use live settled ledgers only, and renewal payment intents resolve through invoice payments for refund tracking.
 
 - Dynamically load the app at bootstrap and wrap lazy pages in a load-error boundary; stale or unavailable dependency chunks must show a retry screen instead of blanking the app.
 

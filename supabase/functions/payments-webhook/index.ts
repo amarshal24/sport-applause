@@ -2,6 +2,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
 import { reconcileGameSession } from "../_shared/gamePayments.ts";
 import { isCheckoutPriceAllowed, isFullyRefunded } from "../_shared/checkoutCatalog.ts";
+import { createStripeClient } from '../_shared/stripe.ts';
+import { reconcilePodcastSession, podcastInvoiceIntent } from '../_shared/podcastPayments.ts';
+import { invoiceSubscription } from '../_shared/podcastCheckoutRules.ts';
 
 function must(res: { error: unknown }) { if (res.error) throw res.error; }
 
@@ -104,7 +107,10 @@ async function recordOneTimePurchase(session: any, env: StripeEnv) {
     await reconcileGameSession(getSupabase(), session.id, env);
     return;
   }
-  if (await recordCreatorPayment(session, env)) return;
+  if (session.metadata?.kind?.startsWith('podcast_')) {
+    await reconcilePodcastSession(getSupabase(), session.id, env);
+    return;
+  }
 
   const userId = session.metadata?.userId;
   const priceId = session.metadata?.priceId;
@@ -175,7 +181,7 @@ async function handleWebhook(req: Request, env: StripeEnv) {
     case "invoice.paid": {
       // Membership renewals: log creator earnings for each recurring charge.
       const invoice: any = event.data.object;
-      const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
+      const subId = invoiceSubscription(invoice);
       if (!subId || invoice.billing_reason === "subscription_create") break;
       const { data: membership, error: memberError } = await getSupabase()
         .from("creator_memberships")
@@ -184,7 +190,8 @@ async function handleWebhook(req: Request, env: StripeEnv) {
         .eq("environment", env)
         .maybeSingle();
       if (memberError) throw memberError;
-      if (!membership) break;
+      if (!membership) throw Error('Membership renewal arrived before membership record');
+      const pi=await podcastInvoiceIntent(createStripeClient(env),invoice.id);
       const amount = Number(invoice.amount_paid ?? 0);
       const fee = Math.round(amount * 0.05);
       must(await getSupabase().from("podcast_payments").upsert(
@@ -197,6 +204,7 @@ async function handleWebhook(req: Request, env: StripeEnv) {
           creator_net_cents: amount - fee,
           stripe_session_id: invoice.id,
           stripe_subscription_id: subId,
+          stripe_payment_intent_id: pi,
           environment: env,
         },
         { onConflict: "stripe_session_id" },

@@ -1,0 +1,20 @@
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { getStripeEnvironment } from '@/lib/stripe';
+import { Button } from '@/components/ui/button';
+import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
+import { CheckCircle2, Loader2, AlertCircle, Headphones, RefreshCw } from 'lucide-react';
+type Result={settled:boolean;ready:boolean;refunded:boolean;kind:string;amount:number;currency:string};
+export default function PodcastThankYou(){
+ const {user,loading:authLoading}=useAuth();const [params]=useSearchParams();const sessionId=params.get('session_id');
+ const [result,setResult]=useState<Result|null>(null);const [error,setError]=useState('');const [attempt,setAttempt]=useState(0);
+ useEffect(()=>{let alive=true;let timer:ReturnType<typeof setTimeout>;let count=0;setResult(null);setError('');if(!user || !sessionId)return;
+ const check=async()=>{try{const {data,error}=await supabase.functions.invoke('checkout-status',{body:{sessionId,environment:getStripeEnvironment()}});if(!alive)return;if(error || data?.error)throw Error('We could not confirm this payment. Your account has not been charged by this page.');if(!data.kind?.startsWith('podcast_'))throw Error('This checkout is not a podcast purchase.');setResult(data);if(!data.ready && !data.refunded && ++count<10)timer=setTimeout(check,2000);}catch(e){if(alive)setError(e instanceof Error?e.message:'Payment confirmation unavailable.');}};void check();return()=>{alive=false;clearTimeout(timer);};},[user,sessionId,attempt]);
+ if(authLoading)return <main className="py-20 flex justify-center"><Loader2 className="animate-spin"/></main>;
+ if(!user)return <main className="max-w-5xl mx-auto p-8"><h1 className="text-3xl mb-6">Sign in to confirm your payment</h1><Button asChild><Link to="/auth">Sign in</Link></Button></main>;
+ const complete=!!result?.settled && result.ready && !result.refunded;
+ const title=complete?(result.kind==='podcast_membership'?'Your membership is active':result.kind==='podcast_unlock'?'Your episode is unlocked':'Thank you for supporting this creator'):result?.refunded?'This purchase was refunded':error?'Unable to confirm payment':!sessionId?'No checkout found':'Confirming your payment';
+ return <><PaymentTestModeBanner/><main className="max-w-5xl mx-auto px-5 py-16"><div className="max-w-xl mx-auto text-center space-y-6"><p className="text-secondary text-sm">U⚡️Sportz · Podcasts</p>{complete?<CheckCircle2 className="h-16 w-16 text-primary mx-auto"/>:error || !sessionId || result?.refunded?<AlertCircle className="h-16 w-16 text-destructive mx-auto"/>:<Loader2 className="h-16 w-16 text-primary mx-auto animate-spin"/>}<h1 className="text-3xl">{title}</h1><p className="text-muted-foreground">{complete?'Thank you. Your payment is confirmed and your podcast access is ready.':error || (!sessionId?'Open this page from your podcast checkout.':result?.refunded?'Refunded purchases do not grant access.':'Access will activate once Stripe confirms payment and your purchase is recorded.')}</p>{complete && <p className="text-xl font-semibold">{new Intl.NumberFormat('en-US',{style:'currency',currency:result.currency}).format(result.amount/100)}{result.kind==='podcast_membership'?' · membership payment':''}</p>}<div className="border-t border-border pt-6 flex flex-col sm:flex-row justify-center gap-3"><Button asChild><Link to="/podcasts"><Headphones className="h-4 w-4 mr-2"/>Back to Podcasts</Link></Button><Button variant="outline" asChild><Link to="/purchases">My purchases</Link></Button>{!complete && sessionId && <Button variant="ghost" onClick={()=>setAttempt(n=>n+1)}><RefreshCw className="h-4 w-4 mr-2"/>Check again</Button>}</div></div></main></>;
+}
