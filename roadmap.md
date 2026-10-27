@@ -160,3 +160,6 @@
 
 ## Combine feed and fans homepage cards (2026-10-27)
 - [x] Merge "Sports videos, stories & trending" and "Fans & community" into one card ("Sports videos, stories & fans") with two links: Feed (/) and Fans & community (/fans). Card link labels are now data-driven (primaryLabel/secondaryLabel) so the Video editing & Motion FX card keeps its own labels. 14 cards render, both links open registration with the intended destinations, build clean. Not published.
+
+## Remove AR Studio and Purchases homepage cards (2026-10-27)
+- [x] Delete the "AR Studio & skins" and "Purchases & memberships" cards from the public homepage grid (12 cards remain); unused ar-studio still import removed. Verified 12 cards render with neither card present, build clean. Not published.
