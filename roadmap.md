@@ -1,5 +1,10 @@
 # Roadmap
 
+## Connected commerce (2026-10-27)
+- [ ] Connect selected Founding 100 membership to verified accounts with free FX/skin benefits and revocation when no longer selected.
+- [ ] Add admin revenue view for purchases, refunds, Stripe transactions and creator earnings with separate test/live data.
+- [ ] Verify existing FX/skin sales and podcast purchase safeguards; keep gaming launch conditional on protected-delivery/payment tests.
+
 ## Live payment audit (2026-10-20)
 - [x] Enable approved live FX/skin checkout after Stripe readiness completion; authenticated requests created live sessions for all five products, unknown products/foreign returns denied, podcasts remain blocked; 4 safeguard tests pass. No payments submitted; live form/payment/refund flow remains unverified (2026-10-27).
 - [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
