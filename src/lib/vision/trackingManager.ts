@@ -64,8 +64,8 @@ export class TrackingManager {
   constructor(opts: EngineOptions = {}) {
     this.opts = {
       maxPeople: opts.maxPeople ?? 2,
-      coastFrames: opts.coastFrames ?? 14,
-      stickiness: opts.stickiness ?? 0.55,
+      coastFrames: opts.coastFrames ?? 24,
+      stickiness: opts.stickiness ?? 0.7,
       segmentation: opts.segmentation ?? true,
       face: opts.face ?? true,
       hands: opts.hands ?? false,

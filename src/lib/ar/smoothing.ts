@@ -87,8 +87,8 @@ export class LandmarkSmoother {
   /** `stickiness` 0..1 — 1 follows raw detections, 0 is very smooth. */
   setStickiness(stickiness: number) {
     const s = Math.max(0, Math.min(1, stickiness));
-    this.minCutoff = 0.35 + s * 3.2;
-    this.beta = 0.004 + s * 0.05;
+    this.minCutoff = 0.6 + s * 3.6;
+    this.beta = 0.01 + s * 0.08;
     this.fx = [];
     this.fy = [];
     this.fz = [];

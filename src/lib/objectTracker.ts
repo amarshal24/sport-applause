@@ -11,12 +11,17 @@ export interface TrackPoint {
   x: number; // 0-100 %
   y: number; // 0-100 %
   c?: number; // match confidence 0-1 (1 = perfect lock)
+  s?: number; // object size relative to the pick frame (1 = same size)
 }
 
-const SAMPLE_FPS = 10; // tracked samples per second
-const WORK_W = 192; // downscaled analysis width
-const PATCH = 9; // half-size of the template patch (in work px)
-const SEARCH = 14; // search radius per step (in work px)
+const SAMPLE_FPS = 24; // tracked samples per second (denser = less lag on fast moves)
+const WORK_W = 288; // downscaled analysis width
+const PATCH = 12; // half-size of the template patch (in work px)
+const SEARCH = 10; // search radius around the motion-predicted spot (in work px)
+const RECOVER = 3; // search-radius multiplier when the lock is weak
+const SCALES = [0.9, 1, 1.1]; // per-step size change tested (player moving toward/away)
+const MIN_S = 0.35;
+const MAX_S = 3;
 
 const toGray = (data: Uint8ClampedArray, w: number, h: number) => {
   const g = new Float32Array(w * h);
@@ -26,37 +31,50 @@ const toGray = (data: Uint8ClampedArray, w: number, h: number) => {
   return g;
 };
 
-const patchAt = (g: Float32Array, w: number, h: number, cx: number, cy: number) => {
-  const size = PATCH * 2 + 1;
-  const out = new Float32Array(size * size);
+const SIZE = PATCH * 2 + 1;
+const N = SIZE * SIZE;
+
+/** Bilinear sample, clamped to the frame. */
+const at = (g: Float32Array, w: number, h: number, x: number, y: number) => {
+  const cx = Math.min(w - 1.001, Math.max(0, x));
+  const cy = Math.min(h - 1.001, Math.max(0, y));
+  const x0 = cx | 0;
+  const y0 = cy | 0;
+  const fx = cx - x0;
+  const fy = cy - y0;
+  const i = y0 * w + x0;
+  const a = g[i] + (g[i + 1] - g[i]) * fx;
+  const b = g[i + w] + (g[i + w + 1] - g[i + w]) * fx;
+  return a + (b - a) * fy;
+};
+
+/** Zero-mean, unit-norm patch sampled at scale `k` (k = object size vs. pick). */
+const patchAt = (g: Float32Array, w: number, h: number, cx: number, cy: number, k = 1) => {
+  const out = new Float32Array(N);
+  let mean = 0;
   for (let dy = -PATCH, i = 0; dy <= PATCH; dy++) {
     for (let dx = -PATCH; dx <= PATCH; dx++, i++) {
-      const x = Math.min(w - 1, Math.max(0, cx + dx));
-      const y = Math.min(h - 1, Math.max(0, cy + dy));
-      out[i] = g[y * w + x];
+      out[i] = at(g, w, h, cx + dx * k, cy + dy * k);
+      mean += out[i];
     }
   }
+  mean /= N;
+  let norm = 0;
+  for (let i = 0; i < N; i++) {
+    out[i] -= mean;
+    norm += out[i] * out[i];
+  }
+  norm = Math.sqrt(norm) || 1;
+  for (let i = 0; i < N; i++) out[i] /= norm;
   return out;
 };
 
-const score = (
-  tpl: Float32Array,
-  g: Float32Array,
-  w: number,
-  h: number,
-  cx: number,
-  cy: number
-) => {
-  let sum = 0;
-  for (let dy = -PATCH, i = 0; dy <= PATCH; dy++) {
-    for (let dx = -PATCH; dx <= PATCH; dx++, i++) {
-      const x = Math.min(w - 1, Math.max(0, cx + dx));
-      const y = Math.min(h - 1, Math.max(0, cy + dy));
-      const d = tpl[i] - g[y * w + x];
-      sum += d * d;
-    }
-  }
-  return sum;
+/** Normalised cross-correlation (-1..1): robust to lighting and shadows. */
+const ncc = (tpl: Float32Array, g: Float32Array, w: number, h: number, cx: number, cy: number, k: number) => {
+  const cand = patchAt(g, w, h, cx, cy, k);
+  let s = 0;
+  for (let i = 0; i < N; i++) s += tpl[i] * cand[i];
+  return s;
 };
 
 const seekTo = (video: HTMLVideoElement, t: number) =>
@@ -87,9 +105,57 @@ export interface TrackOptions {
   forwardOnly?: boolean;
 }
 
+/** One search step: best position + scale for the template near (px, py). */
+export const searchStep = (
+  template: Float32Array,
+  g: Float32Array,
+  w: number,
+  h: number,
+  px: number,
+  py: number,
+  scale: number,
+  radius: number
+) => {
+  let best = -Infinity;
+  let bx = px;
+  let by = py;
+  let bs = scale;
+  const stride = radius > SEARCH ? 3 : 2;
+  for (const f of SCALES) {
+    const k = Math.min(MAX_S, Math.max(MIN_S, scale * f));
+    for (let dy = -radius; dy <= radius; dy += stride) {
+      for (let dx = -radius; dx <= radius; dx += stride) {
+        const nx = px + dx;
+        const ny = py + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        // Mild preference for the predicted spot stops jumps to look-alikes.
+        const s = ncc(template, g, w, h, nx, ny, k) - 0.0006 * (dx * dx + dy * dy) / Math.max(1, k);
+        if (s > best) { best = s; bx = nx; by = ny; bs = k; }
+      }
+    }
+  }
+  // Sub-pixel refinement around the coarse winner.
+  for (const step of [1, 0.5]) {
+    const cx = bx, cy = by;
+    for (let dy = -step; dy <= step; dy += step) {
+      for (let dx = -step; dx <= step; dx += step) {
+        if (!dx && !dy) continue;
+        const s = ncc(template, g, w, h, cx + dx, cy + dy, bs) - 0.0006 * ((cx + dx - px) ** 2 + (cy + dy - py) ** 2) / Math.max(1, bs);
+        if (s > best) { best = s; bx = cx + dx; by = cy + dy; }
+      }
+    }
+  }
+  return { x: bx, y: by, scale: bs, score: best };
+};
+
+/** NCC score -> 0-1 lock confidence. */
+export const nccConfidence = (score: number) => Math.max(0, Math.min(1, (score - 0.2) / 0.7));
+
 /**
  * Follows the object under (x, y) across the whole clip and returns a
- * keyframed path. Tracks forward from the pick point, then backward.
+ * keyframed path (position + relative size). Tracks forward from the pick
+ * point, then backward. Uses motion prediction, scale search and a drift-
+ * guarded template so fast athletes stay locked.
  */
 export const trackObject = async (
   source: string | File | Blob,
@@ -139,72 +205,65 @@ export const trackObject = async (
     };
 
     const step = 1 / SAMPLE_FPS;
-    const total = Math.max(1, Math.round(duration / step));
+    const total = Math.max(1, Math.round((forwardOnly ? duration - startTime : duration) / step));
     let processed = 0;
 
     const anchor = Math.min(Math.max(0, startTime), Math.max(0, duration - step));
     const first = await grab(anchor);
-    let cx = Math.round((x / 100) * w);
-    let cy = Math.round((y / 100) * h);
-    let tpl = patchAt(first, w, h, cx, cy);
+    const ax = (x / 100) * w;
+    const ay = (y / 100) * h;
+    const anchorTpl = patchAt(first, w, h, ax, ay, 1);
 
-    const points: TrackPoint[] = [
-      { t: anchor, x: (cx / w) * 100, y: (cy / h) * 100, c: 1 },
-    ];
-    const N = (PATCH * 2 + 1) ** 2;
-    // Root-mean-square pixel difference -> 0-1 confidence.
-    const toConfidence = (ssd: number) =>
-      Math.max(0, Math.min(1, 1 - Math.sqrt(ssd / N) / 45));
+    const points: TrackPoint[] = [{ t: anchor, x: (ax / w) * 100, y: (ay / h) * 100, c: 1, s: 1 }];
 
     const run = async (dir: 1 | -1) => {
-      let px = Math.round((x / 100) * w);
-      let py = Math.round((y / 100) * h);
-      let template = tpl.slice();
+      let px = ax;
+      let py = ay;
+      let vx = 0;
+      let vy = 0;
+      let scale = 1;
+      let lost = 0;
+      const template = anchorTpl.slice();
 
       for (let t = anchor + dir * step; t >= 0 && t <= duration - 0.01; t += dir * step) {
         if (signal?.aborted) return;
         const g = await grab(t);
 
-        let best = Infinity;
-        let bx = px;
-        let by = py;
-        for (let dy = -SEARCH; dy <= SEARCH; dy += 2) {
-          for (let dx = -SEARCH; dx <= SEARCH; dx += 2) {
-            const nx = px + dx;
-            const ny = py + dy;
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-            const s = score(template, g, w, h, nx, ny);
-            if (s < best) {
-              best = s;
-              bx = nx;
-              by = ny;
-            }
-          }
+        // Constant-velocity prediction keeps the search window on fast movers.
+        const qx = Math.min(w - 1, Math.max(0, px + vx));
+        const qy = Math.min(h - 1, Math.max(0, py + vy));
+        const radius = Math.round((lost ? SEARCH * RECOVER : SEARCH) * Math.max(1, scale));
+        let m = searchStep(template, g, w, h, qx, qy, scale, radius);
+        // Re-acquire against the original look when the adapted one fails.
+        if (nccConfidence(m.score) < 0.45) {
+          const r = searchStep(anchorTpl, g, w, h, qx, qy, scale, Math.round(SEARCH * RECOVER * Math.max(1, scale)));
+          if (r.score > m.score) m = r;
         }
-        // Refine with a 1px pass around the coarse winner
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = bx + dx;
-            const ny = by + dy;
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-            const s = score(template, g, w, h, nx, ny);
-            if (s < best) {
-              best = s;
-              bx = nx;
-              by = ny;
-            }
-          }
+        const conf = nccConfidence(m.score);
+
+        if (conf >= 0.3) {
+          vx = (vx * 0.5 + (m.x - px) * 0.5);
+          vy = (vy * 0.5 + (m.y - py) * 0.5);
+          px = m.x;
+          py = m.y;
+          scale = scale * 0.6 + m.scale * 0.4;
+          lost = 0;
+        } else {
+          // Coast on the motion model instead of snapping to a look-alike.
+          px = qx;
+          py = qy;
+          vx *= 0.7;
+          vy *= 0.7;
+          lost++;
         }
+        points.push({ t, x: (px / w) * 100, y: (py / h) * 100, c: conf, s: scale });
 
-        px = bx;
-        py = by;
-        const conf = toConfidence(best);
-        points.push({ t, x: (px / w) * 100, y: (py / h) * 100, c: conf });
-
-        // Slowly adapt the template so lighting / rotation drift is tolerated
-        const fresh = patchAt(g, w, h, px, py);
-        for (let i = 0; i < template.length; i++) {
-          template[i] = template[i] * 0.85 + fresh[i] * 0.15;
+        // Drift guard: adapt only on confident locks, anchored to the original look.
+        if (conf >= 0.6) {
+          const fresh = patchAt(g, w, h, px, py, scale);
+          for (let i = 0; i < N; i++) {
+            template[i] = template[i] * 0.8 + fresh[i] * 0.12 + anchorTpl[i] * 0.08;
+          }
         }
 
         processed++;
@@ -227,11 +286,11 @@ export const trackObject = async (
 export const sampleTrack = (
   track: TrackPoint[] | undefined,
   t: number
-): { x: number; y: number; c?: number } | null => {
+): { x: number; y: number; c?: number; s?: number } | null => {
   if (!track || track.length === 0) return null;
-  if (t <= track[0].t) return { x: track[0].x, y: track[0].y, c: track[0].c };
+  if (t <= track[0].t) return { x: track[0].x, y: track[0].y, c: track[0].c, s: track[0].s };
   const last = track[track.length - 1];
-  if (t >= last.t) return { x: last.x, y: last.y, c: last.c };
+  if (t >= last.t) return { x: last.x, y: last.y, c: last.c, s: last.s };
 
   let lo = 0;
   let hi = track.length - 1;
@@ -248,6 +307,7 @@ export const sampleTrack = (
     x: a.x + (b.x - a.x) * k,
     y: a.y + (b.y - a.y) * k,
     c: Math.min(a.c ?? 1, b.c ?? 1),
+    s: a.s === undefined && b.s === undefined ? undefined : (a.s ?? 1) + ((b.s ?? 1) - (a.s ?? 1)) * k,
   };
 };
 
@@ -287,6 +347,7 @@ export const shiftTrack = (track: TrackPoint[], dx: number, dy: number): TrackPo
     x: Math.max(0, Math.min(100, p.x + dx)),
     y: Math.max(0, Math.min(100, p.y + dy)),
     c: p.c,
+    s: p.s,
   }));
 
 
@@ -325,13 +386,27 @@ export const smoothTrack = (
 ): TrackPoint[] | undefined => {
   if (!track?.length) return track;
   const alpha = Math.max(0.05, Math.min(1, 0.12 + 0.88 * stickiness));
-  if (alpha >= 1) return track;
-  let px = track[0].x;
-  let py = track[0].y;
-  return track.map((p, i) => {
-    if (i === 0) return { ...p };
-    px += (p.x - px) * alpha;
-    py += (p.y - py) * alpha;
-    return { t: p.t, x: px, y: py, c: p.c };
-  });
+  if (alpha >= 1 || track.length < 3) return track;
+  // Forward + backward pass (zero-phase): removes jitter without the effect
+  // trailing behind the athlete. Low-confidence samples pull less weight.
+  const pass = (xs: number[], ws: number[], rev: boolean) => {
+    const out = xs.slice();
+    const idx = rev ? [...xs.keys()].reverse() : [...xs.keys()];
+    let v = xs[idx[0]];
+    for (const i of idx) {
+      v += (xs[i] - v) * alpha * ws[i];
+      out[i] = v;
+    }
+    return out;
+  };
+  const ws = track.map((p) => 0.35 + 0.65 * Math.min(1, p.c ?? 1));
+  const sm = (xs: number[]) => {
+    const f = pass(xs, ws, false);
+    const b = pass(xs, ws, true);
+    return f.map((v, i) => (v + b[i]) / 2);
+  };
+  const xs = sm(track.map((p) => p.x));
+  const ys = sm(track.map((p) => p.y));
+  const ss = track.some((p) => p.s !== undefined) ? sm(track.map((p) => p.s ?? 1)) : null;
+  return track.map((p, i) => ({ t: p.t, x: xs[i], y: ys[i], c: p.c, ...(ss ? { s: ss[i] } : {}) }));
 };
