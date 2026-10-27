@@ -12,6 +12,7 @@ import AthleteMatch from "@/components/games/AthleteMatch";
 import GamePackages from "@/components/games/GamePackages";
 import CreatorGameStore from "@/components/games/CreatorGameStore";
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const Games = () => {
   const { t } = useTranslation();
@@ -74,6 +75,7 @@ const Games = () => {
               </div>
 
               <CreatorGameStore />
+              <Button asChild variant="link" className="mb-4"><Link to="/admin/game-testing">Game purchase testing · Admin</Link></Button>
               <GamePackages />
 
               <div id="games-library" className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 scroll-mt-24">
