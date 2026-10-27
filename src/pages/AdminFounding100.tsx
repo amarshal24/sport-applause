@@ -98,7 +98,7 @@ export default function AdminFounding100() {
       <Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Application status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{founding100Statuses.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent></Select>
       <Select value={role} onValueChange={setRole}><SelectTrigger aria-label="Role filter"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All roles</SelectItem>{founding100Roles.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent></Select>
     </div>
-    <p className="text-xs text-muted-foreground mb-5">Showing newest {rows.length} applications (up to 500). Confirmation emails are not configured — email sending needs a verified domain.</p>
+    <p className="text-xs text-muted-foreground mb-5">Showing newest {rows.length} applications (up to 500). Applications are saved here even without email delivery. Owner notifications to Yousportz25@gmail.com are pending a paid plan, verified sending domain and notification setup.</p>
     {error && <p role="alert" className="text-destructive">{error}</p>}
     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : !error && visible.length === 0 ? <p className="py-10 text-muted-foreground">No applications found.</p> : <div className="space-y-4">{visible.map(r => <article key={r.id} className="rounded-lg border border-border bg-card p-5 space-y-4">
       <div className="flex flex-wrap gap-3 justify-between">

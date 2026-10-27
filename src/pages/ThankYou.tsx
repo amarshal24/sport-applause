@@ -17,7 +17,7 @@ export default function ThankYou() {
         {state?.alreadyApplied ? (
           <p className="text-muted-foreground leading-relaxed">We already have an application for this email address — no need to apply twice. Every application is reviewed by our team.</p>
         ) : (
-          <p className="text-muted-foreground leading-relaxed">Your Founding 100 application has been received. Our team reviews every application by hand — a founding spot is only confirmed once you're approved, and we'll be in touch by email.</p>
+          <p className="text-muted-foreground leading-relaxed">Your Founding 100 application has been saved for our team to review. A founding spot is only confirmed once you're approved. Email confirmations are not available yet.</p>
         )}
         <div className="border border-border rounded-lg bg-card p-5 flex items-start gap-3">
           <Zap className="h-5 w-5 text-secondary mt-0.5 shrink-0" />
