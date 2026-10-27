@@ -1,5 +1,11 @@
 # Roadmap
 
+## Production readiness audit (2026-10-27)
+- [ ] Produce fresh evidence-based readiness report and prioritized release plan; preserve approved web FX/skin and podcast sales, no charges or publishing.
+- [ ] Add protected launch dashboard and safe reversible fixes after initial report/plan review.
+- [ ] Complete native iOS/Android release preparation (blocked: store accounts, billing policy implementation, signing tools and physical-device testing).
+- [ ] Verify backups/restore, current security scans, production commerce lifecycle and safety/legal operations (blocked: hosted backup confirmation, authorized real-charge test and operational/legal review).
+
 ## Podcast live activation (2026-10-27)
 - [x] Validate podcast inputs/return origin, scope live approval to memberships/unlocks, prevent active membership repurchases; enable live flag. Both live session creation paths verified without charges; tips stay blocked.
 - [x] Add /podcasts/thank-you with authenticated session ownership, Stripe settlement and shared ledger reconciliation; unpaid/invalid/missing checkouts verified without success claims; 8 focused tests pass.
