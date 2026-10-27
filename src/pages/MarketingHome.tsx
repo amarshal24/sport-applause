@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import PublicSubscriptionForm from "@/components/PublicSubscriptionForm";
 import Founding100Counter from "@/components/Founding100Counter";
 import Founding100Form from "@/components/Founding100Form";
-import sampleVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
-import sampleWebm from "@/assets/homepage-editing-sample.webm.asset.json";
+import sampleDunk from "@/assets/sample-dunk.mp4.asset.json";
+import sampleFreekick from "@/assets/sample-freekick.mp4.asset.json";
+import sampleSprint from "@/assets/sample-sprint.mp4.asset.json";
 import court from "@/assets/founders-court.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
@@ -80,15 +81,23 @@ export default function MarketingHome() {
           <div className="max-w-5xl mx-auto px-5">
             <div className="flex flex-wrap items-end justify-between gap-3 mb-7">
               <h2 className="text-4xl">U⚡️Sportz in motion</h2>
-              <span className="text-xs uppercase text-secondary font-semibold">Editing sample</span>
+              <span className="text-xs uppercase text-secondary font-semibold">Sample videos</span>
             </div>
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border bg-background">
-              <video controls playsInline preload="metadata" aria-label="U⚡️Sportz editing sample video" className="w-full h-full object-contain">
-                <source src={sampleVideo.url} type="video/mp4" />
-                <source src={sampleWebm.url} type="video/webm" />
-              </video>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { src: sampleDunk.url, title: "Court at dusk", text: "Street-ball highlights, captured like a broadcast." },
+                { src: sampleFreekick.url, text: "Free kicks with cinematic style.", title: "Under the lights" },
+                { src: sampleSprint.url, title: "Track night", text: "Sprint moments, slowed down and blown up." },
+              ].map(v => (
+                <figure key={v.title} className="rounded-lg overflow-hidden border border-border bg-background">
+                  <video controls playsInline preload="metadata" aria-label={`U⚡️Sportz sample video: ${v.title}`} className="w-full aspect-video object-cover">
+                    <source src={v.src} type="video/mp4" />
+                  </video>
+                  <figcaption className="p-4"><h3 className="text-base font-semibold">{v.title}</h3><p className="text-sm text-muted-foreground mt-1">{v.text}</p></figcaption>
+                </figure>
+              ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-4">A sample editing walkthrough. THE FIRST 100 launch film is still in production.</p>
+            <p className="text-sm text-muted-foreground mt-4">Cinematic samples showing how moments look on U⚡️Sportz. THE FIRST 100 launch film is still in production.</p>
           </div>
         </section>
 
