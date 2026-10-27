@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Regular website account signup (2026-10-27)
-- [ ] Correct homepage and application thank-you registration links; open signup directly and show submission errors.
-- [ ] Verify hosted signup availability and real account/profile creation through the website.
+- [x] Correct homepage and application thank-you registration links; open signup directly and show submission errors; confirmation messaging reflects returned session.
+- [x] Hosted email signup enabled and registrations allowed; homepage → registration → HTTP 200 account creation → signed-in profile with saved username verified, no runtime errors; 2 access tests pass. Isolated signupcheck test account retained; no existing accounts changed. Not published.
 
 ## Subscriber navigation and domain verification (2026-10-27)
 - [x] Add newsletter/event subscriber-list links to both application admin pages; keep existing admin-only access.
