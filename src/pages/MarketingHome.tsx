@@ -40,7 +40,7 @@ export default function MarketingHome() {
             <a href="#features" className="hidden sm:block text-sm text-muted-foreground hover:text-foreground">Features</a>
             <Link to="/updates" className="hidden sm:block text-sm text-muted-foreground hover:text-foreground">Updates</Link>
             <Button variant="ghost" size="sm" asChild><Link to={user ? "/" : "/auth"}>{user ? "Open app" : "Sign in"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
-            <Button size="sm" asChild className="hidden sm:inline-flex"><Link to="/founding100">Founding 100</Link></Button>
+            {!user && <Button size="sm" asChild><Link to="/auth?mode=signup">Sign up</Link></Button>}
           </div>
         </nav>
       </header>
@@ -55,7 +55,7 @@ export default function MarketingHome() {
             <p className="text-base mt-5 max-w-md text-foreground/80">U⚡️Sportz is the sports platform built for the next generation — highlights, editing, podcasts, live streams and community in one place.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild className="bg-secondary text-secondary-foreground hover:bg-secondary/90"><Link to="/founding100">Join the Founding 100 <ArrowUpRight className="ml-2 h-4 w-4" /></Link></Button>
-              <Button size="lg" variant="outline" asChild className="bg-background/30"><Link to={user ? "/" : "/auth"}>Enter U⚡️Sportz</Link></Button>
+              <Button size="lg" variant="outline" asChild className="bg-background/30"><Link to={user ? "/" : "/auth?mode=signup"}>{user ? "Enter U⚡️Sportz" : "Create free account"}</Link></Button>
             </div>
             <a href="#features" className="inline-flex items-center gap-2 text-sm mt-12 text-foreground/80">See what's inside <ArrowDown className="h-4 w-4" /></a>
           </div>

@@ -30,7 +30,7 @@ const authSchema = z.object({
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(() => searchParams.get("mode") === "signup" ? "signup" : "signin");
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,6 +49,10 @@ const Auth = () => {
   const navigate = useNavigate();
   const rawNext = searchParams.get("next") ?? "";
   const nextPath = safeNextPath(rawNext);
+
+  useEffect(() => {
+    setMode(searchParams.get("mode") === "signup" || searchParams.get("invite") ? "signup" : "signin");
+  }, [searchParams]);
 
   useEffect(() => {
     // Legacy client-only biometric credentials are no longer used for auth.
@@ -143,7 +147,8 @@ const Auth = () => {
           setIsSubmitting(false);
           return;
         }
-        await signUp(email, password, username, selectedSports, nextPath);
+        const { error } = await signUp(result.data.email, result.data.password, username.trim(), selectedSports, nextPath);
+        if (error) setErrors({ submit: error.message });
       } else {
         // Handle remember me
         if (rememberMe) {
@@ -151,10 +156,12 @@ const Auth = () => {
         } else {
           localStorage.removeItem('remembered_email');
         }
-        await signIn(email, password);
+        const { error } = await signIn(result.data.email, result.data.password);
+        if (error) setErrors({ submit: error.message });
       }
     } catch (error) {
       console.error("Auth error:", error);
+      setErrors({ submit: "Unable to connect. Please try again." });
     } finally {
       setIsSubmitting(false);
     }
@@ -532,6 +539,8 @@ const Auth = () => {
                   </Button>
                 </div>
               )}
+
+              {errors.submit && <p role="alert" className="text-sm text-destructive">{errors.submit}</p>}
 
               <Button 
                 type="submit" 
