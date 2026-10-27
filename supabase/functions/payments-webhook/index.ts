@@ -190,7 +190,11 @@ async function handleWebhook(req: Request, env: StripeEnv) {
         .eq("environment", env)
         .maybeSingle();
       if (memberError) throw memberError;
-      if (!membership) throw Error('Membership renewal arrived before membership record');
+      if (!membership) {
+        const sub=await createStripeClient(env).subscriptions.retrieve(subId);
+        if(sub.metadata?.kind==='podcast_membership') throw Error('Membership renewal arrived before membership record');
+        break;
+      }
       const pi=await podcastInvoiceIntent(createStripeClient(env),invoice.id);
       const amount = Number(invoice.amount_paid ?? 0);
       const fee = Math.round(amount * 0.05);
