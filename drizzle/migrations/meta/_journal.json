@@ -190,6 +190,13 @@
       "when": 1792498398732,
       "tag": "0026_uploads_own_folder_only",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793071098475,
+      "tag": "0027_founder_account_benefits",
+      "breakpoints": true
     }
   ]
 }
