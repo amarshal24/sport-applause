@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUpRight, Clapperboard, GraduationCap, Mic, Radio, Smartphone, Users, Video, Wand2, Zap } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Smartphone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PublicSubscriptionForm from "@/components/PublicSubscriptionForm";
 import Founding100Counter from "@/components/Founding100Counter";
@@ -11,21 +11,41 @@ import sampleSprint from "@/assets/sample-sprint.mp4.asset.json";
 import court from "@/assets/founders-court.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
+import feedStill from "@/assets/categories/feed.webp.asset.json";
+import trendingStill from "@/assets/categories/trending.webp.asset.json";
+import fansStill from "@/assets/categories/fans.webp.asset.json";
+import profileStill from "@/assets/categories/profile.webp.asset.json";
+import recruitingStill from "@/assets/categories/recruiting.webp.asset.json";
+import recruiterStill from "@/assets/categories/recruiter.webp.asset.json";
+import motivationStill from "@/assets/categories/motivation.webp.asset.json";
+import gamesStill from "@/assets/categories/games.webp.asset.json";
+import topPlaysStill from "@/assets/categories/top-plays.webp.asset.json";
+import liveStill from "@/assets/categories/live.webp.asset.json";
+import marketplaceStill from "@/assets/categories/marketplace.webp.asset.json";
+import messagesStill from "@/assets/categories/messages.webp.asset.json";
+import podcastsStill from "@/assets/categories/podcasts.webp.asset.json";
+import editorStill from "@/assets/categories/editor.webp.asset.json";
+import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
+import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
 const features = [
-  { icon: Video, title: "Sports videos", text: "Highlights, stories and the moments worth sharing — built for every sport." },
-  { icon: Wand2, title: "AI object-tracking effects", text: "Motion FX Studio tracks the ball, the player, the play — and adds cinematic effects that follow the action." },
-  { icon: Clapperboard, title: "Full video editing", text: "A multi-track timeline with sports effects, captions, music and MP4 export. Your footage stays yours." },
-  { icon: GraduationCap, title: "Athlete profiles", text: "Top 5 highlights, recruiting videos and stats that put your talent in front of coaches." },
-  { icon: Mic, title: "Podcasts", text: "Sports podcasts with fan memberships, premium episodes and creator earnings." },
-  { icon: Radio, title: "Live content", text: "Live streams, real-time applause and replays for every side of the game." },
-  { icon: Users, title: "Community", text: "Athletes, fans, creators, coaches and gamers — one community built around the game." },
-];
-
-const screenshots = [
-  { title: "Your feed", text: "Highlights Reel — scroll the plays that matter to you." },
-  { title: "Motion FX Studio", text: "Track any object. Add the effect. Export in MP4." },
-  { title: "Athlete profile", text: "Your Top 5, your stats, your story." },
+  { title: "Sports videos & stories", text: "Your highlights, your sport, your community.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/" },
+  { title: "Trending", text: "The moments getting the community talking.", image: trendingStill, alt: "Football receiver reaching for a catch", path: "/trending" },
+  { title: "Fans & community", text: "Connect with people who love the game.", image: fansStill, alt: "Sports fans cheering together in a stadium", path: "/fans" },
+  { title: "Athlete profiles", text: "Your Top 5, your stats, your story.", image: profileStill, alt: "Athlete portrait on a basketball court", path: "/profile" },
+  { title: "Get recruited", text: "Put your talent in front of coaches.", image: recruitingStill, alt: "Soccer athlete training with cones", path: "/recruiting" },
+  { title: "Recruiter dashboard", text: "Discover athletes and follow their progress.", image: recruiterStill, alt: "Coach reviewing a clipboard on the sideline", path: "/recruiter-dashboard" },
+  { title: "Daily motivation", text: "A little inspiration for your next session.", image: motivationStill, alt: "Runner stretching outside at sunrise", path: "/motivation" },
+  { title: "Games", text: "Sports arcade challenges and creator games.", image: gamesStill, alt: "Game controller next to a basketball", path: "/games" },
+  { title: "Top Plays", text: "The highlights worth watching again.", image: topPlaysStill, alt: "Basketball player rising for a dunk", path: "/top-plays" },
+  { title: "Live content", text: "Streams, applause and replays.", image: liveStill, alt: "Sports camera operator filming beside the field", path: "/live" },
+  { title: "Marketplace", text: "Sports gear from your community.", image: marketplaceStill, alt: "Basketball shoes, football and tennis equipment", path: "/marketplace" },
+  { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
+  { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
+  { title: "Video editing", text: "Timeline, Animation Center, captions, music and sports effects.", image: editorStill, alt: "Sports footage on a video editing workstation", path: "/editor" },
+  { title: "Motion FX Studio", text: "Follow the action with motion-tracked effects.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/motion-studio" },
+  { title: "AR Studio & skins", text: "Make your camera moments your own.", image: arStill, alt: "Illustrative athlete wearing a futuristic sports visor", path: "/ar-studio" },
+  { title: "Purchases & memberships", text: "Your effects, skins and memberships in one place.", image: gamesStill, alt: "Sports gaming equipment illustrating digital purchases", path: "/purchases" },
 ];
 
 export default function MarketingHome() {
@@ -66,13 +86,17 @@ export default function MarketingHome() {
         <section id="features" className="max-w-5xl mx-auto px-5 py-16 sm:py-20 scroll-mt-20">
           <p className="text-secondary uppercase text-xs font-semibold mb-3">Built around the game</p>
           <h2 className="text-4xl sm:text-5xl">Everything an athlete needs.<br />Everything a fan loves.</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
-            {features.map(({ icon: Icon, ...f }) => (
-              <div key={f.title} className="border-t border-border pt-6">
-                <Icon className="h-6 w-6 text-primary mb-5" />
-                <h3 className="text-2xl">{f.title}</h3>
-                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{f.text}</p>
-              </div>
+          <p className="text-xs text-muted-foreground mt-4">Illustrative camera stills · not member photos or app screenshots.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            {features.map(f => (
+              <figure key={f.title} className="rounded-lg overflow-hidden border border-border bg-card flex flex-col">
+                <img src={f.image.url} alt={f.alt} width={480} height={480} loading="lazy" className="w-full aspect-[4/3] object-cover" />
+                <figcaption className="p-5 flex flex-col flex-1">
+                  <h3 className="text-2xl">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed flex-1">{f.text}</p>
+                  <Button variant="link" asChild className="px-0 mt-3 self-start h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.title}`}>{user ? "Open" : "Join to explore"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+                </figcaption>
+              </figure>
             ))}
           </div>
         </section>
@@ -104,16 +128,6 @@ export default function MarketingHome() {
         <section id="app" className="max-w-5xl mx-auto px-5 py-16 sm:py-20">
           <p className="text-secondary uppercase text-xs font-semibold mb-3">Inside the app</p>
           <h2 className="text-4xl sm:text-5xl">Built for the way you move.</h2>
-          <div className="grid sm:grid-cols-3 gap-6 mt-10">
-            {screenshots.map(s => (
-              <figure key={s.title} className="rounded-lg border border-border bg-card overflow-hidden">
-                <div className="aspect-[9/16] max-h-72 w-full bg-background flex items-center justify-center border-b border-border">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground px-6 text-center">App preview<br />coming soon</p>
-                </div>
-                <figcaption className="p-5"><h3 className="text-lg">{s.title}</h3><p className="text-sm text-muted-foreground mt-2">{s.text}</p></figcaption>
-              </figure>
-            ))}
-          </div>
           <div className="mt-10 flex flex-wrap items-center gap-4 border border-border rounded-lg bg-card p-5">
             <Smartphone className="h-6 w-6 text-primary shrink-0" />
             <p className="text-sm text-muted-foreground flex-1 min-w-60">U⚡️Sportz works in your browser today. Native mobile apps are planned — we'll announce them here when they're ready.</p>
