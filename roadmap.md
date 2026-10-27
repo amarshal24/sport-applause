@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Homepage video and signup capture (2026-10-27)
-- [ ] Add existing editing sample video and direct Founding 100 application form to public homepage; preserve signed-in home.
-- [ ] Verify a public application lands in private application storage and admin review; remove only the test application.
+- [x] Add existing 10-second editing sample with MP4/WebM sources and shared Founding 100 application form to public homepage; preserve signed-in home. Hosted video decoded; browser playback verified using hosted file responses (local asset proxy does not serve CDN files).
+- [x] Verify public homepage application → thank-you → private application row; admin review loads; delete only test application by ID. Nine validation/consent tests pass; no publication.
 - [ ] Turn on owner signup emails to Yousportz25@gmail.com (blocked: sender domain not configured/verified; email setup opened).
 
 ## Game purchases and protected-host testing (2026-10-27)
