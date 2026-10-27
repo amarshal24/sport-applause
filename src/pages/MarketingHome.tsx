@@ -24,7 +24,6 @@ import marketplaceStill from "@/assets/categories/marketplace.webp.asset.json";
 import messagesStill from "@/assets/categories/messages.webp.asset.json";
 import podcastsStill from "@/assets/categories/podcasts.webp.asset.json";
 import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
-import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
 const features = [
   { title: "Sports videos, stories & fans", text: "Your highlights, your sport, your community — plus the moments everyone's talking about and the people who love the game.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/", primaryLabel: "Feed", secondaryPath: "/fans", secondaryLabel: "Fans & community" },
@@ -39,8 +38,6 @@ const features = [
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
   { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", primaryLabel: "Video editor", secondaryPath: "/motion-studio", secondaryLabel: "Motion FX Studio" },
-  { title: "AR Studio & skins", text: "Make your camera moments your own.", image: arStill, alt: "Illustrative athlete wearing a futuristic sports visor", path: "/ar-studio" },
-  { title: "Purchases & memberships", text: "Your effects, skins and memberships in one place.", image: gamesStill, alt: "Sports gaming equipment illustrating digital purchases", path: "/purchases" },
 ];
 
 export default function MarketingHome() {
