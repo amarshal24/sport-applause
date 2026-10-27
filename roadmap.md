@@ -1,5 +1,8 @@
 # Roadmap
 
+## Recruiting guide video (2026-10-27)
+- [ ] Replace the written filters/animations guide with the existing 12-minute illustrated tutorial; verify authenticated playback, closing, and small-screen fit. No publication.
+
 ## Homepage category visuals (2026-10-27)
 - [x] Replace empty app previews with 17 category cards using 16 generated illustrative camera stills; preserve member privacy and existing sample videos.
 - [x] All 17 images load with exact CDN-uploaded bytes supplied to local preview; desktop gallery visually checked and Podcasts link opens registration with intended destination; 2 access tests pass and build clean. Local sandbox CDN proxy unavailable; hosted playback not rechecked. Not published.

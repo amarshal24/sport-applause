@@ -1,4 +1,5 @@
 # Architecture rules
+- Recruiting editing help uses the CDN-hosted tutorial with native playback controls and unmounts its video on close so audio cannot continue behind the page.
 - Reference game testing uses isolated admin-owned sandbox runs and service-only short-lived hashed host sessions; every asset/gameplay request rechecks current purchase/revision, and test host evidence never certifies external live hosts.
 - Test payout allocation is run/game-scoped and atomic, never creator-wide or a transfer; test cleanup must touch only run-owned rows and retain provider test history.
 - Gaming-pass entitlements use dedicated price IDs and require verified library readiness; prepared rules are not billing activation or grants to other product families.
