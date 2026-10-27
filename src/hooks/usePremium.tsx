@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getStripeEnvironment } from "@/lib/stripe";
+import { founderBenefits } from "../../supabase/functions/_shared/commerceRules";
 import {
   SKIN_TIER_PRICE_IDS,
   SKIN_TIER_RANK,
@@ -18,6 +19,7 @@ export const usePremium = () => {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
   const [hasPack, setHasPack] = useState(false);
+  const [isFounder, setIsFounder] = useState(false);
   const [skinTier, setSkinTier] = useState<SkinTier>("free");
   const [subStatus, setSubStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,13 +39,14 @@ export const usePremium = () => {
     if (!user) {
       setIsPremium(false);
       setHasPack(false);
+      setIsFounder(false);
       setSkinTier("free");
       setSubStatus(null);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const [purchases, subs] = await Promise.all([
+    const [purchases, subs, founder] = await Promise.all([
       supabase
         .from("fx_purchases")
         .select("price_id")
@@ -59,10 +62,13 @@ export const usePremium = () => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase.rpc("get_my_founder_benefits"),
     ]);
 
     const priceIds = (purchases.data ?? []).map((p) => p.price_id as string);
-    const hasPack = priceIds.some((id) => PRO_FX_PRICE_IDS.includes(id));
+    const benefits = founderBenefits(!founder.error && founder.data === true);
+    setIsFounder(benefits.proFx);
+    const hasPack = benefits.proFx || priceIds.some((id) => PRO_FX_PRICE_IDS.includes(id));
     const sub = subs.data;
     const periodOk =
       !sub?.current_period_end || new Date(sub.current_period_end) > new Date();
@@ -72,7 +78,7 @@ export const usePremium = () => {
     const premium = hasPack || hasSub;
 
     // Highest skin tier owned. Skin packs are sold separately from PRO FX.
-    let tier: SkinTier = "free";
+    let tier: SkinTier = benefits.skinTier;
     priceIds.forEach((id) => {
       const t = SKIN_TIER_PRICE_IDS[id];
       if (t && SKIN_TIER_RANK[t] > SKIN_TIER_RANK[tier]) tier = t;
@@ -103,6 +109,7 @@ export const usePremium = () => {
 
   return {
     isPremium,
+    isFounder,
     hasPack,
     skinTier,
     subStatus,
