@@ -30,7 +30,7 @@ export default function ThankYou() {
           </div>
         )}
         <div className="flex flex-wrap gap-3 pt-2">
-          <Button asChild><Link to="/auth">Create your account</Link></Button>
+          <Button asChild><Link to="/auth?mode=signup">Create your account</Link></Button>
           <Button variant="outline" asChild><Link to="/welcome">Back to home</Link></Button>
         </div>
       </div>

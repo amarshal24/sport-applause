@@ -1,5 +1,9 @@
 # Roadmap
 
+## Regular website account signup (2026-10-27)
+- [ ] Correct homepage and application thank-you registration links; open signup directly and show submission errors.
+- [ ] Verify hosted signup availability and real account/profile creation through the website.
+
 ## Subscriber navigation and domain verification (2026-10-27)
 - [x] Add newsletter/event subscriber-list links to both application admin pages; keep existing admin-only access.
 - [x] Verify usportz.com and www.usportz.com: both connected, routing records match and ownership verified. DNS remains managed at Wix.
