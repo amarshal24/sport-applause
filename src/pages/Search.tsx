@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search as SearchIcon, Users, Video, Mic, Hash, Play, Eye, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SecureImage } from "@/components/SecureMedia";
+import { searchOr, searchPattern } from "@/lib/searchSafety";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 
 interface VideoResult {
   id: string;
@@ -41,84 +43,29 @@ const Search = () => {
   const [podcastQuery, setPodcastQuery] = useState("");
   const [tagQuery, setTagQuery] = useState("");
   
-  const [videoResults, setVideoResults] = useState<VideoResult[]>([]);
-  const [podcastResults, setPodcastResults] = useState<PodcastResult[]>([]);
-  const [tagResults, setTagResults] = useState<VideoResult[]>([]);
-  
-  const [videoLoading, setVideoLoading] = useState(false);
-  const [podcastLoading, setPodcastLoading] = useState(false);
-  const [tagLoading, setTagLoading] = useState(false);
-
-  // Search videos with debounce
-  useEffect(() => {
-    if (!videoQuery.trim()) {
-      setVideoResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setVideoLoading(true);
-      const { data } = await supabase
-        .from("recruiting_videos")
-        .select("id, title, description, thumbnail_url, sport, views_count, user_id, created_at")
-        .eq("status", "active")
-        .or(`title.ilike.%${videoQuery}%,description.ilike.%${videoQuery}%,sport.ilike.%${videoQuery}%`)
-        .order("views_count", { ascending: false })
-        .limit(20);
-      
-      setVideoResults(data || []);
-      setVideoLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [videoQuery]);
-
-  // Search podcasts with debounce
-  useEffect(() => {
-    if (!podcastQuery.trim()) {
-      setPodcastResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setPodcastLoading(true);
-      const { data } = await supabase
-        .from("podcasts")
-        .select("id, title, description, thumbnail_url, duration, plays_count, user_id, created_at")
-        .or(`title.ilike.%${podcastQuery}%,description.ilike.%${podcastQuery}%`)
-        .order("plays_count", { ascending: false })
-        .limit(20);
-      
-      setPodcastResults(data || []);
-      setPodcastLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [podcastQuery]);
-
-  // Search by sport tag with debounce
-  useEffect(() => {
-    if (!tagQuery.trim()) {
-      setTagResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setTagLoading(true);
-      const { data } = await supabase
-        .from("recruiting_videos")
-        .select("id, title, description, thumbnail_url, sport, views_count, user_id, created_at")
-        .eq("status", "active")
-        .ilike("sport", `%${tagQuery}%`)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      
-      setTagResults(data || []);
-      setTagLoading(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [tagQuery]);
+  const videos = useDebouncedSearch<VideoResult>(videoQuery, async (query, signal) => {
+    const { data, error } = await supabase.from('recruiting_videos')
+      .select('id, title, description, thumbnail_url, sport, views_count, user_id, created_at')
+      .eq('status', 'active').or(searchOr(['title', 'description', 'sport'], query))
+      .order('views_count', { ascending: false }).limit(20).abortSignal(signal);
+    if (error) throw error; return data || [];
+  });
+  const podcasts = useDebouncedSearch<PodcastResult>(podcastQuery, async (query, signal) => {
+    const { data, error } = await supabase.from('podcasts')
+      .select('id, title, description, thumbnail_url, duration, plays_count, user_id, created_at')
+      .or(searchOr(['title', 'description'], query)).order('plays_count', { ascending: false }).limit(20).abortSignal(signal);
+    if (error) throw error; return data || [];
+  });
+  const tags = useDebouncedSearch<VideoResult>(tagQuery, async (query, signal) => {
+    const { data, error } = await supabase.from('recruiting_videos')
+      .select('id, title, description, thumbnail_url, sport, views_count, user_id, created_at')
+      .eq('status', 'active').ilike('sport', searchPattern(query))
+      .order('views_count', { ascending: false }).limit(20).abortSignal(signal);
+    if (error) throw error; return data || [];
+  });
+  const { results: videoResults, loading: videoLoading } = videos;
+  const { results: podcastResults, loading: podcastLoading } = podcasts;
+  const { results: tagResults, loading: tagLoading } = tags;
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return "0:00";
@@ -209,19 +156,19 @@ const Search = () => {
 
           <Tabs defaultValue="athletes" className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="athletes" className="gap-2">
+              <TabsTrigger value="athletes" aria-label="Athletes" className="gap-2">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Athletes</span>
               </TabsTrigger>
-              <TabsTrigger value="videos" className="gap-2">
+              <TabsTrigger value="videos" aria-label="Videos" className="gap-2">
                 <Video className="h-4 w-4" />
                 <span className="hidden sm:inline">Videos</span>
               </TabsTrigger>
-              <TabsTrigger value="podcasts" className="gap-2">
+              <TabsTrigger value="podcasts" aria-label="Podcasts" className="gap-2">
                 <Mic className="h-4 w-4" />
                 <span className="hidden sm:inline">Podcasts</span>
               </TabsTrigger>
-              <TabsTrigger value="tags" className="gap-2">
+              <TabsTrigger value="tags" aria-label="Sports" className="gap-2">
                 <Hash className="h-4 w-4" />
                 <span className="hidden sm:inline">Sports</span>
               </TabsTrigger>
@@ -242,13 +189,15 @@ const Search = () => {
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search recruiting videos by title, description, or sport..."
+                  maxLength={200}
+                  aria-label="Search videos"
                   value={videoQuery}
                   onChange={(e) => setVideoQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
               
-              {videoLoading ? (
+              {videos.error ? <p role="alert" className="text-destructive">{videos.error}</p> : videoLoading ? (
                 <LoadingState />
               ) : videoResults.length > 0 ? (
                 <div className="space-y-3">
@@ -272,13 +221,15 @@ const Search = () => {
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search podcasts by title or description..."
+                  maxLength={200}
+                  aria-label="Search podcasts"
                   value={podcastQuery}
                   onChange={(e) => setPodcastQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
               
-              {podcastLoading ? (
+              {podcasts.error ? <p role="alert" className="text-destructive">{podcasts.error}</p> : podcastLoading ? (
                 <LoadingState />
               ) : podcastResults.length > 0 ? (
                 <div className="space-y-3">
@@ -302,13 +253,15 @@ const Search = () => {
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by sport (e.g., basketball, football, soccer)..."
+                  maxLength={200}
+                  aria-label="Search tags"
                   value={tagQuery}
                   onChange={(e) => setTagQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
               
-              {tagLoading ? (
+              {tags.error ? <p role="alert" className="text-destructive">{tags.error}</p> : tagLoading ? (
                 <LoadingState />
               ) : tagResults.length > 0 ? (
                 <div className="space-y-3">

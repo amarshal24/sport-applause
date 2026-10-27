@@ -82,16 +82,31 @@ var list_trending_posts_default = defineTool({
   }
 });
 
+// src/lib/searchSafety.ts
+import { z as z2 } from "npm:zod@^3.25.76";
+var searchSchema = z2.string().trim().max(200);
+function searchPattern(raw) {
+  const value = searchSchema.parse(raw).replace(/[\\%_*]/g, (char) => "\\" + char);
+  return "%" + value + "%";
+}
+function searchOr(columns, raw) {
+  const quoted = JSON.stringify(searchPattern(raw));
+  return columns.map((column) => {
+    if (!/^[a-z_]+(?:\.[a-z_]+)?$/.test(column)) throw new Error("Invalid search column");
+    return `${column}.ilike.${quoted}`;
+  }).join(",");
+}
+
 // src/lib/mcp/tools/search-athletes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z2 } from "npm:zod@^3.25.76";
+import { z as z3 } from "npm:zod@^3.25.76";
 var search_athletes_default = defineTool2({
   name: "search_athletes",
   title: "Search athletes",
   description: "Search U\u26A1\uFE0FSportz athlete profiles by name, sport, or position, as the signed-in user.",
   inputSchema: {
-    query: z2.string().trim().min(1).describe("Text to match against username, full name, or bio."),
-    limit: z2.number().int().min(1).max(50).optional().describe("Max results (default 10).")
+    query: z3.string().trim().min(1).max(200).describe("Text to match against username, full name, or bio."),
+    limit: z3.number().int().min(1).max(50).optional().describe("Max results (default 10).")
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ query, limit }, ctx) => {
@@ -99,9 +114,8 @@ var search_athletes_default = defineTool2({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    const like = `%${query}%`;
     const { data, error } = await supabase.from("profiles").select("id, username, full_name, sports, role, bio, avatar_url").or(
-      `username.ilike.${like},full_name.ilike.${like},bio.ilike.${like}`
+      searchOr(["username", "full_name", "bio"], query)
     ).limit(limit ?? 10);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
@@ -113,7 +127,7 @@ var search_athletes_default = defineTool2({
 
 // src/lib/mcp/tools/get-motivation-quote.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
-import { z as z3 } from "npm:zod@^3.25.76";
+import { z as z4 } from "npm:zod@^3.25.76";
 var MOODS = [
   "motivated",
   "relaxed",
@@ -129,7 +143,7 @@ var get_motivation_quote_default = defineTool3({
   title: "Get a motivational quote",
   description: "Generate an AI-powered motivational quote for an athlete based on their current mood.",
   inputSchema: {
-    mood: z3.enum(MOODS).describe("Athlete's current mood.")
+    mood: z4.enum(MOODS).describe("Athlete's current mood.")
   },
   annotations: { readOnlyHint: true, openWorldHint: true },
   handler: async ({ mood }) => {

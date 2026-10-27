@@ -1,3 +1,4 @@
+import { searchOr } from "@/lib/searchSafety";
 import { useState, useEffect, useCallback, useId } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -316,7 +317,7 @@ export const useFriends = () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('id, username, full_name, avatar_url')
-      .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+      .or(searchOr(['username', 'full_name'], query))
       .neq('id', user?.id || '')
       .limit(10);
 

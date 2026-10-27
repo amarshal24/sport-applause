@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, User, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { searchOr } from "@/lib/searchSafety";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 
 interface AthleteResult {
   id: string;
@@ -28,8 +30,11 @@ const AthleteSearch = ({
 }: AthleteSearchProps) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<AthleteResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { results, loading, error: searchError } = useDebouncedSearch<AthleteResult>(query, async (value, signal) => {
+    const { data, error } = await supabase.from('profiles').select('id, username, full_name, avatar_url, sports')
+      .or(searchOr(['username', 'full_name'], value)).limit(8).abortSignal(signal);
+    if (error) throw error; return data || [];
+  }, 2);
   const [showResults, setShowResults] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,35 +55,6 @@ const AthleteSearch = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    const searchAthletes = async () => {
-      if (query.trim().length < 2) {
-        setResults([]);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, username, full_name, avatar_url, sports")
-          .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
-          .limit(8);
-
-        if (error) throw error;
-        setResults(data || []);
-      } catch (error) {
-        console.error("Search error:", error);
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const debounce = setTimeout(searchAthletes, 300);
-    return () => clearTimeout(debounce);
-  }, [query]);
 
   const handleSelect = (athlete: AthleteResult) => {
     if (onSelect) {
@@ -124,6 +100,8 @@ const AthleteSearch = ({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           ref={inputRef}
+          maxLength={200}
+          aria-label="Search athletes"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -145,7 +123,7 @@ const AthleteSearch = ({
           ref={resultsRef}
           className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
         >
-          {loading && results.length === 0 ? (
+          {searchError ? <p role="alert" className="p-4 text-sm text-destructive">{searchError}</p> : loading && results.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
               Searching...

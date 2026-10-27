@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPORTS, getSportName } from "@/constants/sports";
 import { InlineSportIcon } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
+import { searchOr } from "@/lib/searchSafety";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 
 
@@ -53,8 +55,11 @@ const AthleteSearchAutocomplete = ({
   };
 
   const [debounced, setDebounced] = useState("");
-  const [people, setPeople] = useState<AthleteSuggestion[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { results: people, loading, error: searchError } = useDebouncedSearch<AthleteSuggestion>(query, async (value, signal) => {
+    const { data, error } = await supabase.from('profiles').select('id, username, full_name, avatar_url, sports, role')
+      .or(searchOr(['username', 'full_name'], value)).limit(6).abortSignal(signal);
+    if (error) throw error; return data || [];
+  });
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,30 +70,6 @@ const AthleteSearchAutocomplete = ({
     const id = setTimeout(() => setDebounced(query.trim()), 300);
     return () => clearTimeout(id);
   }, [query]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      if (debounced.length < 1) {
-        setPeople([]);
-        return;
-      }
-      setLoading(true);
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url, sports, role")
-        .or(`username.ilike.%${debounced}%,full_name.ilike.%${debounced}%`)
-        .limit(6);
-      if (!cancelled) {
-        setPeople((data as AthleteSuggestion[]) || []);
-        setLoading(false);
-      }
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [debounced]);
 
   const sportMatches: SportSuggestion[] = useMemo(() => {
     const q = debounced.toLowerCase();
@@ -182,6 +163,8 @@ const AthleteSearchAutocomplete = ({
     <div ref={containerRef} className={cn("relative", className)}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <Input
+        maxLength={200}
+        aria-label="Search athletes by name or sport"
         value={query}
         autoFocus={autoFocus}
         onChange={(e) => {
@@ -226,7 +209,7 @@ const AthleteSearchAutocomplete = ({
               </button>
             </div>
           )}
-          {loading && items.length === 0 ? (
+          {searchError ? <p role="alert" className="p-4 text-sm text-destructive">{searchError}</p> : loading && items.length === 0 ? (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
             </div>
