@@ -28,8 +28,7 @@ import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
 import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
 const features = [
-  { title: "Sports videos, stories & trending", text: "Your highlights, your sport, your community — plus the moments everyone's talking about.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/" },
-  { title: "Fans & community", text: "Connect with people who love the game.", image: fansStill, alt: "Sports fans cheering together in a stadium", path: "/fans" },
+  { title: "Sports videos, stories & fans", text: "Your highlights, your sport, your community — plus the moments everyone's talking about and the people who love the game.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/", primaryLabel: "Feed", secondaryPath: "/fans", secondaryLabel: "Fans & community" },
   { title: "Athlete profiles", text: "Your Top 5, your stats, your story.", image: profileStill, alt: "Athlete portrait on a basketball court", path: "/profile" },
   { title: "Get recruited", text: "Put your talent in front of coaches.", image: recruitingStill, alt: "Soccer athlete training with cones", path: "/recruiting" },
   { title: "Recruiter dashboard", text: "Discover athletes and follow their progress.", image: recruiterStill, alt: "Coach reviewing a clipboard on the sideline", path: "/recruiter-dashboard" },
@@ -92,8 +91,8 @@ export default function MarketingHome() {
                   <h3 className="text-2xl">{f.title}</h3>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed flex-1">{f.text}</p>
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                    <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.title}`}>{f.secondaryPath ? "Video editor" : user ? "Open" : "Join to explore"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
-                    {f.secondaryPath && <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.secondaryPath : `/auth?mode=signup&next=${encodeURIComponent(f.secondaryPath)}`} aria-label={`${user ? "Open" : "Join to explore"} Motion FX Studio`}>Motion FX Studio<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>}
+                    <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.primaryLabel ?? f.title}`}>{f.primaryLabel ?? (user ? "Open" : "Join to explore")}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+                    {f.secondaryPath && <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.secondaryPath : `/auth?mode=signup&next=${encodeURIComponent(f.secondaryPath)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.secondaryLabel ?? f.title}`}>{f.secondaryLabel ?? "Learn more"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>}
                   </div>
                 </figcaption>
               </figure>
