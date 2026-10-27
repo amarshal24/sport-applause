@@ -103,15 +103,13 @@ export default function MarketingHome() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { src: sampleDunk.url, title: "Court at dusk", text: "Street-ball highlights, captured like a broadcast.", fx: "lightning", fxLabel: "Lightning strike" },
+                { src: sampleDunk.url, title: "Court at dusk", text: "Dunk, then transform — the player flashes into a new skin.", fx: "lightning", fxLabel: "Skin transform" },
                 { src: sampleFreekick.url, text: "Free kicks with cinematic style.", title: "Under the lights", fx: "speed", fxLabel: "Speed lines" },
-                { src: sampleSprint.url, title: "Track night", text: "Sprint moments, slowed down and blown up.", fx: "glow", fxLabel: "Night glow" },
+                { src: sampleSprint.url, title: "Track night", text: "Smoke trails off every stride.", fx: "glow", fxLabel: "Smoke trail" },
               ].map((v, i) => (
                 <figure key={v.title} className="rounded-lg overflow-hidden border border-border bg-background group">
                   <div className="relative">
-                    <video autoPlay muted loop controls playsInline preload="metadata" aria-label={`U⚡️Sportz sample video with ${v.fxLabel} effect: ${v.title}`} className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.03]">
-                      <source src={v.src} type="video/mp4" />
-                    </video>
+                    <video key={v.src} src={v.src} autoPlay muted loop controls playsInline preload="auto" aria-label={`U⚡️Sportz sample video with ${v.fxLabel} effect: ${v.title}`} className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
                     <div className="fx-overlay" aria-hidden="true">
                       {v.fx === "lightning" && (
                         <>
