@@ -24,7 +24,6 @@ import liveStill from "@/assets/categories/live.webp.asset.json";
 import marketplaceStill from "@/assets/categories/marketplace.webp.asset.json";
 import messagesStill from "@/assets/categories/messages.webp.asset.json";
 import podcastsStill from "@/assets/categories/podcasts.webp.asset.json";
-import editorStill from "@/assets/categories/editor.webp.asset.json";
 import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
 import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
@@ -41,8 +40,7 @@ const features = [
   { title: "Marketplace", text: "Buy and sell sports memorabilia with your community.", image: marketplaceStill, alt: "Framed signed jersey, game-worn helmet and trading cards on a display shelf", path: "/marketplace" },
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
-  { title: "Video editing", text: "Timeline, Animation Center, captions, music and sports effects.", image: editorStill, alt: "Sports footage on a video editing workstation", path: "/editor" },
-  { title: "Motion FX Studio", text: "Follow the action with motion-tracked effects.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/motion-studio" },
+  { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", secondaryPath: "/motion-studio" },
   { title: "AR Studio & skins", text: "Make your camera moments your own.", image: arStill, alt: "Illustrative athlete wearing a futuristic sports visor", path: "/ar-studio" },
   { title: "Purchases & memberships", text: "Your effects, skins and memberships in one place.", image: gamesStill, alt: "Sports gaming equipment illustrating digital purchases", path: "/purchases" },
 ];
@@ -93,7 +91,10 @@ export default function MarketingHome() {
                 <figcaption className="p-5 flex flex-col flex-1">
                   <h3 className="text-2xl">{f.title}</h3>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed flex-1">{f.text}</p>
-                  <Button variant="link" asChild className="px-0 mt-3 self-start h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.title}`}>{user ? "Open" : "Join to explore"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                    <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.title}`}>{f.secondaryPath ? "Video editor" : user ? "Open" : "Join to explore"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+                    {f.secondaryPath && <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.secondaryPath : `/auth?mode=signup&next=${encodeURIComponent(f.secondaryPath)}`} aria-label={`${user ? "Open" : "Join to explore"} Motion FX Studio`}>Motion FX Studio<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>}
+                  </div>
                 </figcaption>
               </figure>
             ))}
