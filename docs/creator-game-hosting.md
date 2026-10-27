@@ -2,6 +2,18 @@
 
 Public and live sales remain closed. Checkout is restricted to admin buyers and explicitly enabled test games. Test purchases do not represent real money.
 
+## Admin reference host (October 27, 2026)
+
+Open **Launch readiness → Game purchase testing** at `/admin/game-testing`. The hosted reference endpoint protects sandbox gameplay and its asset response with a 10-minute random session, stored only as a hash. Browser sessions remain in component memory. Every request checks expiry, the current delivery revision, suspension and (outside reviewer previews) a settled, reconciled, non-refunded/non-disputed purchase. No external host key is exposed to the browser.
+
+**Verified this turn:** admin fixture creation; six hosted checks (valid preview, replay refusal, missing/unpaid-session denial, expired token denial, incorrect external-host key denial and stale revision denial); protected preview gameplay/asset reads; shot state read-back; rejection of allocation without settled earnings; signed-out dashboard refusal; phone layout; temporary run/order/game/session cleanup, with zero remaining runs. Existing creator settings were not modified.
+
+**Not completed this turn:** Stripe sandbox checkout opened and card fields could be filled, but submission did not complete. The final screenshot showed required billing street/city fields empty. Attempts stopped; no paid order or sale was fabricated. Successful settlement, provider partial/full refunds, disputed buyer access, payout allocation/double-allocation and refund/dispute holds remain unverified in the new harness. Dispute controls are explicitly ledger simulations, not actual provider disputes. No real money was charged or sent.
+
+To finish the test in the preview: create the test game, run host checks, then choose **Test purchase $4.99**. Use Stripe’s test card `4242 4242 4242 4242`, a future expiry, any three-digit security code, and complete every required billing-address field; select USD for the fixed-currency order test. After the payment returns, confirm settlement in the testing page and check $0.75 commission/$4.24 net. Run partial/full refunds, purchased-host revocation and scoped allocation checks. Remove only the isolated test records afterward. Do not use a real card.
+
+The test host is an explicitly isolated in-app test instrument, not the launcher for actual external creator games. It cannot certify arbitrary external hosts or activate live sales. All-Star/MVP price-specific entitlement rules are prepared, but no recurring checkout, pass ledger or promised-library readiness is claimed; packages remain unavailable. Catalog creation is deferred until an authoritative inventory can prevent duplicate permanent product IDs.
+
 ## Host integration
 
 1. Create a host key from **My games → Protected delivery**. Store the key on the external game's server only. It is shown once; U⚡️Sportz stores only its SHA-256 hash.

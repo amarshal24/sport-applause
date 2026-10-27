@@ -204,6 +204,20 @@
       "when": 1793071511263,
       "tag": "0028_podcast_live_audio_access",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793073530222,
+      "tag": "0029_game_reference_host_testing",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793073594398,
+      "tag": "0030_reference_game_payout_scope",
+      "breakpoints": true
     }
   ]
 }

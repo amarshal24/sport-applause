@@ -1,8 +1,10 @@
 # Roadmap
 
 ## Game purchases and protected-host testing (2026-10-27)
-- [ ] Prepare approved creator-game and All-Star/MVP purchase readiness with explicit test/live gates; unfinished libraries stay unavailable.
-- [ ] Build admin game-host test harness and verify protected launch, unpaid/replay/revision/refund/dispute denial and atomic payout allocation with isolated fixtures.
+- [x] Prepare approved creator-game/pass readiness rules; dedicated gaming prices $3.99/$7.99, environment/status/library gates and native/live safeguards tested; unfinished libraries stay unavailable. No new live activation or catalog entries.
+- [x] Build /admin/game-testing and hosted sandbox reference game/asset session boundary; six hosted authorization checks pass, preview gameplay works, signed-out denial and phone layout verified; fixtures removed (zero remaining runs).
+- [ ] Complete sandbox Stripe settlement/refund/dispute and payout-allocation/double-allocation flows in the new harness (blocked: checkout submission did not complete; user must complete all required billing fields with the test card in preview; no settled records fabricated). Server/UI controls exist but success paths are unverified.
+- [ ] Implement paid-pass recurring checkout/ledger and promised libraries (blocked: unavailable library categories, recurring billing/entitlement lifecycle and authoritative catalog inventory).
 - [ ] Activate ready creator-game sales only after host and payment safeguards pass (blocked: participating production host, external payout validation and separately approved real-charge testing).
 - [ ] Review shared-media storage warning without removing user-approved member sharing (blocked: warning is active; owner-only restriction would break intended sharing).
 

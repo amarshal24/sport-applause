@@ -52,6 +52,7 @@ const Moderation = lazy(() => import("./pages/Moderation"));
 const AdminPayouts = lazy(() => import("./pages/AdminPayouts"));
 const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
 const AdminLaunch = lazy(() => import('./pages/AdminLaunch'));
+const AdminGameTesting = lazy(() => import('./pages/AdminGameTesting'));
 const Purchases = lazy(() => import("./pages/Purchases"));
 const PodcastThankYou = lazy(() => import('./pages/PodcastThankYou'));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
@@ -129,6 +130,7 @@ const App = () => (
                 <Route path="/admin/payouts" element={<AdminPayouts />} />
                 <Route path="/admin/revenue" element={<AdminRevenue />} />
                 <Route path="/admin/launch" element={<AdminLaunch />} />
+                <Route path="/admin/game-testing" element={<AdminGameTesting />} />
                 <Route path="/purchases" element={<Purchases />} />
                 <Route path="/podcasts/thank-you" element={<PodcastThankYou />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />
