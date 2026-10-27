@@ -1,5 +1,10 @@
 # Roadmap
 
+## Subscriber navigation and domain verification (2026-10-27)
+- [x] Add newsletter/event subscriber-list links to both application admin pages; keep existing admin-only access.
+- [x] Verify usportz.com and www.usportz.com: both connected, routing records match and ownership verified. DNS remains managed at Wix.
+- [ ] Verify email sending (blocked: no email domain configured; user must complete email setup for usportz.com).
+
 ## Homepage video and signup capture (2026-10-27)
 - [x] Add existing 10-second editing sample with MP4/WebM sources and shared Founding 100 application form to public homepage; preserve signed-in home. Hosted video decoded; browser playback verified using hosted file responses (local asset proxy does not serve CDN files).
 - [x] Verify public homepage application → thank-you → private application row; admin review loads; delete only test application by ID. Nine validation/consent tests pass; no publication.

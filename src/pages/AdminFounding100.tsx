@@ -82,7 +82,8 @@ export default function AdminFounding100() {
     <Button variant="ghost" asChild className="mb-6"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to app</Link></Button>
     <header className="flex justify-between items-start gap-3 flex-wrap">
       <div><p className="text-sm text-secondary mb-2">U⚡️Sportz · Admin</p><h1 className="text-3xl sm:text-4xl">Founding 100 applications</h1></div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
+        <Button asChild variant="outline"><Link to="/admin/subscribers">Newsletter & event subscribers</Link></Button>
         <Button asChild variant="outline"><Link to="/admin/revenue">Revenue</Link></Button>
         <Button variant="outline" size="icon" title="Refresh applications" aria-label="Refresh applications" onClick={load} disabled={loading}><RefreshCw className="h-4 w-4" /></Button>
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}><Download className="mr-2 h-4 w-4" />Export CSV</Button>
