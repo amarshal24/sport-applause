@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { redeemPendingInviteIfAny } from "@/lib/appInvites";
+import { safeNextPath } from '@/lib/appAccess';
 
 interface AuthContextType {
   user: User | null;
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, username: string, sports: string[] = [], redirectPath = "/") => {
-    const redirectUrl = `${window.location.origin}${redirectPath}`;
+    const redirectUrl = `${window.location.origin}/auth?next=${encodeURIComponent(safeNextPath(redirectPath))}`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -98,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${redirectPath}`,
+        redirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(safeNextPath(redirectPath))}`,
       },
     });
 
@@ -115,7 +116,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
       options: {
-        redirectTo: `${window.location.origin}${redirectPath}`,
+        redirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(safeNextPath(redirectPath))}`,
       },
     });
 

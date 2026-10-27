@@ -11,6 +11,7 @@ import QuickNavMenu from "@/components/QuickNavMenu";
 import { DeafAccessibilityProvider } from "@/hooks/useDeafAccessibility";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { PageLoadBoundary } from "@/components/PageLoadBoundary";
+import AppAccessBoundary from '@/components/AppAccessBoundary';
 
 // Lazy load pages for faster initial load
 const Index = lazy(() => import("./pages/Index"));
@@ -50,6 +51,7 @@ const Marketplace = lazy(() => import("./pages/Marketplace"));
 const Moderation = lazy(() => import("./pages/Moderation"));
 const AdminPayouts = lazy(() => import("./pages/AdminPayouts"));
 const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
+const AdminLaunch = lazy(() => import('./pages/AdminLaunch'));
 const Purchases = lazy(() => import("./pages/Purchases"));
 const PodcastThankYou = lazy(() => import('./pages/PodcastThankYou'));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
@@ -86,6 +88,7 @@ const App = () => (
             <PageLoadBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
+                <Route element={<AppAccessBoundary />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/welcome" element={<MarketingHome />} />
                 <Route path="/founding100" element={<Founding100 />} />
@@ -125,11 +128,13 @@ const App = () => (
                 <Route path="/moderation" element={<Moderation />} />
                 <Route path="/admin/payouts" element={<AdminPayouts />} />
                 <Route path="/admin/revenue" element={<AdminRevenue />} />
+                <Route path="/admin/launch" element={<AdminLaunch />} />
                 <Route path="/purchases" element={<Purchases />} />
                 <Route path="/podcasts/thank-you" element={<PodcastThankYou />} />
                 <Route path="/checkout/return" element={<CheckoutReturn />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
+                </Route>
               </Routes>
             </Suspense>
             </PageLoadBoundary>

@@ -1,4 +1,8 @@
 # Architecture rules
+- All routes pass through a shared default-deny authenticated boundary with explicit public paths; sign-in callbacks return to public auth before navigating to a validated internal destination, preventing signed-out app mounting.
+- User search text uses the shared quoted PostgREST literal builder and debounced requests discard superseded responses; punctuation must remain data, not filter syntax.
+- Launch readiness is an admin-only versioned evidence view, never an automatic release/payment/submission control; static audit statuses must disclose their date and verification scope.
+- Notification HTML and applicant CSV use shared escaping/neutralization helpers so untrusted content cannot become markup, unsafe links or spreadsheet formulas.
 
 - Motion FX Studio is an additive authenticated editor; source files remain local and unchanged, shared deterministic source-time effect rendering drives preview/export, and manual corrections/visibility intervals supplement browser tracking without claiming automatic depth occlusion.
 - Tap-selected object masks use a disposable on-device MediaPipe legacy interactive segmenter; arbitrary-object temporal tracking remains separate from the human AR pipeline and must expose correction/failure states.

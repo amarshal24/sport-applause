@@ -11,6 +11,7 @@ import SportsAnimator from "@/components/games/SportsAnimator";
 import AthleteMatch from "@/components/games/AthleteMatch";
 import GamePackages from "@/components/games/GamePackages";
 import CreatorGameStore from "@/components/games/CreatorGameStore";
+import { Button } from '@/components/ui/button';
 
 const Games = () => {
   const { t } = useTranslation();
@@ -81,8 +82,7 @@ const Games = () => {
                   return (
                     <Card 
                       key={game.id}
-                      className="glass-effect hover:shadow-glow transition-all duration-300 cursor-pointer group animate-fade-in"
-                      onClick={() => setSelectedGame(game.id)}
+                      className="glass-effect hover:shadow-glow transition-all duration-300 group animate-fade-in"
                     >
                       <CardHeader>
                         <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
@@ -94,10 +94,10 @@ const Games = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Button variant="ghost" className="w-full justify-start" aria-label={`Play ${game.title}`} onClick={() => setSelectedGame(game.id)}>
                           <Zap className="w-4 h-4 text-primary" />
                           <span>{t("games.playNow")}</span>
-                        </div>
+                        </Button>
                       </CardContent>
                     </Card>
                   );
