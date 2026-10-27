@@ -1035,6 +1035,79 @@ export type Database = {
           },
         ]
       }
+      game_test_host_sessions: {
+        Row: {
+          delivery_revision: string
+          expires_at: string
+          id: string
+          preview: boolean
+          run_id: string
+          secret_hash: string
+          user_id: string
+        }
+        Insert: {
+          delivery_revision: string
+          expires_at?: string
+          id?: string
+          preview: boolean
+          run_id: string
+          secret_hash: string
+          user_id: string
+        }
+        Update: {
+          delivery_revision?: string
+          expires_at?: string
+          id?: string
+          preview?: boolean
+          run_id?: string
+          secret_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_test_host_sessions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "game_test_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_test_runs: {
+        Row: {
+          admin_id: string
+          closed_at: string | null
+          created_at: string
+          creator_id: string
+          game_id: string
+          id: string
+        }
+        Insert: {
+          admin_id: string
+          closed_at?: string | null
+          created_at?: string
+          creator_id: string
+          game_id: string
+          id?: string
+        }
+        Update: {
+          admin_id?: string
+          closed_at?: string | null
+          created_at?: string
+          creator_id?: string
+          game_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_test_runs_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "creator_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_streams: {
         Row: {
           caption_vtt_url: string | null
@@ -2338,6 +2411,10 @@ export type Database = {
         Args: { _buyer_id: string; _game_id: string }
         Returns: Json
       }
+      begin_reference_host_session: {
+        Args: { _run_id: string; _session_hash: string; _token: string }
+        Returns: Json
+      }
       can_purchase_creator_game_test: {
         Args: { _game_id: string }
         Returns: boolean
@@ -2360,6 +2437,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_reference_host_session: { Args: { _hash: string }; Returns: Json }
       configure_creator_game_host: {
         Args: { _game_id: string }
         Returns: string
