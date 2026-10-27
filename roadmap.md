@@ -1,5 +1,9 @@
 # Roadmap
 
+## Homepage category visuals (2026-10-27)
+- [ ] Replace empty app previews with public illustrative camera stills covering all app categories; preserve member privacy and existing sample videos.
+- [ ] Verify image loading, category coverage and registration links on the homepage.
+
 ## Regular website account signup (2026-10-27)
 - [x] Correct homepage and application thank-you registration links; open signup directly and show submission errors; confirmation messaging reflects returned session.
 - [x] Hosted email signup enabled and registrations allowed; homepage → registration → HTTP 200 account creation → signed-in profile with saved username verified, no runtime errors; 2 access tests pass. Isolated signupcheck test account retained; no existing accounts changed. Not published.
