@@ -1,5 +1,10 @@
 # Roadmap
 
+## Homepage video and signup capture (2026-10-27)
+- [x] Add existing 10-second editing sample with MP4/WebM sources and shared Founding 100 application form to public homepage; preserve signed-in home. Hosted video decoded; browser playback verified using hosted file responses (local asset proxy does not serve CDN files).
+- [x] Verify public homepage application → thank-you → private application row; admin review loads; delete only test application by ID. Nine validation/consent tests pass; no publication.
+- [ ] Turn on owner signup emails to Yousportz25@gmail.com (blocked: sender domain not configured/verified; email setup opened).
+
 ## Game purchases and protected-host testing (2026-10-27)
 - [x] Prepare approved creator-game/pass readiness rules; dedicated gaming prices $3.99/$7.99, environment/status/library gates and native/live safeguards tested; unfinished libraries stay unavailable. No new live activation or catalog entries.
 - [x] Build /admin/game-testing and hosted sandbox reference game/asset session boundary; six hosted authorization checks pass, preview gameplay works, signed-out denial and phone layout verified; fixtures removed (zero remaining runs).

@@ -1,9 +1,12 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUpRight, Clapperboard, Film, GraduationCap, Mic, Play, Radio, Smartphone, Users, Video, Wand2, Zap } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Clapperboard, GraduationCap, Mic, Radio, Smartphone, Users, Video, Wand2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PublicSubscriptionForm from "@/components/PublicSubscriptionForm";
 import Founding100Counter from "@/components/Founding100Counter";
+import Founding100Form from "@/components/Founding100Form";
+import sampleVideo from "@/assets/animation-center-tutorial.mp4.asset.json";
+import sampleWebm from "@/assets/homepage-editing-sample.webm.asset.json";
 import court from "@/assets/founders-court.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
@@ -76,16 +79,16 @@ export default function MarketingHome() {
         <section id="film" className="bg-card border-y border-border py-14 sm:py-20">
           <div className="max-w-5xl mx-auto px-5">
             <div className="flex flex-wrap items-end justify-between gap-3 mb-7">
-              <h2 className="text-4xl">THE FIRST 100</h2>
-              <span className="text-xs uppercase text-secondary font-semibold">U⚡️Sportz film · In production</span>
+              <h2 className="text-4xl">U⚡️Sportz in motion</h2>
+              <span className="text-xs uppercase text-secondary font-semibold">Editing sample</span>
             </div>
             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border bg-background">
-              <img src={court} alt="Cover frame for the upcoming U⚡️Sportz film, THE FIRST 100" width={1536} height={1024} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center px-5">
-                <span className="rounded-full border border-border bg-background/70 p-5"><Play className="h-8 w-8 text-secondary" /></span>
-                <p className="text-sm text-muted-foreground max-w-sm">Our cinematic launch film is in production. This is where it will premiere.</p>
-              </div>
+              <video controls playsInline preload="metadata" aria-label="U⚡️Sportz editing sample video" className="w-full h-full object-contain">
+                <source src={sampleVideo.url} type="video/mp4" />
+                <source src={sampleWebm.url} type="video/webm" />
+              </video>
             </div>
+            <p className="text-sm text-muted-foreground mt-4">A sample editing walkthrough. THE FIRST 100 launch film is still in production.</p>
           </div>
         </section>
 
@@ -104,7 +107,7 @@ export default function MarketingHome() {
           </div>
           <div className="mt-10 flex flex-wrap items-center gap-4 border border-border rounded-lg bg-card p-5">
             <Smartphone className="h-6 w-6 text-primary shrink-0" />
-            <p className="text-sm text-muted-foreground flex-1 min-w-60">U⚡️Sportz works in your browser today. Native mobile apps are planned — we'll announce them here and in the newsletter when they're ready.</p>
+            <p className="text-sm text-muted-foreground flex-1 min-w-60">U⚡️Sportz works in your browser today. Native mobile apps are planned — we'll announce them here when they're ready.</p>
             <div className="flex gap-3">
               <span className="text-xs uppercase tracking-wide border border-border rounded-md px-3 py-2 text-muted-foreground">iOS · coming soon</span>
               <span className="text-xs uppercase tracking-wide border border-border rounded-md px-3 py-2 text-muted-foreground">Android · coming soon</span>
@@ -112,19 +115,16 @@ export default function MarketingHome() {
           </div>
         </section>
 
-        <section id="founding100" className="border-y border-border bg-card">
-          <div className="max-w-5xl mx-auto px-5 py-16 sm:py-24 grid md:grid-cols-2 gap-10 items-center">
+        <section id="founding100" className="border-y border-border bg-card scroll-mt-20">
+          <div className="max-w-5xl mx-auto px-5 py-16 sm:py-24 grid md:grid-cols-2 gap-10 items-start">
             <div>
               <p className="text-secondary uppercase text-xs font-semibold mb-4">Founding 100</p>
               <h2 className="text-4xl sm:text-5xl leading-tight">THE FIRST 100<br />CHANGE THE GAME.</h2>
               <p className="mt-5 text-muted-foreground leading-relaxed">One hundred founding members. A permanent badge, priority beta consideration and a direct line to the team. Spots are confirmed only after review.</p>
               <Founding100Counter className="mt-6" />
-              <Button size="lg" asChild className="mt-8 bg-secondary text-secondary-foreground hover:bg-secondary/90"><Link to="/founding100">Apply for the Founding 100 <ArrowUpRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button variant="link" asChild className="mt-6 p-0 h-auto"><Link to="/founding100">View all founding benefits <ArrowUpRight className="ml-2 h-4 w-4" /></Link></Button>
             </div>
-            <div className="relative">
-              <img src={court} alt="Athletes on the court — the community the Founding 100 is building" width={1536} height={1024} loading="lazy" className="rounded-lg border border-border aspect-video object-cover" />
-              <Film className="absolute -top-4 -right-4 h-10 w-10 text-secondary bg-background border border-border rounded-full p-2" />
-            </div>
+            <Founding100Form />
           </div>
         </section>
 
