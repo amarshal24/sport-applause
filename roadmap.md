@@ -1,5 +1,11 @@
 # Roadmap
 
+## Game purchases and protected-host testing (2026-10-27)
+- [ ] Prepare approved creator-game and All-Star/MVP purchase readiness with explicit test/live gates; unfinished libraries stay unavailable.
+- [ ] Build admin game-host test harness and verify protected launch, unpaid/replay/revision/refund/dispute denial and atomic payout allocation with isolated fixtures.
+- [ ] Activate ready creator-game sales only after host and payment safeguards pass (blocked: participating production host, external payout validation and separately approved real-charge testing).
+- [ ] Review shared-media storage warning without removing user-approved member sharing (blocked: warning is active; owner-only restriction would break intended sharing).
+
 ## Production readiness audit (2026-10-27)
 - [x] Produce fresh evidence-based readiness report and prioritized release plan; 64 local tests pass, authenticated/public/mobile page checks performed, Stripe setup complete, private buckets/RLS verified; approved sales preserved, no charges/publishing. Signed-out Games exposure and custom-domain DNS blockers reproduced.
 - [x] Add /admin/launch, shared signed-out gate, search/email/CSV safety and keyboard game controls after plan approval; 69 tests pass; 33 app-only signed-out URLs denied, public routes preserved, authenticated dashboard/checklist, phone layout and search race/error states verified. No publishing, charges, DNS, database changes or scheduler redeployment.
