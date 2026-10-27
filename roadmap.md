@@ -1,5 +1,9 @@
 # Roadmap
 
+## Podcast live activation (2026-10-27)
+- [ ] Harden podcast checkout validation and renewal/refund recording; enable approved memberships/premium episodes only.
+- [ ] Add dedicated podcast thank-you page with server-confirmed settlement/access states; verify without real charges.
+
 ## Connected commerce (2026-10-27)
 - [x] Connect selected Founding 100 membership to confirmed-email accounts with free PRO FX/elite skin benefits; browser-tested selection and waitlist revocation without changing purchase records; temporary application removed.
 - [x] Add /admin/revenue with separate test/live Stripe charge pagination, FX/skin purchases, subscriptions, refunds and creator earnings/payout records; authenticated load and signed-out denial verified. Totals explicitly bounded to loaded entries.
