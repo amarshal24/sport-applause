@@ -1,14 +1,16 @@
 # Roadmap
 
 ## Podcast live activation (2026-10-27)
-- [ ] Harden podcast checkout validation and renewal/refund recording; enable approved memberships/premium episodes only.
-- [ ] Add dedicated podcast thank-you page with server-confirmed settlement/access states; verify without real charges.
+- [x] Validate podcast inputs/return origin, scope live approval to memberships/unlocks, prevent active membership repurchases; enable live flag. Both live session creation paths verified without charges; tips stay blocked.
+- [x] Add /podcasts/thank-you with authenticated session ownership, Stripe settlement and shared ledger reconciliation; unpaid/invalid/missing checkouts verified without success claims; 8 focused tests pass.
+- [ ] Verify successful live settlement, renewals/refunds and external creator payout end-to-end (blocked: separately authorized real-charge test; payouts remain manual). Test purchase success page not exercised with a settled checkout.
 
 ## Connected commerce (2026-10-27)
 - [x] Connect selected Founding 100 membership to confirmed-email accounts with free PRO FX/elite skin benefits; browser-tested selection and waitlist revocation without changing purchase records; temporary application removed.
 - [x] Add /admin/revenue with separate test/live Stripe charge pagination, FX/skin purchases, subscriptions, refunds and creator earnings/payout records; authenticated load and signed-out denial verified. Totals explicitly bounded to loaded entries.
 - [x] Add /purchases navigation and settlement/ownership confirmation before checkout return success; 21 focused tests pass, invalid podcast confirmation denied, existing FX/skin checkout remains enabled.
-- [ ] Activate public podcast/game monetization only after settlement/refund/payout checks and protected game-host validation; blocked by real-charge approval, external host integration and native billing certification.
+- [x] Activate web podcast memberships/premium content on explicit approval; live sessions work, full real-charge lifecycle remains unverified.
+- [ ] Activate public game monetization after protected host/payment tests (blocked: external host integration and native billing certification).
 
 ## Live payment audit (2026-10-20)
 - [x] Enable approved live FX/skin checkout after Stripe readiness completion; authenticated requests created live sessions for all five products, unknown products/foreign returns denied, podcasts remain blocked; 4 safeguard tests pass. No payments submitted; live form/payment/refund flow remains unverified (2026-10-27).
