@@ -154,3 +154,6 @@
 ## Follow-ups
 - [ ] Character copies exact movement: skeletal retargeting of animated superhero / athlete / cartoon rigs
 - [ ] Additional character skins + premium gating reuse
+
+## Marketplace memorabilia on landing page (2026-10-27)
+- [x] Add dedicated "Own a piece of the game" marketplace memorabilia section to the public homepage with generated illustrative display still, real category chips and signup-gated CTA to /marketplace; update the Marketplace feature card copy. Desktop and mobile screenshots verified, CTA opens registration with marketplace destination, image loads, build clean, no runtime errors. Not published.
