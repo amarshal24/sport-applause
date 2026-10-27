@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Live payment audit (2026-10-20)
-- [ ] Enable approved live FX/skin checkout after Stripe readiness completion; verify all five live checkout products without charging, keep podcasts/games restricted (2026-10-27).
+- [x] Enable approved live FX/skin checkout after Stripe readiness completion; authenticated requests created live sessions for all five products, unknown products/foreign returns denied, podcasts remain blocked; 4 safeguard tests pass. No payments submitted; live form/payment/refund flow remains unverified (2026-10-27).
 - [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
 - [x] Fix FX/skin buyer validation, refund revocation, webhook recording errors, FX subscription separation.
 - [x] Stripe live app installed, live keys provisioned, readiness completed; FX/skin approval flag enabled with explicit user approval (2026-10-27).
