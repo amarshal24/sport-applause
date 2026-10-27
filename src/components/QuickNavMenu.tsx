@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAuth } from '@/hooks/useAuth';
 
 const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
@@ -41,6 +42,7 @@ const QuickNavMenu = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +66,7 @@ const QuickNavMenu = () => {
     return label.includes(searchQuery.toLowerCase());
   });
 
-  if (["/welcome", "/unsubscribe", "/motion-studio", "/timeline-editor"].includes(location.pathname)) return null;
+  if (loading || !user || ["/welcome", "/unsubscribe", "/motion-studio", "/timeline-editor", "/auth"].includes(location.pathname)) return null;
 
   return (
     <div className="fixed bottom-20 right-4 z-40 md:bottom-6">
@@ -120,6 +122,7 @@ const QuickNavMenu = () => {
 
       <Button
         size="icon"
+        aria-label={isOpen ? 'Close quick navigation' : 'Open quick navigation'}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-12 w-12 rounded-full shadow-lg transition-all",

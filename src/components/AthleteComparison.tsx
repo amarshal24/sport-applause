@@ -1,3 +1,4 @@
+import { searchOr } from "@/lib/searchSafety";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,7 +87,7 @@ const AthleteComparison = () => {
         `)
         .eq("status", "active")
         .eq("sport", "Basketball")
-        .or(`profiles.username.ilike.%${query}%,profiles.full_name.ilike.%${query}%`)
+        .or(searchOr(['username', 'full_name'], query), { referencedTable: 'profiles' })
         .limit(10);
 
       if (error) throw error;

@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FOUNDING100_CAP, founding100Roles, founding100Statuses, remainingSpots } from "@/lib/founding100";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { csvCell } from '@/lib/csvSafety';
 
 type Application = Database["public"]["Tables"]["founding100_applications"]["Row"];
 
-const csvCell = (v: string) => `"${v.replace(/"/g, '""')}"`;
 
 export default function AdminFounding100() {
   const { user, loading: authLoading } = useAuth();

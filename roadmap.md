@@ -2,7 +2,9 @@
 
 ## Production readiness audit (2026-10-27)
 - [x] Produce fresh evidence-based readiness report and prioritized release plan; 64 local tests pass, authenticated/public/mobile page checks performed, Stripe setup complete, private buckets/RLS verified; approved sales preserved, no charges/publishing. Signed-out Games exposure and custom-domain DNS blockers reproduced.
-- [ ] Add protected launch dashboard and safe reversible fixes after initial report/plan review.
+- [x] Add /admin/launch, shared signed-out gate, search/email/CSV safety and keyboard game controls after plan approval; 69 tests pass; 33 app-only signed-out URLs denied, public routes preserved, authenticated dashboard/checklist, phone layout and search race/error states verified. No publishing, charges, DNS, database changes or scheduler redeployment.
+- [ ] Remediate remaining completed deep-scan findings: friendship/invite authorization, game integrity, public AI access, trusted portal origins and premium audio revocation (blocked: targeted backend verification/design work outside the first-stage release boundary; hosted email settings unverified). Search/CSV changes await fresh security verification.
+- [ ] Deploy and verify shared notification-email safety in the hosted payout scheduler (blocked: first-stage no-release-side-effects boundary; email infrastructure unverified).
 - [ ] Complete native iOS/Android release preparation (blocked: store accounts, billing policy implementation, signing tools and physical-device testing).
 - [ ] Verify backups/restore, current security scans, production commerce lifecycle and safety/legal operations (blocked: hosted backup confirmation, authorized real-charge test and operational/legal review).
 

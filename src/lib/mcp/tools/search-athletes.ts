@@ -1,3 +1,4 @@
+import { searchOr } from "../../searchSafety";
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser } from "../supabase";
@@ -7,7 +8,7 @@ export default defineTool({
   title: "Search athletes",
   description: "Search U⚡️Sportz athlete profiles by name, sport, or position, as the signed-in user.",
   inputSchema: {
-    query: z.string().trim().min(1).describe("Text to match against username, full name, or bio."),
+    query: z.string().trim().min(1).max(200).describe("Text to match against username, full name, or bio."),
     limit: z.number().int().min(1).max(50).optional().describe("Max results (default 10)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -16,12 +17,12 @@ export default defineTool({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    const like = `%${query}%`;
+
     const { data, error } = await supabase
       .from("profiles")
       .select("id, username, full_name, sports, role, bio, avatar_url")
       .or(
-        `username.ilike.${like},full_name.ilike.${like},bio.ilike.${like}`,
+        searchOr(['username', 'full_name', 'bio'], query),
       )
       .limit(limit ?? 10);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

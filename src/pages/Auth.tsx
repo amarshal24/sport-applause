@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { SPORTS } from "@/constants/sports";
 import { z } from "zod";
+import { safeNextPath } from '@/lib/appAccess';
 import { Phone, Mail, Eye, EyeOff, UserPlus } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import LightningLoader from "@/components/LightningLoader";
@@ -47,7 +48,7 @@ const Auth = () => {
   const { signUp, signIn, signInWithGoogle, signInWithApple, signInWithPhone, verifyPhoneOtp, resetPassword, user, loading } = useAuth();
   const navigate = useNavigate();
   const rawNext = searchParams.get("next") ?? "";
-  const nextPath = /^\/(?!\/)/.test(rawNext) ? rawNext : "/";
+  const nextPath = safeNextPath(rawNext);
 
   useEffect(() => {
     // Legacy client-only biometric credentials are no longer used for auth.
@@ -142,7 +143,7 @@ const Auth = () => {
           setIsSubmitting(false);
           return;
         }
-        await signUp(email, password, username, selectedSports);
+        await signUp(email, password, username, selectedSports, nextPath);
       } else {
         // Handle remember me
         if (rememberMe) {

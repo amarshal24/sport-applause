@@ -1,3 +1,4 @@
+import { searchOr } from "@/lib/searchSafety";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -88,7 +89,7 @@ const Fans = () => {
       }
       if (debouncedQuery) {
         req = req.or(
-          `username.ilike.%${debouncedQuery}%,full_name.ilike.%${debouncedQuery}%`
+          searchOr(['username', 'full_name'], debouncedQuery)
         );
       }
 

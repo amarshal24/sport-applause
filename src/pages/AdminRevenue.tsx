@@ -28,7 +28,7 @@ export default function AdminRevenue(){
   const currencyTotals=new Map<string,{gross:number;refunds:number}>();
   for(const c of data?.charges??[]){if(c.status!=='succeeded')continue;const t=currencyTotals.get(c.currency)??{gross:0,refunds:0};t.gross+=c.amount;t.refunds+=c.refunded;currencyTotals.set(c.currency,t);}
   return <main className="max-w-5xl mx-auto px-5 py-8 pb-24 space-y-6">
-    <Button asChild variant="ghost"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4"/>Back to app</Link></Button>
+    <div className="flex gap-2 flex-wrap"><Button asChild variant="ghost"><Link to="/"><ArrowLeft className="mr-2 h-4 w-4"/>Back to app</Link></Button><Button asChild variant="outline"><Link to="/admin/launch">Launch readiness</Link></Button></div>
     <header className="flex items-start justify-between gap-4 flex-wrap"><div><p className="text-secondary text-sm">U⚡️Sportz · Admin</p><h1 className="text-3xl">Revenue</h1></div><div className="flex gap-2"><Button asChild variant="outline"><Link to="/admin/founding100">Founding 100</Link></Button><Button asChild variant="outline"><Link to="/admin/payouts">Payouts</Link></Button><Button variant="outline" size="icon" aria-label="Refresh revenue" disabled={loading} onClick={()=>load()}><RefreshCw className="h-4 w-4"/></Button></div></header>
     <Tabs value={env} onValueChange={v=>setEnv(v==='live'?'live':'sandbox')}><TabsList><TabsTrigger value="live">Live</TabsTrigger><TabsTrigger value="sandbox">Test</TabsTrigger></TabsList></Tabs>
     {error && <p role="alert" className="text-destructive">{error}</p>}
