@@ -157,3 +157,6 @@
 
 ## Marketplace memorabilia on landing page (2026-10-27)
 - [x] Add dedicated "Own a piece of the game" marketplace memorabilia section to the public homepage with generated illustrative display still, real category chips and signup-gated CTA to /marketplace; update the Marketplace feature card copy. Desktop and mobile screenshots verified, CTA opens registration with marketplace destination, image loads, build clean, no runtime errors. Not published.
+
+## Combine feed and fans homepage cards (2026-10-27)
+- [x] Merge "Sports videos, stories & trending" and "Fans & community" into one card ("Sports videos, stories & fans") with two links: Feed (/) and Fans & community (/fans). Card link labels are now data-driven (primaryLabel/secondaryLabel) so the Video editing & Motion FX card keeps its own labels. 14 cards render, both links open registration with the intended destinations, build clean. Not published.
