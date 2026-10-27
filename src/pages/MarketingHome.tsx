@@ -13,7 +13,6 @@ import memorabilia from "@/assets/marketplace-memorabilia.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
 import feedStill from "@/assets/categories/feed.webp.asset.json";
-import fansStill from "@/assets/categories/fans.webp.asset.json";
 import profileStill from "@/assets/categories/profile.webp.asset.json";
 import recruitingStill from "@/assets/categories/recruiting.webp.asset.json";
 import recruiterStill from "@/assets/categories/recruiter.webp.asset.json";
@@ -28,8 +27,7 @@ import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
 import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
 const features = [
-  { title: "Sports videos, stories & trending", text: "Your highlights, your sport, your community — plus the moments everyone's talking about.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/" },
-  { title: "Fans & community", text: "Connect with people who love the game.", image: fansStill, alt: "Sports fans cheering together in a stadium", path: "/fans" },
+  { title: "Sports videos, stories & fans", text: "Your highlights, your sport, your community — plus the moments everyone's talking about and the people who love the game.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/", primaryLabel: "Feed", secondaryPath: "/fans", secondaryLabel: "Fans & community" },
   { title: "Athlete profiles", text: "Your Top 5, your stats, your story.", image: profileStill, alt: "Athlete portrait on a basketball court", path: "/profile" },
   { title: "Get recruited", text: "Put your talent in front of coaches.", image: recruitingStill, alt: "Soccer athlete training with cones", path: "/recruiting" },
   { title: "Recruiter dashboard", text: "Discover athletes and follow their progress.", image: recruiterStill, alt: "Coach reviewing a clipboard on the sideline", path: "/recruiter-dashboard" },
@@ -40,7 +38,7 @@ const features = [
   { title: "Marketplace", text: "Buy and sell sports memorabilia with your community.", image: marketplaceStill, alt: "Framed signed jersey, game-worn helmet and trading cards on a display shelf", path: "/marketplace" },
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
-  { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", secondaryPath: "/motion-studio" },
+  { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", primaryLabel: "Video editor", secondaryPath: "/motion-studio", secondaryLabel: "Motion FX Studio" },
   { title: "AR Studio & skins", text: "Make your camera moments your own.", image: arStill, alt: "Illustrative athlete wearing a futuristic sports visor", path: "/ar-studio" },
   { title: "Purchases & memberships", text: "Your effects, skins and memberships in one place.", image: gamesStill, alt: "Sports gaming equipment illustrating digital purchases", path: "/purchases" },
 ];
@@ -92,8 +90,8 @@ export default function MarketingHome() {
                   <h3 className="text-2xl">{f.title}</h3>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed flex-1">{f.text}</p>
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                    <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.title}`}>{f.secondaryPath ? "Video editor" : user ? "Open" : "Join to explore"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
-                    {f.secondaryPath && <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.secondaryPath : `/auth?mode=signup&next=${encodeURIComponent(f.secondaryPath)}`} aria-label={`${user ? "Open" : "Join to explore"} Motion FX Studio`}>Motion FX Studio<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>}
+                    <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.path : `/auth?mode=signup&next=${encodeURIComponent(f.path)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.primaryLabel ?? f.title}`}>{f.primaryLabel ?? (user ? "Open" : "Join to explore")}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+                    {f.secondaryPath && <Button variant="link" asChild className="px-0 h-auto text-sm"><Link to={user ? f.secondaryPath : `/auth?mode=signup&next=${encodeURIComponent(f.secondaryPath)}`} aria-label={`${user ? "Open" : "Join to explore"} ${f.secondaryLabel ?? f.title}`}>{f.secondaryLabel ?? "Learn more"}<ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>}
                   </div>
                 </figcaption>
               </figure>
