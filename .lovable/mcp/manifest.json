@@ -55,6 +55,7 @@
             "query": {
               "type": "string",
               "minLength": 1,
+              "maxLength": 200,
               "description": "Text to match against username, full name, or bio."
             },
             "limit": {
