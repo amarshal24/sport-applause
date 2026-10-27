@@ -9,6 +9,7 @@ import sampleDunk from "@/assets/sample-dunk.mp4.asset.json";
 import sampleFreekick from "@/assets/sample-freekick.mp4.asset.json";
 import sampleSprint from "@/assets/sample-sprint.mp4.asset.json";
 import court from "@/assets/founders-court.jpg";
+import memorabilia from "@/assets/marketplace-memorabilia.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
 import feedStill from "@/assets/categories/feed.webp.asset.json";
@@ -39,7 +40,7 @@ const features = [
   { title: "Games", text: "Sports arcade challenges and creator games.", image: gamesStill, alt: "Game controller next to a basketball", path: "/games" },
   { title: "Top Plays", text: "The highlights worth watching again.", image: topPlaysStill, alt: "Basketball player rising for a dunk", path: "/top-plays" },
   { title: "Live content", text: "Streams, applause and replays.", image: liveStill, alt: "Sports camera operator filming beside the field", path: "/live" },
-  { title: "Marketplace", text: "Sports gear from your community.", image: marketplaceStill, alt: "Basketball shoes, football and tennis equipment", path: "/marketplace" },
+  { title: "Marketplace", text: "Sports memorabilia and gear from your community.", image: marketplaceStill, alt: "Basketball shoes, football and tennis equipment", path: "/marketplace" },
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
   { title: "Video editing", text: "Timeline, Animation Center, captions, music and sports effects.", image: editorStill, alt: "Sports footage on a video editing workstation", path: "/editor" },
@@ -122,6 +123,30 @@ export default function MarketingHome() {
               ))}
             </div>
             <p className="text-sm text-muted-foreground mt-4">Cinematic samples showing how moments look on U⚡️Sportz. THE FIRST 100 launch film is still in production.</p>
+          </div>
+        </section>
+
+        <section id="marketplace" className="border-y border-border bg-card py-16 sm:py-20">
+          <div className="max-w-5xl mx-auto px-5 grid md:grid-cols-2 gap-10 items-center">
+            <div className="order-2 md:order-1">
+              <p className="text-secondary uppercase text-xs font-semibold mb-3 flex items-center gap-2"><Zap className="h-3 w-3" /> Marketplace</p>
+              <h2 className="text-4xl sm:text-5xl leading-tight">Own a piece<br />of the game.</h2>
+              <p className="mt-5 text-muted-foreground leading-relaxed">Buy and sell sports memorabilia with people in your community — jerseys, trading cards, signed items, game-worn gear and equipment. Message sellers directly and arrange safe, in-person pickup.</p>
+              <div className="flex flex-wrap gap-2 mt-6">
+                {["Memorabilia", "Jerseys", "Trading Cards", "Signed Items", "Game-Worn", "Equipment", "Collectibles"].map(c => (
+                  <span key={c} className="text-xs uppercase tracking-wide border border-border rounded-md px-3 py-1.5 text-muted-foreground bg-background/50">{c}</span>
+                ))}
+              </div>
+              <Button size="lg" asChild className="mt-7 bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                <Link to={user ? "/marketplace" : "/auth?mode=signup&next=%2Fmarketplace"} aria-label={user ? "Browse the marketplace" : "Join to browse the marketplace"}>
+                  {user ? "Browse the marketplace" : "Join to browse the marketplace"}<ArrowUpRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <figure className="order-1 md:order-2 rounded-lg overflow-hidden border border-border">
+              <img src={memorabilia} alt="Framed signed jersey, game-worn helmet, trading cards and a signed baseball on a display shelf" width={1600} height={1200} loading="lazy" className="w-full aspect-[4/3] object-cover" />
+              <figcaption className="p-4 text-xs text-muted-foreground">Illustrative display · not member listings or member photos.</figcaption>
+            </figure>
           </div>
         </section>
 
