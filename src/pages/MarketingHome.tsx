@@ -103,19 +103,39 @@ export default function MarketingHome() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { src: sampleDunk.url, title: "Court at dusk", text: "Street-ball highlights, captured like a broadcast." },
-                { src: sampleFreekick.url, text: "Free kicks with cinematic style.", title: "Under the lights" },
-                { src: sampleSprint.url, title: "Track night", text: "Sprint moments, slowed down and blown up." },
-              ].map(v => (
-                <figure key={v.title} className="rounded-lg overflow-hidden border border-border bg-background">
-                  <video controls playsInline preload="metadata" aria-label={`U⚡️Sportz sample video: ${v.title}`} className="w-full aspect-video object-cover">
-                    <source src={v.src} type="video/mp4" />
-                  </video>
+                { src: sampleDunk.url, title: "Court at dusk", text: "Street-ball highlights, captured like a broadcast.", fx: "lightning", fxLabel: "Lightning strike" },
+                { src: sampleFreekick.url, text: "Free kicks with cinematic style.", title: "Under the lights", fx: "speed", fxLabel: "Speed lines" },
+                { src: sampleSprint.url, title: "Track night", text: "Sprint moments, slowed down and blown up.", fx: "glow", fxLabel: "Night glow" },
+              ].map((v, i) => (
+                <figure key={v.title} className="rounded-lg overflow-hidden border border-border bg-background group">
+                  <div className="relative">
+                    <video autoPlay muted loop controls playsInline preload="metadata" aria-label={`U⚡️Sportz sample video with ${v.fxLabel} effect: ${v.title}`} className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.03]">
+                      <source src={v.src} type="video/mp4" />
+                    </video>
+                    <div className="fx-overlay" aria-hidden="true">
+                      {v.fx === "lightning" && (
+                        <>
+                          <div className="fx-flash" style={{ animationDelay: `${i * 0.5}s` }} />
+                          <svg className="fx-bolt" style={{ animationDelay: `${i * 0.5}s` }} viewBox="0 0 32 64" fill="none"><path d="M18 2 6 30h8l-4 32 16-38h-9l7-22z" fill="currentColor" /></svg>
+                        </>
+                      )}
+                      {v.fx === "speed" && [0, 1, 2].map(n => (
+                        <div key={n} className="fx-speed-line" style={{ top: `${20 + n * 24}%`, left: `${-8 + n * 10}%`, animationDelay: `${n * 0.7 + i * 0.4}s` }} />
+                      ))}
+                      {v.fx === "glow" && (
+                        <>
+                          <div className="fx-glow" />
+                          <div className="fx-scan" />
+                        </>
+                      )}
+                      <span className="absolute top-2 left-2 rounded-md border border-border bg-background/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary backdrop-blur-sm">FX · {v.fxLabel}</span>
+                    </div>
+                  </div>
                   <figcaption className="p-4"><h3 className="text-base font-semibold">{v.title}</h3><p className="text-sm text-muted-foreground mt-1">{v.text}</p></figcaption>
                 </figure>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-4">Cinematic samples showing how moments look on U⚡️Sportz. THE FIRST 100 launch film is still in production.</p>
+            <p className="text-sm text-muted-foreground mt-4">Cinematic samples with live Motion FX overlays — lightning strikes, speed lines and glow — showing how moments look on U⚡️Sportz. THE FIRST 100 launch film is still in production.</p>
           </div>
         </section>
 
