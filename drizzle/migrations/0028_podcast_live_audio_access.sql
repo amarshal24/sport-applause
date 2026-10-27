@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION public.has_podcast_access(_user_id uuid, _podcast_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+ SELECT _user_id IS NOT NULL AND (EXISTS(SELECT 1 FROM public.podcasts p WHERE p.id=_podcast_id AND (NOT p.is_premium OR p.user_id=_user_id)) OR EXISTS(SELECT 1 FROM public.podcast_payments pay WHERE pay.podcast_id=_podcast_id AND pay.payer_id=_user_id AND pay.kind='unlock' AND pay.environment='live' AND pay.refunded_cents < pay.amount_cents) OR EXISTS(SELECT 1 FROM public.creator_memberships m JOIN public.podcasts p ON p.id=_podcast_id WHERE m.fan_id=_user_id AND m.creator_id=p.user_id AND m.environment='live' AND ((m.status IN ('active','trialing','past_due') AND (m.current_period_end IS NULL OR m.current_period_end>now())) OR (m.status='canceled' AND m.current_period_end>now()))));
+$$;
+REVOKE ALL ON FUNCTION public.has_podcast_access(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.has_podcast_access(uuid,uuid) TO authenticated,service_role;
