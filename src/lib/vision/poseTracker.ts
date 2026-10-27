@@ -13,7 +13,7 @@ import {
 import type { Landmark, Observation } from "@/lib/ar/types";
 
 export const POSE_MODEL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
 
 export const toLandmarks = (
   pts: { x: number; y: number; z?: number; visibility?: number }[]
@@ -60,9 +60,9 @@ export class PoseTracker {
       runningMode: "VIDEO",
       numPoses: opts.maxPeople ?? 2,
       outputSegmentationMasks: opts.segmentation ?? false,
-      minPoseDetectionConfidence: 0.4,
-      minPosePresenceConfidence: 0.4,
-      minTrackingConfidence: 0.4,
+      minPoseDetectionConfidence: 0.45,
+      minPosePresenceConfidence: 0.45,
+      minTrackingConfidence: 0.5,
     });
     return new PoseTracker(landmarker);
   }

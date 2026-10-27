@@ -92,7 +92,7 @@ export class MultiTargetTracker {
 
   constructor(opts: TrackerOptions = {}) {
     this.opts = {
-      coastFrames: opts.coastFrames ?? 12,
+      coastFrames: opts.coastFrames ?? 24,
       matchThreshold: opts.matchThreshold ?? 0.2,
       stickiness: opts.stickiness ?? 0.5,
       maxTargets: opts.maxTargets ?? 4,
@@ -125,8 +125,11 @@ export class MultiTargetTracker {
         const predicted = track.predictor.predict(t) ?? track.target.center;
         const oc = centerOf(o.box);
         const dist = Math.hypot(predicted.x - oc.x, predicted.y - oc.y);
-        const proximity = Math.max(0, 1 - dist / 0.45);
-        const score = Math.max(iou(track.target.box, o.box), proximity * 0.9);
+        // Tighter gate + size check so the skin never jumps to another player.
+        const gate = 0.22 + Math.min(0.2, track.missed * 0.02);
+        const proximity = Math.max(0, 1 - dist / gate);
+        const sizeRatio = Math.min(o.box.h, track.target.box.h) / Math.max(o.box.h, track.target.box.h, 1e-4);
+        const score = Math.max(iou(track.target.box, o.box), proximity * 0.9) * (0.5 + 0.5 * sizeRatio);
         if (score >= this.opts.matchThreshold) pairs.push({ id, obs: oi, score });
       });
     });
@@ -179,8 +182,8 @@ export class MultiTargetTracker {
     const center = centerOf(o.box);
     const track: Track = {
       predictor: new MotionPredictor(),
-      boxSmoother: new Vec2Smoother(1.0, 0.02),
-      sizeSmoother: new Vec2Smoother(0.7, 0.01),
+      boxSmoother: new Vec2Smoother(1.8, 0.05),
+      sizeSmoother: new Vec2Smoother(1.6, 0.03),
       poseSmoother: new LandmarkSmoother(),
       faceSmoother: new LandmarkSmoother(),
       handSmoothers: [new LandmarkSmoother(), new LandmarkSmoother()],

@@ -19,7 +19,8 @@ export function motionSample(object: MotionObject, t: number) {
   const before = [...keys].reverse().find(p => p.t <= t);
   const after = keys.find(p => p.t > t);
   if (before?.visible === false) return null;
-  if (!before) return { ...tracked, size: object.size };
+  const grow = Math.min(3, Math.max(0.35, tracked.s ?? 1));
+  if (!before) return { x: tracked.x, y: tracked.y, c: tracked.c, size: object.size * grow };
   // Corrections are offsets from the tracked path, preserving intervening motion.
   const rawBefore = sampleTrack(object.track, before.t) ?? { x: object.x, y: object.y };
   let dx = before.x - rawBefore.x, dy = before.y - rawBefore.y, size = before.size;
@@ -29,7 +30,7 @@ export function motionSample(object: MotionObject, t: number) {
     dx += (after.x - rawAfter.x - dx) * k; dy += (after.y - rawAfter.y - dy) * k;
     size += (after.size - size) * k;
   }
-  return { x: tracked.x + dx, y: tracked.y + dy, c: tracked.c, size };
+  return { x: tracked.x + dx, y: tracked.y + dy, c: tracked.c, size: size * grow };
 }
 export interface MotionPalette { flame: string; core: string; electric: string; trail: string }
 export function motionPalette(): MotionPalette {
