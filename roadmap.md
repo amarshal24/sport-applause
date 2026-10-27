@@ -1,5 +1,9 @@
 # Roadmap
 
+## Homepage category visuals (2026-10-27)
+- [x] Replace empty app previews with 17 category cards using 16 generated illustrative camera stills; preserve member privacy and existing sample videos.
+- [x] All 17 images load with exact CDN-uploaded bytes supplied to local preview; desktop gallery visually checked and Podcasts link opens registration with intended destination; 2 access tests pass and build clean. Local sandbox CDN proxy unavailable; hosted playback not rechecked. Not published.
+
 ## Regular website account signup (2026-10-27)
 - [x] Correct homepage and application thank-you registration links; open signup directly and show submission errors; confirmation messaging reflects returned session.
 - [x] Hosted email signup enabled and registrations allowed; homepage → registration → HTTP 200 account creation → signed-in profile with saved username verified, no runtime errors; 2 access tests pass. Isolated signupcheck test account retained; no existing accounts changed. Not published.

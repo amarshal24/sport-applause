@@ -16,7 +16,7 @@
 - Keep Founders Club public submission in a validated, rate-limited edge function with service-only inserts and admin-only application reads/review; store applications separately so landing changes never alter existing app records.
 - Founding 100 applications live in their own table (separate from Founders Club) with statuses applied/selected/waitlisted/rejected, service-only writes, admin-only reads, duplicate-email handling, and a count-only public RPC for the approved counter; marketing pages must never claim a founding spot is confirmed before admin approval.
 - Keep the public landing available at /welcome and use it for signed-out home only; preserve the signed-in home experience.
-- Homepage applications reuse the Founding 100 form and private submission flow; public sample videos use approved CDN assets, never member media.
+- Homepage applications reuse the Founding 100 form and private submission flow; public category previews use labeled illustrative CDN stills, and sample videos never use member media, preserving privacy.
 - Public subscriptions use service-only writes, an immutable consent-event history and hashed private unsubscribe tokens; email alone must never change an existing subscriber's consent or expose their unsubscribe link.
 - Review safety uses a database spam guard and dedicated report/moderation RPCs; hiding a review excludes it from public summaries and cannot be reversed by buyer edits.
 - Generic digital-product live checkout requires a server-side explicit approval flag before any payment-provider call; test checkout remains separate from launch approval.
