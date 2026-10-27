@@ -2,6 +2,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 
 export type PodcastCheckoutKind = "tip" | "unlock" | "membership";
 
@@ -28,7 +29,7 @@ const PodcastCheckoutModal = ({ request, onClose }: Props) => {
         podcastId: request.podcastId,
         creatorId: request.creatorId,
         amountCents: request.amountCents,
-        returnUrl: `${window.location.origin}/checkout/return?type=podcast_${request.kind}&session_id={CHECKOUT_SESSION_ID}`,
+        returnUrl: `${window.location.origin}/podcasts/thank-you?session_id={CHECKOUT_SESSION_ID}`,
         environment: getStripeEnvironment(),
       },
     });
@@ -44,6 +45,7 @@ const PodcastCheckoutModal = ({ request, onClose }: Props) => {
         <DialogHeader>
           <DialogTitle>{request.title ?? "Support this creator"}</DialogTitle>
         </DialogHeader>
+        <PaymentTestModeBanner />
         <div id="podcast-checkout">
           <EmbeddedCheckoutProvider
             stripe={getStripe()}

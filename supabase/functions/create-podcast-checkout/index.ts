@@ -2,6 +2,9 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
+import { z } from "npm:zod@3";
+import { podcastLiveAllowed, podcastReturnAllowed } from "../_shared/podcastCheckoutRules.ts";
+const schema = z.object({kind:z.enum(['tip','unlock','membership']),environment:z.enum(['sandbox','live']),returnUrl:z.string().url(),podcastId:z.string().uuid().optional(),creatorId:z.string().uuid().optional(),amountCents:z.number().int().min(100).max(50000).optional()}).strict();
 
 const PLATFORM_FEE_BPS = 500; // 5%
 
@@ -66,10 +69,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
+    const parsed = schema.safeParse(await req.json());
+    if (!parsed.success) return new Response(JSON.stringify({error:'Invalid checkout request'}),{status:400,headers:{...corsHeaders,'Content-Type':'application/json'}});
+    const body = parsed.data;
     const kind: string = body.kind;
     const returnUrl: string = body.returnUrl;
-    const environment: StripeEnv = body.environment === "live" ? "live" : "sandbox";
+    const environment: StripeEnv = body.environment;
     if (!["tip", "unlock", "membership"].includes(kind) || typeof returnUrl !== "string") {
       return new Response(JSON.stringify({ error: "Invalid request" }), {
         status: 400,
@@ -77,8 +82,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Public paid transactions stay off until reconciliation, refunds and payouts pass review.
-    if (environment === "live" && Deno.env.get("PODCAST_LIVE_PAYMENTS_ENABLED") !== "true") {
+    if (!podcastReturnAllowed(returnUrl,req.headers.get('origin'))) return new Response(JSON.stringify({error:'Invalid return address'}),{status:400,headers:{...corsHeaders,'Content-Type':'application/json'}});
+    // Live approval covers memberships and premium episodes, not tips.
+    if (environment === "live" && !podcastLiveAllowed(kind,Deno.env.get("PODCAST_LIVE_PAYMENTS_ENABLED"))) {
       return new Response(JSON.stringify({ error: "Paid podcast features are not open to the public yet" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -121,7 +127,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (!creatorId) throw new Error('Creator unavailable');
+    const suspension = await supabase.rpc('is_suspended',{_user_id:creatorId});
+    if (suspension.error || suspension.data) throw new Error('Creator unavailable');
     if (creatorId === user.id) throw new Error("You can't pay yourself");
+    if(kind === 'membership') {
+      const existing = await supabase.from('creator_memberships').select('id,status,current_period_end').eq('fan_id',user.id).eq('creator_id',creatorId).eq('environment',environment).in('status',['active','trialing','past_due']);
+      if(existing.error) throw Error('Membership check unavailable');
+      if(existing.data?.some(m=>!m.current_period_end || new Date(m.current_period_end)>new Date())) throw Error('You already have this membership');
+    }
     if (!Number.isFinite(amountCents) || amountCents < 100 || amountCents > 50000) {
       throw new Error("Amount must be between $1 and $500");
     }
@@ -136,7 +150,7 @@ Deno.serve(async (req) => {
     const metadata = {
       userId: user.id,
       kind: `podcast_${kind}`,
-      creatorId: creatorId!,
+      creatorId,
       ...(podcastId && { podcastId }),
       amountCents: String(amountCents),
       platformFeeCents: String(platformFee),
