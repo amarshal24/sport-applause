@@ -12,6 +12,9 @@
 - Public subscriptions use service-only writes, an immutable consent-event history and hashed private unsubscribe tokens; email alone must never change an existing subscriber's consent or expose their unsubscribe link.
 - Review safety uses a database spam guard and dedicated report/moderation RPCs; hiding a review excludes it from public summaries and cannot be reversed by buyer edits.
 - Generic digital-product live checkout requires a server-side explicit approval flag before any payment-provider call; test checkout remains separate from launch approval.
+- Founding benefits are derived by a self-only RPC matching confirmed Auth email to selected applications; do not create fake purchase ledger rows, and recheck selection so revocation follows admin review.
+- Admin revenue is read-only, admin-checked server-side and environment-filtered; Stripe charge pagination and bounded local ledgers must disclose their scope, never imply lifetime totals.
+- Pure commerce rules shared by client and edge functions stay in the functions shared directory; checkout return screens verify authenticated session ownership and Stripe settlement before success messaging.
 
 - Dynamically load the app at bootstrap and wrap lazy pages in a load-error boundary; stale or unavailable dependency chunks must show a retry screen instead of blanking the app.
 

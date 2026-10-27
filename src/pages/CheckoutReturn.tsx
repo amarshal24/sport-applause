@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { usePremium } from "@/hooks/usePremium";
 import { AnimationTutorial } from "@/components/video-fx/AnimationTutorial";
 import GameCheckoutReturn from "@/components/games/GameCheckoutReturn";
+import { supabase } from "@/integrations/supabase/client";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 /** Lightweight confetti burst — no extra dependency. */
 const Confetti = () => {
@@ -53,10 +55,31 @@ const Confetti = () => {
 const CheckoutReturn = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmationError, setConfirmationError] = useState("");
+  useEffect(() => {
+    let alive = true;
+    setConfirmed(false); setConfirmationError("");
+    if (!sessionId || searchParams.get("type") === "creator_game") return;
+    let count = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("checkout-status", { body: { sessionId, environment: getStripeEnvironment() } });
+        if (!alive) return;
+        if (error || data?.error) { setConfirmationError("Payment could not be confirmed. Check your purchases or try again later."); return; }
+        if (data?.settled) { setConfirmed(true); return; }
+        if (++count < 10) timer = setTimeout(check, 2000);
+        else setConfirmationError("Payment is still pending. Access will activate after settlement.");
+      } catch { if (alive) setConfirmationError("Payment confirmation is unavailable."); }
+    };
+    void check();
+    return () => { alive = false; clearTimeout(timer); };
+  }, [sessionId, searchParams]);
   const { isPremium: hasProFx, skinTier, refresh } = usePremium();
   // Skin pack buyers own a tier without full PRO FX — still a completed purchase.
   const skinOnly = !hasProFx && skinTier !== "free";
-  const isPremium = hasProFx || skinOnly;
+  const isPremium = confirmed && (hasProFx || skinOnly);
   const [tries, setTries] = useState(0);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
@@ -93,9 +116,9 @@ const CheckoutReturn = () => {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center space-y-4 rounded-xl border border-border bg-card/60 p-8">
-          <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{sessionId ? body : "No checkout session found."}</p>
+          {confirmed ? <CheckCircle2 className="h-12 w-12 text-primary mx-auto" /> : <Loader2 className="h-12 w-12 text-primary mx-auto animate-spin" />}
+          <h1 className="text-2xl font-bold">{confirmed ? title : "Confirming payment"}</h1>
+          <p className="text-sm text-muted-foreground">{confirmed ? body : !sessionId ? "No checkout session found." : confirmationError || "Waiting for Stripe to confirm settlement."}</p>
           <div className="flex flex-col gap-2">
             <Button asChild><Link to="/podcasts">Back to Podcasts</Link></Button>
             <Button asChild variant="ghost"><Link to="/">Back home</Link></Button>
@@ -125,15 +148,9 @@ const CheckoutReturn = () => {
             : isPremium
             ? "Every premium effect, filter and animation is now available in the Animation Center and Recruiting editor. Your PRO badge is live on your profile."
             : sessionId
-              ? "We're confirming your payment. This usually takes a few seconds."
+              ? confirmationError || "We're confirming your payment. This usually takes a few seconds."
               : "No checkout session found."}
         </p>
-        {isPremium && (
-          <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-            A confirmation email is on its way.
-          </p>
-        )}
         <div className="flex flex-col gap-2">
           {isPremium && (
             <Button variant="secondary" className="gap-2" onClick={() => setTutorialOpen(true)}>
