@@ -13,7 +13,6 @@ import memorabilia from "@/assets/marketplace-memorabilia.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
 import feedStill from "@/assets/categories/feed.webp.asset.json";
-import fansStill from "@/assets/categories/fans.webp.asset.json";
 import profileStill from "@/assets/categories/profile.webp.asset.json";
 import recruitingStill from "@/assets/categories/recruiting.webp.asset.json";
 import recruiterStill from "@/assets/categories/recruiter.webp.asset.json";
@@ -39,7 +38,7 @@ const features = [
   { title: "Marketplace", text: "Buy and sell sports memorabilia with your community.", image: marketplaceStill, alt: "Framed signed jersey, game-worn helmet and trading cards on a display shelf", path: "/marketplace" },
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
-  { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", secondaryPath: "/motion-studio" },
+  { title: "Video editing & Motion FX", text: "Timeline, Animation Center, captions, music and sports effects — plus motion-tracked effects that follow the action.", image: motionStill, alt: "Illustrative basketball with electric motion trails", path: "/editor", primaryLabel: "Video editor", secondaryPath: "/motion-studio", secondaryLabel: "Motion FX Studio" },
   { title: "AR Studio & skins", text: "Make your camera moments your own.", image: arStill, alt: "Illustrative athlete wearing a futuristic sports visor", path: "/ar-studio" },
   { title: "Purchases & memberships", text: "Your effects, skins and memberships in one place.", image: gamesStill, alt: "Sports gaming equipment illustrating digital purchases", path: "/purchases" },
 ];
