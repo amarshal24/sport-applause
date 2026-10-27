@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
@@ -94,6 +94,7 @@ const AdminPayouts = () => {
       <div className="flex items-center gap-2">
         <Banknote className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Creator payouts</h1>
+        <Button asChild variant="outline" className="ml-auto"><Link to="/admin/revenue">Revenue</Link></Button>
       </div>
       <p className="text-sm text-muted-foreground">
         After you send money to a creator, mark the payout as paid with the transfer reference so they can track it.

@@ -81,7 +81,7 @@ export const UpgradeProModal = ({ open, onClose }: UpgradeProModalProps) => {
 
             <ul className="space-y-2 py-1">
               {[
-                "60+ premium character & object skins",
+                "Premium video effects and editing tools",
                 "8 pro color looks (Cyberpunk, Noir, VHS, Thermal & more)",
                 "8 pro overlay animations (Lightning, Embers, Matrix, Gold Rain…)",
                 "20+ pro pin animations & one-tap FX combos",

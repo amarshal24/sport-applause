@@ -16,6 +16,7 @@ import {
   Search,
   Flame,
   Heart,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { path: "/", icon: Home, labelKey: "quickNav.home" },
   { path: "/profile", icon: User, labelKey: "quickNav.profile" },
+  { path: "/purchases", icon: ShoppingBag, labelKey: "Purchases & membership" },
   { path: "/trending", icon: Flame, labelKey: "quickNav.trending" },
   
   { path: "/fans", icon: Heart, labelKey: "quickNav.fans" },

@@ -2437,6 +2437,7 @@ export type Database = {
           status: string
         }[]
       }
+      get_my_founder_benefits: { Args: never; Returns: boolean }
       get_trending_highlights: {
         Args: { _days?: number; _limit?: number; _sport?: string }
         Returns: {

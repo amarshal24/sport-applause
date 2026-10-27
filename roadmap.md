@@ -1,11 +1,17 @@
 # Roadmap
 
+## Connected commerce (2026-10-27)
+- [x] Connect selected Founding 100 membership to confirmed-email accounts with free PRO FX/elite skin benefits; browser-tested selection and waitlist revocation without changing purchase records; temporary application removed.
+- [x] Add /admin/revenue with separate test/live Stripe charge pagination, FX/skin purchases, subscriptions, refunds and creator earnings/payout records; authenticated load and signed-out denial verified. Totals explicitly bounded to loaded entries.
+- [x] Add /purchases navigation and settlement/ownership confirmation before checkout return success; 21 focused tests pass, invalid podcast confirmation denied, existing FX/skin checkout remains enabled.
+- [ ] Activate public podcast/game monetization only after settlement/refund/payout checks and protected game-host validation; blocked by real-charge approval, external host integration and native billing certification.
+
 ## Live payment audit (2026-10-20)
 - [x] Enable approved live FX/skin checkout after Stripe readiness completion; authenticated requests created live sessions for all five products, unknown products/foreign returns denied, podcasts remain blocked; 4 safeguard tests pass. No payments submitted; live form/payment/refund flow remains unverified (2026-10-27).
 - [x] Check Stripe activation and payment sections without charges or creator-data changes: authenticated pages load, 19 tests pass, live FX/skin/podcast/game refusal paths verified; findings in docs/live-payment-audit-2026-10-20.md.
 - [x] Fix FX/skin buyer validation, refund revocation, webhook recording errors, FX subscription separation.
 - [x] Stripe live app installed, live keys provisioned, readiness completed; FX/skin approval flag enabled with explicit user approval (2026-10-27).
-- [ ] Podcast return page confirms settlement before success copy.
+- [x] Podcast return page confirms authenticated checkout ownership and Stripe settlement before success copy; invalid session cannot claim an unlock (2026-10-27).
 - [ ] Successful live payment/renewal/refund/payout checks (blocked: separately approved real-charge test; podcast/game launch safeguards remain separate).
 
 ## Complete Video Editor and Sports FX (sections 4–5)
