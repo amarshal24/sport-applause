@@ -13,7 +13,6 @@ import memorabilia from "@/assets/marketplace-memorabilia.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
 import feedStill from "@/assets/categories/feed.webp.asset.json";
-import trendingStill from "@/assets/categories/trending.webp.asset.json";
 import fansStill from "@/assets/categories/fans.webp.asset.json";
 import profileStill from "@/assets/categories/profile.webp.asset.json";
 import recruitingStill from "@/assets/categories/recruiting.webp.asset.json";
@@ -30,8 +29,7 @@ import motionStill from "@/assets/categories/motion-fx.webp.asset.json";
 import arStill from "@/assets/categories/ar-studio.webp.asset.json";
 
 const features = [
-  { title: "Sports videos & stories", text: "Your highlights, your sport, your community.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/" },
-  { title: "Trending", text: "The moments getting the community talking.", image: trendingStill, alt: "Football receiver reaching for a catch", path: "/trending" },
+  { title: "Sports videos, stories & trending", text: "Your highlights, your sport, your community — plus the moments everyone's talking about.", image: feedStill, alt: "Basketball athlete dribbling on an outdoor court", path: "/" },
   { title: "Fans & community", text: "Connect with people who love the game.", image: fansStill, alt: "Sports fans cheering together in a stadium", path: "/fans" },
   { title: "Athlete profiles", text: "Your Top 5, your stats, your story.", image: profileStill, alt: "Athlete portrait on a basketball court", path: "/profile" },
   { title: "Get recruited", text: "Put your talent in front of coaches.", image: recruitingStill, alt: "Soccer athlete training with cones", path: "/recruiting" },
