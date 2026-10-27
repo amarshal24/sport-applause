@@ -116,9 +116,9 @@ const Marketplace = () => {
             <div>
               <h1 className="text-2xl font-display font-bold gradient-text flex items-center gap-2">
                 <Store className="h-6 w-6 text-primary" />
-                Marketplace
+                Marketplace & memorabilia
               </h1>
-              <p className="text-sm text-muted-foreground">Buy and sell sports memorabilia locally.</p>
+              <p className="text-sm text-muted-foreground">Jerseys, trading cards, signed items, collectibles and sports gear. Local pickup only.</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {user && (

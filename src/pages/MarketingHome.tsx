@@ -39,7 +39,7 @@ const features = [
   { title: "Games", text: "Sports arcade challenges and creator games.", image: gamesStill, alt: "Game controller next to a basketball", path: "/games" },
   { title: "Top Plays", text: "The highlights worth watching again.", image: topPlaysStill, alt: "Basketball player rising for a dunk", path: "/top-plays" },
   { title: "Live content", text: "Streams, applause and replays.", image: liveStill, alt: "Sports camera operator filming beside the field", path: "/live" },
-  { title: "Marketplace", text: "Sports gear from your community.", image: marketplaceStill, alt: "Basketball shoes, football and tennis equipment", path: "/marketplace" },
+  { title: "Marketplace & memorabilia", text: "Jerseys, trading cards, signed items, collectibles and sports gear. Local, in-person exchanges only.", image: marketplaceStill, alt: "Basketball shoes, football and tennis equipment", path: "/marketplace" },
   { title: "Messages", text: "Stay connected with teammates and friends.", image: messagesStill, alt: "Two teammates sharing a moment on a court bench", path: "/messages" },
   { title: "Podcasts", text: "Sports conversations, memberships and premium episodes.", image: podcastsStill, alt: "Two sports podcasters recording with microphones", path: "/podcasts" },
   { title: "Video editing", text: "Timeline, Animation Center, captions, music and sports effects.", image: editorStill, alt: "Sports footage on a video editing workstation", path: "/editor" },
