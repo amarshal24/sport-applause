@@ -1,5 +1,8 @@
 # Roadmap
 
+## Tutorial captions and transcript (2026-11-06)
+- [ ] Recover the tutorial narration and timing, add default-on English captions and a readable transcript, and verify silent playback and transcript access.
+
 ## Recruiting guide video (2026-10-27)
 - [ ] Replace the written filters/animations guide with the existing 12-minute illustrated tutorial; verify authenticated playback, closing, and small-screen fit. No publication.
 
