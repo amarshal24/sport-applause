@@ -33,7 +33,7 @@ export function FilterHelpDialog({ open, onOpenChange }: FilterHelpDialogProps) 
   const activeCue = captions.find(cue => currentTime >= cue.start && currentTime < cue.end);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-4xl max-h-[85dvh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="block w-[calc(100%-2rem)] max-w-4xl max-h-[85dvh] space-y-4 overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 pr-6 text-xl sm:text-2xl">
             <Sparkles className="w-6 h-6 shrink-0 text-primary" />
@@ -80,7 +80,7 @@ export function FilterHelpDialog({ open, onOpenChange }: FilterHelpDialogProps) 
         {showTranscript && (
           <section id="editing-tutorial-transcript" aria-label="Video transcript" className="border-t border-border pt-4">
             <h3 className="mb-3 font-semibold">Transcript</h3>
-            <div className="space-y-3">
+            <div className="max-h-64 space-y-3 overflow-y-auto">
               {captions.map(cue => (
                 <div key={cue.start} className="flex items-start gap-3" aria-current={activeCue === cue ? "true" : undefined}>
                   <Button variant="ghost" size="sm" className="shrink-0 font-mono text-primary" aria-label={`Jump to ${labelTime(cue.start)}`} onClick={() => {
