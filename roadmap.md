@@ -1,10 +1,10 @@
 # Roadmap
 
 ## Tutorial captions and transcript (2026-11-06)
-- [ ] Recover the tutorial narration and timing, add default-on English captions and a readable transcript, and verify silent playback and transcript access.
+- [x] Recover 114 timed cues from the video's existing on-screen narration; add default-on English captions, readable current caption and expandable timestamped transcript. Authenticated muted playback, caption track loading, seeking to 8:53, mobile/desktop fit and video removal on close verified with exact source bytes supplying the unavailable local CDN proxy; build clean. No publication.
 
 ## Recruiting guide video (2026-10-27)
-- [ ] Replace the written filters/animations guide with the existing 12-minute illustrated tutorial; verify authenticated playback, closing, and small-screen fit. No publication.
+- [x] Replace the written filters/animations guide with the existing 12-minute illustrated tutorial; authenticated playback, closing, and small-screen fit verified alongside caption work on 2026-11-06. No publication.
 
 ## Homepage category visuals (2026-10-27)
 - [x] Replace empty app previews with 17 category cards using 16 generated illustrative camera stills; preserve member privacy and existing sample videos.
