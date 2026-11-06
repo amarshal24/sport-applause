@@ -1,0 +1,572 @@
+[
+  {
+    "start": 2.0,
+    "end": 9.0,
+    "text": "Welcome to the U⚡️Sportz editing tutorial."
+  },
+  {
+    "start": 9.0,
+    "end": 16.0,
+    "text": "Over the next twelve minutes, we'll walk through the full editing flow, step by step: opening the editor, picking a filter, adding custom animations, and finishing with trimming and music."
+  },
+  {
+    "start": 16.0,
+    "end": 19.5,
+    "text": "Grab one of your highlight reels, and let's build a better edit together."
+  },
+  {
+    "start": 25.0,
+    "end": 35.0,
+    "text": "Here's U⚡️Sportz, the platform built for the next generation of athletes and creators."
+  },
+  {
+    "start": 35.0,
+    "end": 38.0,
+    "text": "Highlights, editing, podcasts, live streams and community, all in one place."
+  },
+  {
+    "start": 38.0,
+    "end": 40.0,
+    "text": "This first screen is a real capture of the app."
+  },
+  {
+    "start": 40.0,
+    "end": 45.5,
+    "text": "Everything we cover today happens inside the video editor, which you reach from your own highlight reels."
+  },
+  {
+    "start": 51.5,
+    "end": 54.0,
+    "text": "This is the in-app editing guide."
+  },
+  {
+    "start": 54.0,
+    "end": 57.0,
+    "text": "It breaks the whole process into four steps."
+  },
+  {
+    "start": 57.0,
+    "end": 58.5,
+    "text": "One, open the editor."
+  },
+  {
+    "start": 58.5,
+    "end": 60.0,
+    "text": "Two, pick a filter."
+  },
+  {
+    "start": 60.0,
+    "end": 62.0,
+    "text": "Three, add custom animations."
+  },
+  {
+    "start": 62.0,
+    "end": 64.0,
+    "text": "Four, trim and add music."
+  },
+  {
+    "start": 64.0,
+    "end": 72.5,
+    "text": "We'll take each step in order, and spend real time on the choices that make a highlight feel finished."
+  },
+  {
+    "start": 78.0,
+    "end": 80.0,
+    "text": "A quick note before we start."
+  },
+  {
+    "start": 80.0,
+    "end": 85.5,
+    "text": "Some screens in this tutorial are illustrated mock-ups, drawn in code to explain each control clearly."
+  },
+  {
+    "start": 85.5,
+    "end": 91.5,
+    "text": "They're based on the in-app guide and the editor's actual options, but they are not screen recordings."
+  },
+  {
+    "start": 91.5,
+    "end": 97.0,
+    "text": "Whenever you see the illustration tag in the corner, that's what you're looking at."
+  },
+  {
+    "start": 103.5,
+    "end": 106.0,
+    "text": "Open the editor."
+  },
+  {
+    "start": 110.0,
+    "end": 112.5,
+    "text": "Start with any of your highlight reels."
+  },
+  {
+    "start": 112.5,
+    "end": 117.5,
+    "text": "On the reel, look for the Edit / Filters button, marked with the sparkle icon."
+  },
+  {
+    "start": 117.5,
+    "end": 122.5,
+    "text": "Tap it, and the full-screen editor opens with your video already loaded."
+  },
+  {
+    "start": 122.5,
+    "end": 125.5,
+    "text": "There's nothing to import and nothing to set up."
+  },
+  {
+    "start": 125.5,
+    "end": 128.5,
+    "text": "Your clip is ready to work on right away."
+  },
+  {
+    "start": 134.0,
+    "end": 139.0,
+    "text": "Once the editor is open, your video sits in the large preview area."
+  },
+  {
+    "start": 139.0,
+    "end": 149.5,
+    "text": "Along the side is the toolbar, where each tool lives in its own tab: Filters, Adjust, Effects, Transitions, Music, Text, Stickers and Trim."
+  },
+  {
+    "start": 149.5,
+    "end": 155.5,
+    "text": "Today we'll focus on four of them, Filters, the FX plus animations, Trim, and Music."
+  },
+  {
+    "start": 155.5,
+    "end": 161.5,
+    "text": "The preview is your best friend: every change you make shows up there."
+  },
+  {
+    "start": 169.5,
+    "end": 172.0,
+    "text": "Pick a filter."
+  },
+  {
+    "start": 176.5,
+    "end": 178.5,
+    "text": "Tap Filters in the side toolbar."
+  },
+  {
+    "start": 178.5,
+    "end": 186.5,
+    "text": "You'll see the full set of looks: Original, Vintage, Cool, Warm, Vivid, Noir, Neon, Fade, Dreamy, Cinematic, Retro and Pop."
+  },
+  {
+    "start": 186.5,
+    "end": 196.5,
+    "text": "Original is always there as your starting point, so you can compare any look against the untouched clip, or go back to it at any time."
+  },
+  {
+    "start": 202.5,
+    "end": 204.0,
+    "text": "The preview updates live."
+  },
+  {
+    "start": 204.0,
+    "end": 211.0,
+    "text": "Tap a filter, and the clip changes instantly, so you can audition looks one after another without waiting."
+  },
+  {
+    "start": 211.0,
+    "end": 224.0,
+    "text": "On screen now, we're applying the same color recipes the editor uses to a sample frame, cycling through each look, so you can see how much the mood of a single moment can shift."
+  },
+  {
+    "start": 230.0,
+    "end": 233.5,
+    "text": "Vintage adds a warm sepia tone with extra contrast."
+  },
+  {
+    "start": 233.5,
+    "end": 240.0,
+    "text": "It's great for throwback moments, career recaps, or anything that should feel like a memory."
+  },
+  {
+    "start": 240.0,
+    "end": 250.5,
+    "text": "Warm pushes saturation and shifts the hue toward golden tones, a natural fit for outdoor games, sunsets, and summer tournaments."
+  },
+  {
+    "start": 256.0,
+    "end": 261.5,
+    "text": "Cool goes the other way, with stronger saturation and a shift toward blues."
+  },
+  {
+    "start": 261.5,
+    "end": 264.5,
+    "text": "It suits indoor courts, rinks, and pools."
+  },
+  {
+    "start": 264.5,
+    "end": 271.0,
+    "text": "Vivid doubles the saturation and lifts contrast, so jerseys and court lines really pop."
+  },
+  {
+    "start": 271.0,
+    "end": 279.0,
+    "text": "Neon goes even further, with heavy saturation and extra brightness, for a bold, high-energy look."
+  },
+  {
+    "start": 285.0,
+    "end": 289.5,
+    "text": "Noir turns the clip fully black and white with strong contrast."
+  },
+  {
+    "start": 289.5,
+    "end": 295.5,
+    "text": "It's dramatic, and it focuses attention on movement and form rather than color."
+  },
+  {
+    "start": 295.5,
+    "end": 306.0,
+    "text": "Dreamy adds a very soft blur with lifted brightness, for slow, reflective moments, like a walk-off, a celebration, or a post-game hug."
+  },
+  {
+    "start": 311.5,
+    "end": 314.0,
+    "text": "A few tips for choosing a filter."
+  },
+  {
+    "start": 314.0,
+    "end": 318.0,
+    "text": "Match the look to the moment, not just to your taste."
+  },
+  {
+    "start": 318.0,
+    "end": 323.5,
+    "text": "Keep it consistent across a series of clips, so your profile feels like one story."
+  },
+  {
+    "start": 323.5,
+    "end": 327.5,
+    "text": "And always check the faces and the ball in the preview."
+  },
+  {
+    "start": 327.5,
+    "end": 333.0,
+    "text": "If either gets lost, try a gentler look, or go back to Original."
+  },
+  {
+    "start": 339.0,
+    "end": 347.5,
+    "text": "Here's an example still from a U⚡️Sportz timeline export."
+  },
+  {
+    "start": 347.5,
+    "end": 349.0,
+    "text": "On the left, the original moment."
+  },
+  {
+    "start": 349.0,
+    "end": 352.0,
+    "text": "On the right, the same moment with a title and a timed rim effect added."
+  },
+  {
+    "start": 352.0,
+    "end": 356.5,
+    "text": "Small touches like these guide the viewer's eye to exactly what matters in the play."
+  },
+  {
+    "start": 361.5,
+    "end": 362.5,
+    "text": "Step three."
+  },
+  {
+    "start": 362.5,
+    "end": 365.5,
+    "text": "Add custom animations."
+  },
+  {
+    "start": 369.5,
+    "end": 371.5,
+    "text": "Tap FX+ to open the effects panel."
+  },
+  {
+    "start": 371.5,
+    "end": 376.5,
+    "text": "Inside, you'll find two collections: Sport Animations and Character Transforms."
+  },
+  {
+    "start": 376.5,
+    "end": 380.0,
+    "text": "Sport Animations are built around big moments in a game."
+  },
+  {
+    "start": 380.0,
+    "end": 385.5,
+    "text": "Character Transforms restyle a player into a themed character look."
+  },
+  {
+    "start": 390.0,
+    "end": 399.5,
+    "text": "Sport Animations are sorted by sport: Basketball, Football, Soccer, Baseball, Tennis, Hockey, Track, and Swimming, plus an All view."
+  },
+  {
+    "start": 399.5,
+    "end": 405.5,
+    "text": "In basketball, for example, you'll find Swish, Dunk Slam, 3-Pointer, and Crossover."
+  },
+  {
+    "start": 405.5,
+    "end": 410.0,
+    "text": "In soccer, there's Goal, Keeper Save, Free Kick, and Bicycle Kick."
+  },
+  {
+    "start": 410.0,
+    "end": 414.0,
+    "text": "Pick the one that matches the play you captured."
+  },
+  {
+    "start": 420.5,
+    "end": 424.5,
+    "text": "Every effect is clearly badged as either Free or PRO."
+  },
+  {
+    "start": 424.5,
+    "end": 432.0,
+    "text": "In basketball, Swish and Dunk Slam carry the Free badge, while 3-Pointer and Crossover carry the PRO badge."
+  },
+  {
+    "start": 432.0,
+    "end": 437.5,
+    "text": "The badge tells you which tier an effect belongs to before you choose it."
+  },
+  {
+    "start": 437.5,
+    "end": 443.0,
+    "text": "For details about PRO, check the information shown inside the app."
+  },
+  {
+    "start": 449.0,
+    "end": 456.0,
+    "text": "Character Transforms are grouped into themes, including anime, cartoon, superhero, and athlete styles."
+  },
+  {
+    "start": 456.0,
+    "end": 464.5,
+    "text": "A few examples: Ninja Mode, Speedster, Basketball Legend, and Speed Demon are marked Free, while Boxing Champion is marked PRO."
+  },
+  {
+    "start": 464.5,
+    "end": 469.0,
+    "text": "Each one is badged the same way as the sport animations."
+  },
+  {
+    "start": 475.0,
+    "end": 477.5,
+    "text": "Character transforms are placed with pins."
+  },
+  {
+    "start": 477.5,
+    "end": 481.0,
+    "text": "You can drop up to two character pins on the video."
+  },
+  {
+    "start": 481.0,
+    "end": 484.0,
+    "text": "Place each pin on the player you want to highlight."
+  },
+  {
+    "start": 484.0,
+    "end": 493.0,
+    "text": "Two is the limit, so choose your stars wisely: usually the player who makes the play, and maybe the teammate who set it up."
+  },
+  {
+    "start": 498.0,
+    "end": 500.0,
+    "text": "Some tips for animations."
+  },
+  {
+    "start": 500.0,
+    "end": 506.5,
+    "text": "Less is more: one well-timed effect on the key moment hits harder than five scattered ones."
+  },
+  {
+    "start": 506.5,
+    "end": 509.5,
+    "text": "Put the effect right where the action peaks."
+  },
+  {
+    "start": 509.5,
+    "end": 520.0,
+    "text": "And pair it with your filter, a Neon look with a high-energy animation, or Noir with a single dramatic pin, for a style that feels intentional."
+  },
+  {
+    "start": 525.5,
+    "end": 526.5,
+    "text": "Step four."
+  },
+  {
+    "start": 526.5,
+    "end": 529.5,
+    "text": "Trim and add music."
+  },
+  {
+    "start": 533.5,
+    "end": 536.0,
+    "text": "Open Trim to set your in and out points."
+  },
+  {
+    "start": 536.0,
+    "end": 542.0,
+    "text": "There are two sliders: Start sets where your clip begins, and End sets where it finishes."
+  },
+  {
+    "start": 542.0,
+    "end": 552.5,
+    "text": "Each shows its time as you drag, and below them, the editor shows the final duration, so you always know exactly how long your edit will be."
+  },
+  {
+    "start": 558.0,
+    "end": 560.0,
+    "text": "Good trimming makes a highlight."
+  },
+  {
+    "start": 560.0,
+    "end": 565.5,
+    "text": "Start just before the action begins, so viewers have a moment to see the setup."
+  },
+  {
+    "start": 565.5,
+    "end": 571.0,
+    "text": "End right after the payoff, the shot dropping, the goal, the celebration."
+  },
+  {
+    "start": 571.0,
+    "end": 573.0,
+    "text": "Cut the dead time on either side."
+  },
+  {
+    "start": 573.0,
+    "end": 578.0,
+    "text": "A tight eight seconds almost always beats a loose thirty."
+  },
+  {
+    "start": 583.5,
+    "end": 584.5,
+    "text": "Now for music."
+  },
+  {
+    "start": 584.5,
+    "end": 589.5,
+    "text": "Open Music, and you can add background music from the library."
+  },
+  {
+    "start": 589.5,
+    "end": 599.5,
+    "text": "Tracks are listed with a title, an artist, a length and a mood, things like Victory Anthem, Champion's Rise, Game Day Energy, or Cool Down."
+  },
+  {
+    "start": 599.5,
+    "end": 605.0,
+    "text": "Pick a mood that matches your filter and the energy of the play."
+  },
+  {
+    "start": 611.0,
+    "end": 612.0,
+    "text": "Prefer your own sound?"
+  },
+  {
+    "start": 612.0,
+    "end": 614.5,
+    "text": "You can upload your own track instead."
+  },
+  {
+    "start": 614.5,
+    "end": 619.5,
+    "text": "This is a good spot to bring in a song you've made, or audio you have permission to use."
+  },
+  {
+    "start": 619.5,
+    "end": 624.0,
+    "text": "Your uploaded track works in the edit just like a library track."
+  },
+  {
+    "start": 628.5,
+    "end": 630.5,
+    "text": "Finally, use fade in and fade out."
+  },
+  {
+    "start": 630.5,
+    "end": 639.5,
+    "text": "A fade in brings the music up smoothly instead of starting abruptly, and a fade out lets it settle at the end, rather than cutting off mid-beat."
+  },
+  {
+    "start": 639.5,
+    "end": 646.5,
+    "text": "Short fades of a second or two usually feel the most natural, and make your edit sound polished."
+  },
+  {
+    "start": 651.5,
+    "end": 653.5,
+    "text": "Let's recap the full flow."
+  },
+  {
+    "start": 653.5,
+    "end": 660.0,
+    "text": "One, tap the Edit / Filters button on a highlight reel to open the full-screen editor."
+  },
+  {
+    "start": 660.0,
+    "end": 663.5,
+    "text": "Two, pick a filter, and watch the live preview."
+  },
+  {
+    "start": 663.5,
+    "end": 672.5,
+    "text": "Three, tap FX+ for Sport Animations and Character Transforms, check the Free and PRO badges, and drop up to two character pins."
+  },
+  {
+    "start": 672.5,
+    "end": 681.0,
+    "text": "Four, trim your in and out points, then add library music or upload your own, with a fade in and out."
+  },
+  {
+    "start": 687.5,
+    "end": 689.5,
+    "text": "Before you post, run a quick checklist."
+  },
+  {
+    "start": 689.5,
+    "end": 692.0,
+    "text": "Does the clip start right before the action?"
+  },
+  {
+    "start": 692.0,
+    "end": 694.5,
+    "text": "Is the key moment easy to see with your filter?"
+  },
+  {
+    "start": 694.5,
+    "end": 697.5,
+    "text": "Is there one clear effect where the play peaks?"
+  },
+  {
+    "start": 697.5,
+    "end": 699.5,
+    "text": "Does the music fade in and out cleanly?"
+  },
+  {
+    "start": 699.5,
+    "end": 703.5,
+    "text": "If you can answer yes to all four, your highlight is ready."
+  },
+  {
+    "start": 706.5,
+    "end": 707.5,
+    "text": "That's the complete editing walkthrough."
+  },
+  {
+    "start": 707.5,
+    "end": 709.5,
+    "text": "Open the editor on one of your reels and try it now."
+  },
+  {
+    "start": 709.5,
+    "end": 717.5,
+    "text": "Thanks for watching, and we can't wait to see your next highlight on U⚡️Sportz."
+  }
+]
