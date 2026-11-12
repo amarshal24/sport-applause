@@ -1,0 +1,72 @@
+[
+ {
+  "start": 0.3,
+  "end": 3.4,
+  "text": "How to cut, upload & edit a podcast in U⚡️Sportz"
+ },
+ {
+  "start": 3.6,
+  "end": 7.4,
+  "text": "Open Podcasts, then tap the My Podcasts tab."
+ },
+ {
+  "start": 7.6,
+  "end": 11.4,
+  "text": "Enter a Podcast Title (required). Description is optional."
+ },
+ {
+  "start": 11.6,
+  "end": 14.9,
+  "text": "Tap Choose audio file. Audio files must be under 100MB."
+ },
+ {
+  "start": 15.1,
+  "end": 18.9,
+  "text": "Tap Trim. The Start and End handles keep ONE continuous section."
+ },
+ {
+  "start": 19.1,
+  "end": 22.9,
+  "text": "The first 30 seconds are selected at first. Drag End to your episode length."
+ },
+ {
+  "start": 23.1,
+  "end": 25.9,
+  "text": "Drag Start to skip a slow intro."
+ },
+ {
+  "start": 26.1,
+  "end": 29.9,
+  "text": "Tap Preview to listen. Add a Fade In or Fade Out if you want."
+ },
+ {
+  "start": 30.1,
+  "end": 33.4,
+  "text": "Tap Apply Trim. The original file on your device stays unchanged."
+ },
+ {
+  "start": 33.6,
+  "end": 37.9,
+  "text": "Optional: tap Choose thumbnail. Then tap Upload Podcast."
+ },
+ {
+  "start": 38.1,
+  "end": 41.4,
+  "text": "Later, find the episode under Your Podcasts and tap Edit."
+ },
+ {
+  "start": 41.6,
+  "end": 46.4,
+  "text": "Change the Title, Description, Thumbnail or Audio, then tap Save changes."
+ },
+ {
+  "start": 46.6,
+  "end": 51.4,
+  "text": "Edit has no trimmer: prepare an edited copy, then use Replace Audio."
+ },
+ {
+  "start": 51.6,
+  "end": 55.3,
+  "text": "Cut. Upload. Edit. Now go share your game. (Illustrative walkthrough)"
+ }
+]

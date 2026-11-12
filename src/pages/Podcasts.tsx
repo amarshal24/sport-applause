@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -11,7 +11,11 @@ import PodcastDiscover from "@/components/podcast/PodcastDiscover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Headphones } from "lucide-react";
+import { Headphones, CirclePlay } from "lucide-react";
+import podcastTutorialVideo from "@/assets/videos/podcast-tutorial.mp4.asset.json";
+import podcastTutorialCues from "@/components/podcast/podcastTutorialCues.json";
+
+const PodcastTutorialDialog = lazy(() => import("@/components/podcast/PodcastTutorialDialog"));
 
 const Podcasts = () => {
   const { t } = useTranslation();
@@ -21,6 +25,7 @@ const Podcasts = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState("browse");
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -79,7 +84,7 @@ const Podcasts = () => {
       <MobileNav />
       <main className="pt-20 pb-24 md:pb-8 lg:pl-64 px-4 lg:px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex flex-wrap items-center gap-3 mb-8">
             <div className="p-3 rounded-xl bg-primary/10">
               <Headphones className="h-8 w-8 text-primary" />
             </div>
@@ -89,6 +94,9 @@ const Podcasts = () => {
               </h1>
               <p className="text-muted-foreground">{t("podcasts.subtitle")}</p>
             </div>
+            <Button variant="outline" className="sm:ml-auto" onClick={() => setTutorialOpen(true)}>
+              <CirclePlay className="mr-2 h-4 w-4" /> Podcast tutorial
+            </Button>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -107,6 +115,12 @@ const Podcasts = () => {
               <MyPodcasts key={refreshKey} />
             </TabsContent>
           </Tabs>
+          {tutorialOpen && (
+            <Suspense fallback={null}>
+              <PodcastTutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen}
+                videoUrl={podcastTutorialVideo.url} cues={podcastTutorialCues} />
+            </Suspense>
+          )}
         </div>
       </main>
     </div>

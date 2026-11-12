@@ -1,5 +1,9 @@
 # Roadmap
 
+## Podcast tutorial (2026-11-12)
+- [x] Create a 55.5-second illustrated video walkthrough of upload, pre-upload trim, and existing-episode edits; distinguish replacement audio from in-place cuts. Scene contact sheet inspected.
+- [x] Add accessible tutorial access on Podcasts with shared timed captions/transcript; authenticated playback, caption loading, seeking, close-unmount and phone layout verified using exact source bytes for the unavailable local CDN proxy. Local practice trim passed; no creator data changed. Two access tests pass; build clean. Not published.
+
 ## Tutorial captions and transcript (2026-11-06)
 - [x] Recover 114 timed cues from the video's existing on-screen narration; add default-on English captions, readable current caption and expandable timestamped transcript. Authenticated muted playback, caption track loading, seeking to 8:53, mobile/desktop fit and video removal on close verified with exact source bytes supplying the unavailable local CDN proxy; build clean. No publication.
 
