@@ -1,11 +1,11 @@
 import { searchOr } from "@/lib/searchSafety";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import MobileNav from "@/components/MobileNav";
 import Sidebar from "@/components/Sidebar";
-import { Heart, Search, Users, Mic, Camera, Trophy, History as HistoryIcon } from "lucide-react";
+import { Heart, Search, History as HistoryIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FriendsPanel from "@/components/friends/FriendsPanel";
 import FriendChat from "@/components/friends/FriendChat";
 import UserActionsMenu from "@/components/friends/UserActionsMenu";
+import ProfileIdentitySportFilter from "@/components/ProfileIdentitySportFilter";
+import { useProfileIdentitySport } from "@/hooks/useProfileIdentitySport";
 
 
-type Role = "all" | "athlete" | "commentator" | "media";
+
 
 interface FanProfile {
   id: string;
@@ -33,15 +35,7 @@ interface FanProfile {
   avatar_url: string | null;
   bio: string | null;
   sports: string[] | null;
-  role: string | null;
 }
-
-const ROLES: { id: Role; label: string; icon: typeof Users }[] = [
-  { id: "all", label: "All", icon: Users },
-  { id: "athlete", label: "Athletes", icon: Trophy },
-  { id: "commentator", label: "Commentators", icon: Mic },
-  { id: "media", label: "Media", icon: Camera },
-];
 
 const Fans = () => {
   const { t } = useTranslation();
@@ -50,8 +44,7 @@ const Fans = () => {
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [selectedSport, setSelectedSport] = useState<string>("all");
-  const [selectedRole, setSelectedRole] = useState<Role>("all");
+  const { selectedSport, setSelectedSport, sports, ready } = useProfileIdentitySport(user?.id);
   const [results, setResults] = useState<FanProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const { recents, addRecent, clearRecents } = useRecentSearches();
@@ -70,23 +63,19 @@ const Fans = () => {
   }, [query]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !ready) return;
+    let cancelled = false;
 
     const fetchProfiles = async () => {
       setLoading(true);
       let req = supabase
         .from("profiles")
-        .select("id, username, full_name, avatar_url, bio, sports, role")
+        .select("id, username, full_name, avatar_url, bio, sports")
         .neq("id", user.id)
         .order("updated_at", { ascending: false })
         .limit(50);
 
-      if (selectedRole !== "all") {
-        req = req.eq("role", selectedRole);
-      }
-      if (selectedSport !== "all") {
-        req = req.contains("sports", [selectedSport]);
-      }
+      if (sports.length) req = req.overlaps("sports", sports);
       if (debouncedQuery) {
         req = req.or(
           searchOr(['username', 'full_name'], debouncedQuery)
@@ -94,27 +83,15 @@ const Fans = () => {
       }
 
       const { data, error } = await req;
+      if (cancelled) return;
       if (!error && data) setResults(data as FanProfile[]);
+      else setResults([]);
       setLoading(false);
     };
 
     fetchProfiles();
-  }, [user, debouncedQuery, selectedSport, selectedRole]);
-
-  const roleBadge = useMemo(
-    () => (role: string | null) => {
-      const r = ROLES.find((x) => x.id === (role as Role));
-      if (!r || r.id === "all") return null;
-      const Icon = r.icon;
-      return (
-        <Badge variant="secondary" className="gap-1">
-          <Icon className="h-3 w-3" />
-          {r.label.replace(/s$/, "")}
-        </Badge>
-      );
-    },
-    []
-  );
+    return () => { cancelled = true; };
+  }, [user, debouncedQuery, sports, ready]);
 
   if (!user) {
     return (
@@ -153,7 +130,7 @@ const Fans = () => {
                 {t("sidebar.fans")}
               </h1>
               <p className="text-muted-foreground">
-                Find athletes, commentators, and media to support
+                Connect with people in your sports community
               </p>
             </div>
           </div>
@@ -228,61 +205,11 @@ const Fans = () => {
           )}
 
 
-          {/* Role filter */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Role</p>
-            <div className="flex flex-wrap gap-2">
-              {ROLES.map((r) => {
-                const Icon = r.icon;
-                const active = selectedRole === r.id;
-                return (
-                  <Button
-                    key={r.id}
-                    size="sm"
-                    variant={active ? "default" : "outline"}
-                    onClick={() => setSelectedRole(r.id)}
-                    className="gap-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {r.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sport filter */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Sport</p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant={selectedSport === "all" ? "default" : "outline"}
-                onClick={() => setSelectedSport("all")}
-              >
-                All Sports
-              </Button>
-              {SPORTS.map((sport) => {
-                const Icon = sport.icon;
-                const active = selectedSport === sport.id;
-                return (
-                  <Button
-                    key={sport.id}
-                    size="sm"
-                    variant={active ? "default" : "outline"}
-                    onClick={() => {
-                      setSelectedSport(sport.id);
-                      addRecent({ type: "sport", id: sport.id, label: sport.name });
-                    }}
-                    className="gap-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {sport.name}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
+          <ProfileIdentitySportFilter value={selectedSport} onChange={sport => {
+            setSelectedSport(sport);
+            const selected = SPORTS.find(item => item.id === sport);
+            if (selected) addRecent({ type: "sport", id: selected.id, label: selected.name });
+          }} />
 
           {/* Results */}
           <div className="space-y-3">
@@ -322,7 +249,6 @@ const Fans = () => {
                       {profile.sports?.[0] && (
                         <InlineSportIcon sportId={profile.sports[0]} />
                       )}
-                      {roleBadge(profile.role)}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
                       @{profile.username}

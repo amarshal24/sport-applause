@@ -1,4 +1,5 @@
 # Architecture rules
+- Profile-sport discovery shares selection rules across Fans and Feed, queries profile sports before pagination, and never uses public identity fields for authorization.
 - Podcast tutorial uses native playback and one timed cue source for captions/transcript; distinguish pre-upload trim from published-audio replacement to avoid promising unsupported edits.
 - Recruiting editing help uses the CDN-hosted tutorial with native controls, unmounts on close, and derives its caption track and transcript from the same timed cue data to prevent text drift.
 - Reference game testing uses isolated admin-owned sandbox runs and service-only short-lived hashed host sessions; every asset/gameplay request rechecks current purchase/revision, and test host evidence never certifies external live hosts.

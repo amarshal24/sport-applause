@@ -1,5 +1,12 @@
 # Roadmap
 
+## Profile identity sport (2026-11-18)
+- [ ] Combine feed role/sport filters into profile-sport discovery; default to member sports and allow other sport categories.
+- [ ] Verify filtering rules and signed-in/mobile flow without changing security roles.
+
+## Coach recruiter tutorial
+- [ ] Create and add coach video tutorial; deferred while implementing the new profile sport request.
+
 ## Podcast tutorial (2026-11-12)
 - [x] Create a 55.5-second illustrated video walkthrough of upload, pre-upload trim, and existing-episode edits; distinguish replacement audio from in-place cuts. Scene contact sheet inspected.
 - [x] Add accessible tutorial access on Podcasts with shared timed captions/transcript; authenticated playback, caption loading, seeking, close-unmount and phone layout verified using exact source bytes for the unavailable local CDN proxy. Local practice trim passed; no creator data changed. Two access tests pass; build clean. Not published.

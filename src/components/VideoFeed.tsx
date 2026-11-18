@@ -49,7 +49,9 @@ import VideoTrimModal from "@/components/VideoTrimModal";
 import PostComments from "@/components/PostComments";
 import ApplauseButton from "@/components/ApplauseButton";
 import { useDeafAccessibility } from "@/hooks/useDeafAccessibility";
-import { SPORTS } from "@/constants/sports";
+import ProfileIdentitySportFilter from "@/components/ProfileIdentitySportFilter";
+import { useProfileIdentitySport } from "@/hooks/useProfileIdentitySport";
+import { matchesIdentitySport } from "@/lib/profileIdentitySport";
 
 interface Post {
   id: string;
@@ -100,8 +102,8 @@ interface FeedItem {
 const VideoFeed = () => {
   const { user } = useAuth();
   const { preferCaptions } = useDeafAccessibility();
-  const [selectedSport, setSelectedSport] = useState("all");
-  const [feedScope, setFeedScope] = useState<"following" | "everyone">("following");
+  const { selectedSport, setSelectedSport, sports: identitySports, ready: identityReady } = useProfileIdentitySport(user?.id);
+  const [feedScope, setFeedScope] = useState<"following" | "everyone">("everyone");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [applausedVideos, setApplausedVideos] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -135,7 +137,7 @@ const VideoFeed = () => {
     comments_count,
     created_at,
     user_id,
-    profiles:user_id (
+    profiles:user_id!inner (
       username,
       full_name,
       avatar_url,
@@ -168,22 +170,24 @@ const VideoFeed = () => {
         .order("created_at", { ascending: false })
         .limit(PAGE_SIZE);
       if (beforePost) postsQuery = postsQuery.lt("created_at", beforePost);
+      if (identitySports.length) postsQuery = postsQuery.overlaps("profiles.sports", identitySports);
 
       let repostsQuery = supabase
         .from("post_reposts")
         .select(
           `id, caption, created_at, user_id, post_id,
              reposter:user_id ( username, full_name, avatar_url ),
-             post:post_id ( ${POST_FIELDS} )`
+             post:post_id!inner ( ${POST_FIELDS} )`
         )
         .order("created_at", { ascending: false })
         .limit(PAGE_SIZE);
       if (beforeRepost) repostsQuery = repostsQuery.lt("created_at", beforeRepost);
+      if (identitySports.length) repostsQuery = repostsQuery.overlaps("post.profiles.sports", identitySports);
 
       return Promise.all([postsQuery, repostsQuery]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [identitySports]
   );
 
   const fetchPosts = useCallback(async () => {
@@ -274,8 +278,9 @@ const VideoFeed = () => {
   }, [fetchPage, mergeById, hasMore, loadingMore]);
 
   useEffect(() => {
+    if (!identityReady) return;
     fetchPosts();
-  }, [fetchPosts, refreshKey]);
+  }, [fetchPosts, refreshKey, identityReady]);
 
   // Realtime: refresh the feed as soon as anyone publishes or removes a post
   useEffect(() => {
@@ -671,14 +676,7 @@ const VideoFeed = () => {
       })),
   ].sort((a, b) => +new Date(b.activityAt) - +new Date(a.activityAt));
 
-  const sportFiltered =
-    selectedSport === "all"
-      ? feedItems
-      : feedItems.filter((i) =>
-          i.post.profiles?.sports?.some(
-            (s) => s.toLowerCase() === selectedSport.toLowerCase()
-          )
-        );
+  const sportFiltered = feedItems.filter(item => matchesIdentitySport(item.post.profiles?.sports, identitySports));
 
   const filteredPosts =
     feedScope === "following" && user
@@ -733,54 +731,7 @@ const VideoFeed = () => {
             </div>
           )}
 
-          <div className="relative">
-            <div
-              role="listbox"
-              aria-label="Filter by sport"
-              className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 snap-x snap-mandatory scrollbar-hide [-webkit-overflow-scrolling:touch]"
-            >
-              <button
-                type="button"
-                role="option"
-                aria-selected={selectedSport === "all"}
-                onClick={() => setSelectedSport("all")}
-                className={`snap-start shrink-0 inline-flex h-8 items-center rounded-full px-3 text-xs font-medium transition-colors ${
-                  selectedSport === "all"
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-white/10 text-white/80 hover:bg-white/15 hover:text-white"
-                }`}
-              >
-                All
-              </button>
-              {SPORTS.map((sport) => {
-                const Icon = sport.icon;
-                const active = selectedSport === sport.id;
-                return (
-                  <button
-                    key={sport.id}
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    onClick={() => setSelectedSport(active ? "all" : sport.id)}
-                    title={sport.name}
-                    aria-label={sport.name}
-                    className={`snap-start shrink-0 inline-flex h-8 max-w-[9.5rem] items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-white/10 text-white/80 hover:bg-white/15 hover:text-white"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    <span className="truncate">{sport.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-xl bg-gradient-to-l from-black/70 to-transparent"
-            />
-          </div>
+          <ProfileIdentitySportFilter value={selectedSport} onChange={setSelectedSport} compact />
         </div>
       </div>
 
