@@ -232,6 +232,13 @@
       "when": 1795606423112,
       "tag": "0032_chat_messages_receipt_columns_only",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795606483112,
+      "tag": "0033_public_subscription_preferences",
+      "breakpoints": true
     }
   ]
 }

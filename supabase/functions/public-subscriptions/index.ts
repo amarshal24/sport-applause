@@ -1,9 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
-const topics = ["basketball","football","soccer","tennis","baseball","volleyball","swimming","running","cycling","other-sports","media","podcasts","live-events","coaching","fitness","creators"] as const;
+import { interests as topics } from "../_shared/subscriptionTopics.ts";
 const schema = z.discriminatedUnion("action", [
-  z.object({action:z.literal("subscribe"),email:z.string().trim().toLowerCase().email().max(255),interests:z.array(z.enum(topics)).min(1).max(16),newsletter:z.boolean(),events:z.boolean(),website:z.string().max(0).optional()}),
+  z.object({action:z.literal("subscribe"),email:z.string().trim().toLowerCase().email().max(255),interests:z.array(z.enum(topics)).min(1).max(topics.length),newsletter:z.boolean(),events:z.boolean(),website:z.string().max(0).optional()}),
+  z.object({action:z.literal("get"),token:z.string().regex(/^[a-f0-9]{64}$/)}),
+  z.object({action:z.literal("update"),token:z.string().regex(/^[a-f0-9]{64}$/),interests:z.array(z.enum(topics)).min(1).max(topics.length),newsletter:z.boolean(),events:z.boolean()}),
   z.object({action:z.literal("unsubscribe"),token:z.string().regex(/^[a-f0-9]{64}$/),scope:z.enum(["all","newsletter","events"])}),
 ]);
 const reply=(status:number,body:object)=>new Response(JSON.stringify(body),{status,headers:{...corsHeaders,"Content-Type":"application/json"}});
@@ -21,6 +23,18 @@ Deno.serve(async req=>{
       const {data,error}=await db.rpc("unsubscribe_public_subscription",{_hash:await hash(input.token),_scope:input.scope});
       if(error) return reply(503,{error:"Could not update preferences"});
       return data?reply(200,{updated:true}):reply(400,{error:"This unsubscribe link is invalid"});
+    }
+    if(input.action==="get") {
+      // Token-holder only: returns preferences, never the email address.
+      const {data,error}=await db.rpc("get_public_subscription",{_hash:await hash(input.token)});
+      if(error) return reply(503,{error:"Could not load preferences"});
+      return data?reply(200,{preferences:data}):reply(400,{error:"This preferences link is invalid"});
+    }
+    if(input.action==="update") {
+      if(!input.newsletter&&!input.events) return reply(400,{error:"Choose newsletter or event updates, or unsubscribe"});
+      const {data,error}=await db.rpc("update_public_subscription",{_hash:await hash(input.token),_interests:[...new Set(input.interests)],_newsletter:input.newsletter,_events:input.events});
+      if(error) return reply(503,{error:"Could not update preferences"});
+      return data?reply(200,{updated:true}):reply(400,{error:"This preferences link is invalid"});
     }
     if(!input.newsletter&&!input.events) return reply(400,{error:"Choose newsletter or event updates"});
     const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,"0")).join("");

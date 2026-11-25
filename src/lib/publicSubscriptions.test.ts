@@ -14,4 +14,25 @@ test("newsletter and events consent remain independent and require an explicit c
 });
 test("invalid interests and missing interests are rejected",()=>{
   for(const interests of [[],["not-a-sport"]]) assert.equal(subscriptionSchema.safeParse({email:"test@example.com",interests,newsletter:true,events:false}).success,false);
+});import { interests } from "./publicSubscriptions";
+import { readFileSync } from "node:fs";
+test("gaming and recruiting are available interest categories", () => {
+  for (const interest of ["gaming", "recruiting"]) {
+    assert.equal(subscriptionSchema.safeParse({ email: "test@example.com", interests: [interest], newsletter: true, events: false }).success, true);
+  }
+});
+test("every required newsletter category is offered", () => {
+  const required = ["media", "podcasts", "coaching", "fitness", "gaming", "recruiting", "creators"];
+  for (const category of required) assert.ok((interests as readonly string[]).includes(category), `missing ${category}`);
+  assert.ok(interests.some((i) => ["basketball", "football", "soccer"].includes(i)), "sports are offered");
+});
+test("the interest list has no duplicates and the whole list round-trips through the schema", () => {
+  assert.equal(new Set(interests).size, interests.length);
+  const r = subscriptionSchema.parse({ email: "all@example.com", interests: [...interests], newsletter: true, events: true });
+  assert.equal(r.interests.length, interests.length);
+});
+test("the edge function and the form share one topic list (no hard-coded copy to drift)", () => {
+  const edge = readFileSync(new URL("../../supabase/functions/public-subscriptions/index.ts", import.meta.url), "utf8");
+  assert.match(edge, /from "\.\.\/_shared\/subscriptionTopics\.ts"/);
+  assert.doesNotMatch(edge, /const topics\s*=\s*\[/);
 });
