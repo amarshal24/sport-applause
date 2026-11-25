@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { storageRefUrl } from '@/lib/signedMedia';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { appendUnique, belongsToThread, rowToThreadMessage } from '@/lib/chatMessages';
 
 export interface ChatMessage {
   id: string;
@@ -44,6 +45,15 @@ export const useChat = (recipientId?: string) => {
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const reactionChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Several useChat instances can be mounted at once (conversation list + open
+  // thread). Each needs its own channel topic, otherwise they share one channel
+  // and the first cleanup tears down the other's subscription.
+  const instanceId = useRef(Math.random().toString(36).slice(2)).current;
+  // The subscription reads the open thread through a ref so opening or switching
+  // a conversation never tears the channel down (that gap dropped first messages).
+  const recipientIdRef = useRef<string | undefined>(recipientId);
+  recipientIdRef.current = recipientId;
+  const fetchMessagesRef = useRef<((quiet?: boolean) => Promise<void>) | null>(null);
 
   // Fetch all conversations
   const fetchConversations = useCallback(async () => {
@@ -136,10 +146,10 @@ export const useChat = (recipientId?: string) => {
   }, [user]);
 
   // Fetch messages for a specific conversation
-  const fetchMessages = useCallback(async () => {
+  const fetchMessages = useCallback(async (quiet = false) => {
     if (!user || !recipientId) return;
 
-    setIsLoading(true);
+    if (!quiet) setIsLoading(true);
     const { data, error } = await supabase
       .from('chat_messages')
       .select('*')
@@ -150,24 +160,18 @@ export const useChat = (recipientId?: string) => {
 
     if (error) {
       console.error('Error fetching messages:', error);
-      setIsLoading(false);
+      if (!quiet) setIsLoading(false);
       return;
     }
 
-    setMessages(
-      (data || []).map(msg => ({
-        id: msg.id,
-        senderId: msg.sender_id,
-        recipientId: msg.recipient_id,
-        content: msg.content,
-        imageUrl: msg.image_url,
-        read: msg.read,
-        readAt: msg.read_at,
-        deliveredAt: msg.delivered_at ?? null,
-        createdAt: msg.created_at,
-        isMine: msg.sender_id === user.id
-      }))
-    );
+    const fetched = (data || []).map(msg => rowToThreadMessage(msg, user.id));
+    if (quiet) {
+      // Catch-up after (re)subscribing: merge, never replace, so a message that
+      // arrived while the fetch was in flight is not lost.
+      setMessages(prev => fetched.reduce(appendUnique, prev));
+    } else {
+      setMessages(fetched);
+    }
 
     // Mark unread messages as read (also implies delivered)
     const unreadIds = data?.filter(m => !m.read && m.recipient_id === user.id).map(m => m.id) || [];
@@ -197,8 +201,9 @@ export const useChat = (recipientId?: string) => {
       setReactions([]);
     }
 
-    setIsLoading(false);
+    if (!quiet) setIsLoading(false);
   }, [user, recipientId]);
+  fetchMessagesRef.current = fetchMessages;
 
   // Add or remove a reaction on a message
   const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
@@ -254,6 +259,11 @@ export const useChat = (recipientId?: string) => {
 
     if (blockError) {
       console.error('Error checking block status:', blockError);
+      toast({
+        title: 'Message not sent',
+        description: 'We could not verify this conversation. Please try again.',
+        variant: 'destructive',
+      });
       return false;
     }
 
@@ -266,14 +276,24 @@ export const useChat = (recipientId?: string) => {
       return false;
     }
 
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('chat_messages')
       .insert({
         sender_id: user.id,
         recipient_id: recipientId,
         content: content.trim() || '',
         image_url: imageUrl || null
-      });
+      })
+      .select()
+      .single();
+
+    if (!error && inserted) {
+      // Show the sent message immediately from the database response instead of
+      // waiting for the realtime echo; appendUnique drops the echo when it lands.
+      setMessages(prev => appendUnique(prev, rowToThreadMessage(inserted, user.id)));
+      fetchConversations();
+      return true;
+    }
 
     if (error) {
       console.error('Error sending message:', error);
@@ -286,7 +306,7 @@ export const useChat = (recipientId?: string) => {
     }
 
     return true;
-  }, [user, recipientId, toast]);
+  }, [user, recipientId, toast, fetchConversations]);
 
 
   // Upload image
@@ -323,7 +343,7 @@ export const useChat = (recipientId?: string) => {
     }
 
     const channel = supabase
-      .channel(`chat-${user.id}`)
+      .channel(`chat-${user.id}-${instanceId}`)
       .on(
         'postgres_changes',
         {
@@ -336,20 +356,9 @@ export const useChat = (recipientId?: string) => {
           const now = new Date().toISOString();
 
           // If we're in a conversation with this sender, add the message
-          if (recipientId && payload.new.sender_id === recipientId) {
-            const newMsg: ChatMessage = {
-              id: payload.new.id,
-              senderId: payload.new.sender_id,
-              recipientId: payload.new.recipient_id,
-              content: payload.new.content,
-              imageUrl: payload.new.image_url,
-              read: payload.new.read,
-              readAt: payload.new.read_at ?? null,
-              deliveredAt: payload.new.delivered_at ?? now,
-              createdAt: payload.new.created_at,
-              isMine: false
-            };
-            setMessages(prev => [...prev, newMsg]);
+          if (belongsToThread(payload.new as any, user.id, recipientIdRef.current)) {
+            const newMsg = rowToThreadMessage(payload.new as any, user.id, now);
+            setMessages(prev => appendUnique(prev, newMsg));
 
             // Thread is open: delivered and read
             supabase
@@ -378,26 +387,10 @@ export const useChat = (recipientId?: string) => {
           filter: `sender_id=eq.${user.id}`
         },
         (payload) => {
-          // Add our own sent messages to the list
-          if (recipientId && payload.new.recipient_id === recipientId) {
-            const newMsg: ChatMessage = {
-              id: payload.new.id,
-              senderId: payload.new.sender_id,
-              recipientId: payload.new.recipient_id,
-              content: payload.new.content,
-              imageUrl: payload.new.image_url,
-              read: payload.new.read,
-              readAt: payload.new.read_at ?? null,
-              deliveredAt: payload.new.delivered_at ?? null,
-
-              createdAt: payload.new.created_at,
-              isMine: true
-            };
-            setMessages(prev => {
-              // Avoid duplicates
-              if (prev.some(m => m.id === newMsg.id)) return prev;
-              return [...prev, newMsg];
-            });
+          // Add our own sent messages (also covers sends from another tab/device)
+          if (belongsToThread(payload.new as any, user.id, recipientIdRef.current)) {
+            const newMsg = rowToThreadMessage(payload.new as any, user.id);
+            setMessages(prev => appendUnique(prev, newMsg));
           }
           fetchConversations();
         }
@@ -426,16 +419,22 @@ export const useChat = (recipientId?: string) => {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Anything sent while the socket was still joining was not echoed to us.
+        // Catch up once the channel is live (merge-only, no loading flicker).
+        if (status === 'SUBSCRIBED') {
+          fetchConversations();
+          if (recipientIdRef.current) fetchMessagesRef.current?.(true);
+        }
+      });
 
     channelRef.current = channel;
 
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      supabase.removeChannel(channel);
+      if (channelRef.current === channel) channelRef.current = null;
     };
-  }, [user, recipientId, fetchConversations]);
+  }, [user, instanceId, fetchConversations]);
 
   // Subscribe to reaction changes for the open thread
   useEffect(() => {
