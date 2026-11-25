@@ -12,6 +12,8 @@
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "lint": "eslint .",
+    "test": "npx --yes tsx@4 --test src/lib/*.test.ts src/constants/*.test.ts",
+    "test:founding100-cap": "bash scripts/test-founding100-cap.sh",
     "preview": "vite preview"
   },
   "dependencies": {
