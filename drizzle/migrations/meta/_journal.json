@@ -225,6 +225,13 @@
       "when": 1795606363112,
       "tag": "0031_founding100_atomic_cap",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795606423112,
+      "tag": "0032_chat_messages_receipt_columns_only",
+      "breakpoints": true
     }
   ]
 }
