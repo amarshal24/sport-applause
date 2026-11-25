@@ -56,7 +56,7 @@ export default function AdminFounding100() {
     setSaving(row.id);
     const admin_notes = notes[row.id] || "";
     const { error } = await supabase.from("founding100_applications").update({ status: nextStatus, admin_notes }).eq("id", row.id);
-    if (error) toast.error("Could not save review");
+    if (error) toast.error(error.message?.includes("FOUNDING100_CAP_REACHED") ? "All 100 founding spots are taken. Reject or waitlist a selected member to free one." : "Could not save review");
     else { setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: nextStatus, admin_notes } : r)); toast.success("Review saved"); }
     setSaving(undefined);
   };
