@@ -9,7 +9,7 @@ const at = (t: number) => pts.reduce((b, p) => Math.abs(p.t - t) < Math.abs(b.t 
 let ok = 0, ok2 = 0;
 for (const [t, gx, gy] of gt) {
   const p = at(t), dx = (p.x - gx) * w / 100, dy = (p.y - gy) * h / 100, err = Math.hypot(dx, dy);
-  const R = 0.165 * w; // ball radius on screen (~33% of frame width)
+  const R = (Number(process.env.BALL_R_PCT) || 16.5) / 100 * w; // ball radius, percent of frame width (env BALL_R_PCT)
   const hit = err <= R; const tight = err <= R / 2; if (hit) ok++; if (tight) ok2++;
   console.log(`t=${t.toFixed(1)} gt=(${gx.toFixed(0)},${gy.toFixed(0)}) trk=(${p.x.toFixed(0)},${p.y.toFixed(0)}) err=${err.toFixed(1)}px conf=${(p.c ?? 0).toFixed(2)} ${tight ? "LOCKED" : hit ? "on-ball" : "MISS"}`);
 }
