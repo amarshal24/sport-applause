@@ -12,6 +12,7 @@ import { trackObject, trackQuality, mergeTracks } from "@/lib/objectTracker";
 import { correctMotionPoint, motionSample, motionUploadSchema, motionRangeSchema, paintMotion, motionPalette, type MotionObject, type MotionEffect } from "@/lib/motionStudio";
 import { MotionSegmenter } from "@/lib/motionSegmentation";
 import { exportMotion } from "@/lib/motionExport";
+import { exportMotionExact, ExactExportUnavailable } from "@/lib/motionExportExact";
 const MotionLiveCamera = lazy(() => import("@/components/video-fx/MotionLiveCamera"));
 
 export default function MotionStudio() {
@@ -33,20 +34,24 @@ export default function MotionStudio() {
   useEffect(() => () => { if (output) URL.revokeObjectURL(output.url); }, [output]);
   useEffect(() => {
     if (!url || mode !== "edit") return;
-    let raf = 0; const palette = motionPalette();
+    let raf = 0, rvfc = 0, watched: HTMLVideoElement | null = null, shown: number | null = null; const palette = motionPalette();
+    // Paint effects at the presentation time of the frame actually on screen (same clock as export).
+    const onFrame = (_now: number, meta: { mediaTime: number }) => { shown = meta.mediaTime; if (watched) rvfc = watched.requestVideoFrameCallback(onFrame); };
     const draw = () => {
       raf = requestAnimationFrame(draw); const v = video.current, c = canvas.current;
       if (!v || !c || v.readyState < 2) return;
+      if (v !== watched && "requestVideoFrameCallback" in v) { watched = v; shown = null; rvfc = v.requestVideoFrameCallback(onFrame); }
+      const at = shown ?? v.currentTime;
       if (c.width !== v.videoWidth || c.height !== v.videoHeight) { c.width = v.videoWidth; c.height = v.videoHeight; }
       const ctx = c.getContext("2d"); if (!ctx) return; ctx.clearRect(0, 0, c.width, c.height);
       if (mask.current && v.paused && Math.abs(v.currentTime - maskTime.current) < 0.04) ctx.drawImage(mask.current, 0, 0, c.width, c.height);
-      paintMotion(ctx, c.width, c.height, v.currentTime, data.current, palette);
+      paintMotion(ctx, c.width, c.height, at, data.current, palette);
       for (const o of data.current) {
-        const p = motionSample(o, v.currentTime); if (!p) continue;
+        const p = motionSample(o, at); if (!p) continue;
         ctx.strokeStyle = o.id === selectedRef.current ? palette.core : palette.electric; ctx.lineWidth = Math.max(2, c.width / 450);
         ctx.beginPath(); ctx.arc(p.x * c.width / 100, p.y * c.height / 100, p.size * Math.min(c.width, c.height) / 200, 0, Math.PI * 2); ctx.stroke();
       }
-    }; draw(); return () => cancelAnimationFrame(raf);
+    }; draw(); return () => { cancelAnimationFrame(raf); if (watched && rvfc) watched.cancelVideoFrameCallback(rvfc); };
   }, [url, mode]);
   const load = (next: File) => {
     const parsed = motionUploadSchema.safeParse(next); if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Select a video"); return; }
@@ -84,7 +89,17 @@ export default function MotionStudio() {
   const save = async () => {
     if (!file) return; video.current?.pause(); const controller = new AbortController(); abort.current = controller; const generation = run.current;
     setBusy("Rendering edited video"); setProgress(0); setError("");
-    try { const blob = await exportMotion(file, objects, controller.signal, n => { if (mounted.current && generation === run.current) setProgress(n); }, swishAt); if (controller.signal.aborted || !mounted.current || generation !== run.current) return; setOutput({ blob, url: URL.createObjectURL(blob) }); toast.success("Edited video ready"); }
+    const onProgress = (n: number) => { if (mounted.current && generation === run.current) setProgress(n); };
+    try {
+      let blob: Blob;
+      try { blob = await exportMotionExact(file, objects, controller.signal, onProgress, swishAt); }
+      catch (e) {
+        if (!(e instanceof ExactExportUnavailable)) throw e;
+        // Real-time capture is not frame-exact; say so instead of silently degrading.
+        toast.warning("Exact-frame export isn't available on this browser. Using real-time capture, so effect timing may differ slightly from the preview.");
+        blob = await exportMotion(file, objects, controller.signal, onProgress, swishAt);
+      }
+      if (controller.signal.aborted || !mounted.current || generation !== run.current) return; setOutput({ blob, url: URL.createObjectURL(blob) }); toast.success("Edited video ready"); }
     catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Export failed"); }
     finally { if (mounted.current && generation === run.current) setBusy(""); }
   };
