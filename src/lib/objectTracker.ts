@@ -151,6 +151,93 @@ export const searchStep = (
 /** NCC score -> 0-1 lock confidence. */
 export const nccConfidence = (score: number) => Math.max(0, Math.min(1, (score - 0.2) / 0.7));
 
+/** Grabs the downscaled grayscale frame nearest time `t` (browser: seek + canvas; tests: pre-decoded). */
+export type GrayGrabber = (t: number) => Promise<Float32Array>;
+
+/**
+ * Decoder-independent tracking core: identical algorithm for the browser (video element) and for
+ * offline evaluation against real footage. `w`/`h` are the analysis frame size.
+ */
+export const trackFrames = async (
+  grab: GrayGrabber,
+  { w, h, duration, startTime, x, y, onProgress, signal, forwardOnly }:
+    { w: number; h: number; duration: number } & TrackOptions
+): Promise<TrackPoint[]> => {
+  const step = 1 / SAMPLE_FPS;
+  const total = Math.max(1, Math.round((forwardOnly ? duration - startTime : duration) / step));
+  let processed = 0;
+
+  const anchor = Math.min(Math.max(0, startTime), Math.max(0, duration - step));
+  const first = await grab(anchor);
+  const ax = (x / 100) * w;
+  const ay = (y / 100) * h;
+  const anchorTpl = patchAt(first, w, h, ax, ay, 1);
+
+  const points: TrackPoint[] = [{ t: anchor, x: (ax / w) * 100, y: (ay / h) * 100, c: 1, s: 1 }];
+
+  const run = async (dir: 1 | -1) => {
+    let px = ax;
+    let py = ay;
+    let vx = 0;
+    let vy = 0;
+    let scale = 1;
+    let lost = 0;
+    const template = anchorTpl.slice();
+
+    for (let t = anchor + dir * step; t >= 0 && t <= duration - 0.01; t += dir * step) {
+      if (signal?.aborted) return;
+      const g = await grab(t);
+
+      // Constant-velocity prediction keeps the search window on fast movers.
+      const qx = Math.min(w - 1, Math.max(0, px + vx));
+      const qy = Math.min(h - 1, Math.max(0, py + vy));
+      const radius = Math.round((lost ? SEARCH * RECOVER : SEARCH) * Math.max(1, scale));
+      let m = searchStep(template, g, w, h, qx, qy, scale, radius);
+      // Re-acquire against the original look when the adapted one fails.
+      if (nccConfidence(m.score) < 0.45) {
+        const r = searchStep(anchorTpl, g, w, h, qx, qy, scale, Math.round(SEARCH * RECOVER * Math.max(1, scale)));
+        if (r.score > m.score) m = r;
+      }
+      const conf = nccConfidence(m.score);
+
+      if (conf >= 0.3) {
+        vx = (vx * 0.5 + (m.x - px) * 0.5);
+        vy = (vy * 0.5 + (m.y - py) * 0.5);
+        px = m.x;
+        py = m.y;
+        scale = scale * 0.6 + m.scale * 0.4;
+        lost = 0;
+      } else {
+        // Coast on the motion model instead of snapping to a look-alike.
+        px = qx;
+        py = qy;
+        vx *= 0.7;
+        vy *= 0.7;
+        lost++;
+      }
+      points.push({ t, x: (px / w) * 100, y: (py / h) * 100, c: conf, s: scale });
+
+      // Drift guard: adapt only on confident locks, anchored to the original look.
+      if (conf >= 0.6) {
+        const fresh = patchAt(g, w, h, px, py, scale);
+        for (let i = 0; i < N; i++) {
+          template[i] = template[i] * 0.8 + fresh[i] * 0.12 + anchorTpl[i] * 0.08;
+        }
+      }
+
+      processed++;
+      onProgress?.(Math.min(99, Math.round((processed / total) * 100)), conf);
+    }
+  };
+
+  await run(1);
+  if (!forwardOnly) await run(-1);
+
+  points.sort((a, b) => a.t - b.t);
+  onProgress?.(100);
+  return points;
+};
+
 /**
  * Follows the object under (x, y) across the whole clip and returns a
  * keyframed path (position + relative size). Tracks forward from the pick
@@ -204,78 +291,7 @@ export const trackObject = async (
       return toGray(ctx.getImageData(0, 0, w, h).data, w, h);
     };
 
-    const step = 1 / SAMPLE_FPS;
-    const total = Math.max(1, Math.round((forwardOnly ? duration - startTime : duration) / step));
-    let processed = 0;
-
-    const anchor = Math.min(Math.max(0, startTime), Math.max(0, duration - step));
-    const first = await grab(anchor);
-    const ax = (x / 100) * w;
-    const ay = (y / 100) * h;
-    const anchorTpl = patchAt(first, w, h, ax, ay, 1);
-
-    const points: TrackPoint[] = [{ t: anchor, x: (ax / w) * 100, y: (ay / h) * 100, c: 1, s: 1 }];
-
-    const run = async (dir: 1 | -1) => {
-      let px = ax;
-      let py = ay;
-      let vx = 0;
-      let vy = 0;
-      let scale = 1;
-      let lost = 0;
-      const template = anchorTpl.slice();
-
-      for (let t = anchor + dir * step; t >= 0 && t <= duration - 0.01; t += dir * step) {
-        if (signal?.aborted) return;
-        const g = await grab(t);
-
-        // Constant-velocity prediction keeps the search window on fast movers.
-        const qx = Math.min(w - 1, Math.max(0, px + vx));
-        const qy = Math.min(h - 1, Math.max(0, py + vy));
-        const radius = Math.round((lost ? SEARCH * RECOVER : SEARCH) * Math.max(1, scale));
-        let m = searchStep(template, g, w, h, qx, qy, scale, radius);
-        // Re-acquire against the original look when the adapted one fails.
-        if (nccConfidence(m.score) < 0.45) {
-          const r = searchStep(anchorTpl, g, w, h, qx, qy, scale, Math.round(SEARCH * RECOVER * Math.max(1, scale)));
-          if (r.score > m.score) m = r;
-        }
-        const conf = nccConfidence(m.score);
-
-        if (conf >= 0.3) {
-          vx = (vx * 0.5 + (m.x - px) * 0.5);
-          vy = (vy * 0.5 + (m.y - py) * 0.5);
-          px = m.x;
-          py = m.y;
-          scale = scale * 0.6 + m.scale * 0.4;
-          lost = 0;
-        } else {
-          // Coast on the motion model instead of snapping to a look-alike.
-          px = qx;
-          py = qy;
-          vx *= 0.7;
-          vy *= 0.7;
-          lost++;
-        }
-        points.push({ t, x: (px / w) * 100, y: (py / h) * 100, c: conf, s: scale });
-
-        // Drift guard: adapt only on confident locks, anchored to the original look.
-        if (conf >= 0.6) {
-          const fresh = patchAt(g, w, h, px, py, scale);
-          for (let i = 0; i < N; i++) {
-            template[i] = template[i] * 0.8 + fresh[i] * 0.12 + anchorTpl[i] * 0.08;
-          }
-        }
-
-        processed++;
-        onProgress?.(Math.min(99, Math.round((processed / total) * 100)), conf);
-      }
-    };
-
-    await run(1);
-    if (!forwardOnly) await run(-1);
-
-    points.sort((a, b) => a.t - b.t);
-    onProgress?.(100);
+    const points = await trackFrames(grab, { w, h, duration, startTime, x, y, onProgress, signal, forwardOnly });
     return points;
   } finally {
     cleanup();

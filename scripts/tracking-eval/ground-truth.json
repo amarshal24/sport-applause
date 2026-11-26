@@ -1,0 +1,17 @@
+{
+  "note": "Hand-labeled ball centres (percent of frame) read by eye from sampled frames. Accuracy about +/-3% of frame width. A HUMAN MUST VERIFY these labels before they are used as an acceptance gate. Footage itself is not stored in the repo (minors).",
+  "clips": {
+    "arcade-toddler-720x1280": {
+      "init": { "t": 0, "x": 36, "y": 47.7 },
+      "ballRadiusPctOfWidth": 16.5,
+      "checkpoints": [[0.5,41.7,50.8],[1,34.7,46],[1.5,30,39.8],[2,33.3,54.7],[2.5,41.7,51.6],[3,41,44.5],[3.5,38.9,30.5],[4,37.5,43]]
+    },
+    "youth-game-iphone-hevc-rotated": {
+      "segments": [
+        { "init": { "t": 15, "x": 66.7, "y": 54 }, "checkpoints": [[16,80,48]] },
+        { "init": { "t": 18, "x": 64, "y": 27 }, "checkpoints": [[19,76,19.5]] }
+      ],
+      "ballRadiusPctOfWidth": 4
+    }
+  }
+}
