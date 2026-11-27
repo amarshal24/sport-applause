@@ -7,7 +7,8 @@
 -- access), and a per-user advisory lock makes consume/refund safe under concurrent requests.
 --
 --   monthly bucket  : counts clips in the current UTC calendar month; resets automatically
---   lifetime bucket : counts clips that never reset (used for the one-time pack bonus)
+--   lifetime bucket : counts clips that never reset (supported, but no package uses it today:
+--                     every package is a monthly allowance, so the server passes 0)
 -- A clip is taken from the monthly bucket first, then the lifetime bucket.
 -- Failed jobs are refunded (refunded_at) so a user is never charged a slot for a clip that failed.
 

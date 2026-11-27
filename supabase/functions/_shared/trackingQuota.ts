@@ -1,7 +1,8 @@
 // AI tracked-clip allowances per package. Pure rules shared by the edge function (authoritative)
 // and the UI (display only). Prices are NOT defined here; this only sets clip allowances.
-// Numbers approved by the owner on 2026-11-27: Free 1/month (changed from 2 by the owner on 2026-11-27), Pro FX Pack 10 lifetime, Members 30/month.
-export const TRACKING_LIMITS = { freeMonthly: 1, memberMonthly: 30, packLifetime: 10 } as const;
+// Owner decisions: Free 1/month (2026-11-27), one-time Pro FX Pack 5/month (2026-11-27, replaces the
+// earlier 10-lifetime choice), Members and Founding 100 members 30/month.
+export const TRACKING_LIMITS = { freeMonthly: 1, packMonthly: 5, memberMonthly: 30 } as const;
 
 export interface TrackingEntitlements {
   /** Active Pro FX Membership subscription, or an approved Founding 100 member. */
@@ -10,15 +11,17 @@ export interface TrackingEntitlements {
   pack: boolean;
 }
 
+/** lifetimeLimit stays 0 for every package: the database still supports a lifetime bucket, no package uses it. */
 export interface TrackingAllowance { monthlyLimit: number; lifetimeLimit: number }
 
 export function trackingAllowance(e: TrackingEntitlements): TrackingAllowance {
-  return {
-    monthlyLimit: e.member ? TRACKING_LIMITS.memberMonthly : TRACKING_LIMITS.freeMonthly,
-    // The one-time pack adds a never-resetting bonus on top of the free monthly allowance, so a
-    // pack owner is never worse off than a free user after the bonus runs out.
-    lifetimeLimit: e.pack ? TRACKING_LIMITS.packLifetime : 0,
-  };
+  // Highest applicable monthly allowance; packages do not stack.
+  const monthlyLimit = Math.max(
+    TRACKING_LIMITS.freeMonthly,
+    e.pack ? TRACKING_LIMITS.packMonthly : 0,
+    e.member ? TRACKING_LIMITS.memberMonthly : 0,
+  );
+  return { monthlyLimit, lifetimeLimit: 0 };
 }
 
 export interface TrackingUsage { monthlyUsed: number; lifetimeUsed: number }
