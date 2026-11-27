@@ -29,12 +29,12 @@ q -v ON_ERROR_STOP=1 -f "$MIG" >/dev/null || { echo "FAIL  0034 not re-runnable"
 C() { svc "SELECT consume_tracking_clip('$1','$2',$3,$4)->>'allowed'" | sed 's/^true$/t/;s/^false$/f/'; }
 B() { sed 's/^true$/t/;s/^false$/f/'; }
 
-echo "== free user: 2 per month, then blocked =="
-check "free clip 1" t "$(C $U1 a1 2 0)"; check "free clip 2" t "$(C $U1 a2 2 0)"; check "free clip 3 blocked" f "$(C $U1 a3 2 0)"
-echo "== pack owner: 2 monthly then 10 lifetime, then blocked =="
-ok=0; for i in $(seq 1 12); do [ "$(C $U2 p$i 2 10)" = t ] && ok=$((ok+1)); done
-check "pack owner gets 12 clips (2 monthly + 10 lifetime)" 12 "$ok"; check "13th blocked" f "$(C $U2 p13 2 10)"
-check "source split" "monthly=2 lifetime=10" "$(q -At -c "SELECT 'monthly='||count(*) FILTER (WHERE source='monthly')||' lifetime='||count(*) FILTER (WHERE source='lifetime') FROM public.tracking_usage WHERE user_id='$U2'")"
+echo "== free user: 1 per month, then blocked =="
+check "free clip 1" t "$(C $U1 a1 1 0)"; check "free clip 2 blocked" f "$(C $U1 a2 1 0)"
+echo "== pack owner: 1 monthly then 10 lifetime, then blocked =="
+ok=0; for i in $(seq 1 11); do [ "$(C $U2 p$i 1 10)" = t ] && ok=$((ok+1)); done
+check "pack owner gets 11 clips (1 monthly + 10 lifetime)" 11 "$ok"; check "12th blocked" f "$(C $U2 p12 1 10)"
+check "source split" "monthly=1 lifetime=10" "$(q -At -c "SELECT 'monthly='||count(*) FILTER (WHERE source='monthly')||' lifetime='||count(*) FILTER (WHERE source='lifetime') FROM public.tracking_usage WHERE user_id='$U2'")"
 echo "== idempotency + refunds =="
 check "same job id twice is one slot" "t|1" "$(C $U3 j1 2 0)|$(q -At -c "SELECT count(*) FROM public.tracking_usage WHERE user_id='$U3'")"
 C $U3 j1 2 0 >/dev/null; check "duplicate flagged and still one row" 1 "$(q -At -c "SELECT count(*) FROM public.tracking_usage WHERE user_id='$U3'")"
@@ -48,7 +48,7 @@ echo "== month rollover =="
 q -c "UPDATE public.tracking_usage SET period_start = (date_trunc('month', now() AT TIME ZONE 'utc') - interval '1 month')::date WHERE user_id IN ('$U1')" >/dev/null
 check "monthly bucket resets with a new month" t "$(C $U1 b1 2 0)"
 q -c "UPDATE public.tracking_usage SET period_start = (date_trunc('month', now() AT TIME ZONE 'utc') - interval '2 month')::date WHERE user_id='$U2'" >/dev/null
-check "lifetime bucket does NOT reset (pack owner: monthly resets, lifetime still 10 used)" "t|t|f" "$(C $U2 m1 2 10)|$(C $U2 m2 2 10)|$(C $U2 m3 2 10)"
+check "lifetime bucket does NOT reset (pack owner: monthly resets, lifetime still 10 used)" "t|f|f" "$(C $U2 m1 1 10)|$(C $U2 m2 1 10)|$(C $U2 m3 1 10)"
 echo "== concurrency: 25 parallel requests, limit 5 =="
 for i in $(seq 1 25); do ( svc "SELECT consume_tracking_clip('$U4','race$i',5,0)->>'allowed'" > "$WORK/r$i" ) & done; wait
 check "exactly 5 allowed under concurrency" 5 "$(cat "$WORK"/r* | grep -c '^true$')"
@@ -66,6 +66,6 @@ for stmt in "INSERT INTO public.tracking_usage (user_id,job_id,source,period_sta
 done
 check "user sees only own usage rows" "$(q -At -c "SELECT count(*) FROM public.tracking_usage WHERE user_id='$U2'")" "$(as $U2 "SELECT count(*) FROM public.tracking_usage")"
 check "stranger sees none of another user's rows" 0 "$(as $U3 "SELECT count(*) FROM public.tracking_usage WHERE user_id='$U2'")"
-check "get_my_tracking_usage reports own counts" "2|10" "$(as $U2 "SELECT (get_my_tracking_usage()->>'monthly_used')||'|'||(get_my_tracking_usage()->>'lifetime_used')" | tr -d ' ')"
+check "get_my_tracking_usage reports own counts" "1|10" "$(as $U2 "SELECT (get_my_tracking_usage()->>'monthly_used')||'|'||(get_my_tracking_usage()->>'lifetime_used')" | tr -d ' ')"
 check "get_my_tracking_usage unusable when signed out" "" "$(q -c "SET ROLE anon; SELECT get_my_tracking_usage()" | grep -c 'permission denied' | sed 's/^1$//')"
 echo; if [ "$FAILS" -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "$FAILS CHECK(S) FAILED"; exit 1; fi

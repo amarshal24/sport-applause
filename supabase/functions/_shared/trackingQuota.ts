@@ -1,7 +1,7 @@
 // AI tracked-clip allowances per package. Pure rules shared by the edge function (authoritative)
 // and the UI (display only). Prices are NOT defined here; this only sets clip allowances.
-// Numbers approved by the owner on 2026-11-27: Free 2/month, Pro FX Pack 10 lifetime, Members 30/month.
-export const TRACKING_LIMITS = { freeMonthly: 2, memberMonthly: 30, packLifetime: 10 } as const;
+// Numbers approved by the owner on 2026-11-27: Free 1/month (changed from 2 by the owner on 2026-11-27), Pro FX Pack 10 lifetime, Members 30/month.
+export const TRACKING_LIMITS = { freeMonthly: 1, memberMonthly: 30, packLifetime: 10 } as const;
 
 export interface TrackingEntitlements {
   /** Active Pro FX Membership subscription, or an approved Founding 100 member. */
